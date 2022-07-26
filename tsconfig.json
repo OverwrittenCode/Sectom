@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strictNullChecks": true,
+    "target": "ESNext",
+    "outDir": "dist",
+    "sourceMap": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "resolveJsonModule": true,
+    "importHelpers": true,
+    "noErrorTruncation": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@class/*": ["class/*"],
+      "@commands/*": ["commands/*"],
+      "@events/*": ["events/*"],
+      "@DB/*": ["DB/*"],
+      "@util/*": ["util/*"]
+    }
+  },
+  "include": ["src", "enviroment.d.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
