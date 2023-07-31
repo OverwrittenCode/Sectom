@@ -21,20 +21,20 @@ import {
 } from "discord.js";
 
 import { capitalizeFirstLetter } from "../../utils/casing.js";
+import { replyOrFollowUp } from "../../utils/interaction.js";
 import { logger } from "../../utils/logger.js";
-import { replyOrFollowUp } from "../../utils/others.js";
-import {
+import type {
 	AccessGateSubGroupApplicationCommandOptionType,
 	AccessListBarrier,
 	ButtonIDFormat,
 	ServerModelSelectionSnowflakeType,
-	TargetClass,
 	TargetClassSingular,
 	TargetType
-} from "../../utils/type.js";
-import { ServerModel } from "../ServerModel.js";
+} from "../../utils/ts/Access.js";
+import { TargetClass } from "../../utils/ts/Access.js";
+import { ServerModel } from "../Server.js";
 
-import { AccessSelection } from "./AccessGate.js";
+import { AccessSelection } from "./Access.js";
 import { Blacklist } from "./Blacklist.js";
 import { Command } from "./Command.js";
 import { CounterModel } from "./Counter.js";

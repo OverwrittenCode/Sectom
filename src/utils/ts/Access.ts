@@ -1,76 +1,76 @@
-import type { User, Role, GuildBasedChannel } from "discord.js";
+import type { GuildBasedChannel, Role, User } from "discord.js";
 
 import type {
-    Channel as ChannelObj,
-    Role as RoleObj,
-    User as UserObj
-} from "../../models/ServerModel.js";
+	Channel as ChannelObj,
+	Role as RoleObj,
+	User as UserObj
+} from "../../models/Server.js";
 
 export type AccessGateSubGroupApplicationCommandOptionType =
-    | User
-    | Role
-    | GuildBasedChannel;
+	| User
+	| Role
+	| GuildBasedChannel;
 
 export type ServerModelSelectionSnowflakeType = UserObj | RoleObj | ChannelObj;
 
 export type EnumValues<T extends Record<string, string>> = T[keyof T];
 
 export enum TargetClass {
-    USERS = "users",
-    ROLES = "roles",
-    CHANNELS = "channels"
+	USERS = "users",
+	ROLES = "roles",
+	CHANNELS = "channels"
 }
 
 export enum TargetClassSingular {
-    USER = "user",
-    ROLE = "role",
-    CHANNEL = "channel"
+	USER = "user",
+	ROLE = "role",
+	CHANNEL = "channel"
 }
 
 export enum SecondaryTargetClass {
-    GUILDS = "guilds"
+	GUILDS = "guilds"
 }
 
 export enum SecondaryTargetClassSingular {
-    GUILD = "guild"
+	GUILD = "guild"
 }
 
 export const CombinedTargetClass = {
-    ...TargetClass,
-    ...SecondaryTargetClass
+	...TargetClass,
+	...SecondaryTargetClass
 };
 
 export const CombinedTargetSingularClass = {
-    ...TargetClassSingular,
-    ...SecondaryTargetClassSingular
+	...TargetClassSingular,
+	...SecondaryTargetClassSingular
 };
 
 export enum TargetType {
-    USER = "User",
-    CHANNEL = "Channel",
-    ROLE = "Role"
+	USER = "User",
+	CHANNEL = "Channel",
+	ROLE = "Role"
 }
 
 export enum AccessListBarrier {
-    BLACKLIST = "blacklist",
-    WHITELIST = "whitelist"
+	BLACKLIST = "blacklist",
+	WHITELIST = "whitelist"
 }
 
 export enum PaginationIDBarrier {
-    ACTIONS = "actions",
-    BLACKLIST = AccessListBarrier.BLACKLIST,
-    WHITELIST = AccessListBarrier.WHITELIST
+	ACTIONS = "actions",
+	BLACKLIST = AccessListBarrier.BLACKLIST,
+	WHITELIST = AccessListBarrier.WHITELIST
 }
 
 export enum SubCommandActionType {
-    ADD = "add",
-    REMOVE = "remove"
+	ADD = "add",
+	REMOVE = "remove"
 }
 
 type ButtonIDPrefix = `${PaginationIDBarrier}_${EnumValues<
-    typeof CombinedTargetClass
+	typeof CombinedTargetClass
 >}_`;
 
 export type ButtonIDFormat<T extends string = string> = T extends string
-    ? `${ButtonIDPrefix}${T}`
-    : ButtonIDPrefix;
+	? `${ButtonIDPrefix}${T}`
+	: ButtonIDPrefix;

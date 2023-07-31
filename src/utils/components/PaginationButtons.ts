@@ -12,14 +12,13 @@ import {
 } from "discord.js";
 import lodash from "lodash";
 
-import { Blacklist } from "../models/Moderation/Blacklist.js";
-import { Command } from "../models/Moderation/Command.js";
-import { ModerationCases } from "../models/Moderation/ModerationCases.js";
-import { Whitelist } from "../models/Moderation/Whitelist.js";
-import { Server, ServerModel } from "../models/ServerModel.js";
-
-import { MAX_DESCRIPTION_LENGTH } from "./config.js";
-import { replyNoData } from "./others.js";
+import { Blacklist } from "../../models/Moderation/Blacklist.js";
+import { Command } from "../../models/Moderation/Command.js";
+import { ModerationCases } from "../../models/Moderation/ModerationCases.js";
+import { Whitelist } from "../../models/Moderation/Whitelist.js";
+import { Server, ServerModel } from "../../models/Server.js";
+import { MAX_DESCRIPTION_LENGTH } from "../config.js";
+import { replyNoData } from "../interaction.js";
 import type {
 	ButtonIDFormat,
 	CombinedTargetClass,
@@ -29,9 +28,12 @@ import type {
 	TargetClass,
 	TargetClassSingular,
 	TargetType
-} from "./ts/Access.js";
-import { AccessListBarrier } from "./ts/Access.js";
-import type { ClassPropertyNames, MongooseDocumentType } from "./ts/General.js";
+} from "../ts/Access.js";
+import { AccessListBarrier } from "../ts/Access.js";
+import type {
+	ClassPropertyNames,
+	MongooseDocumentType
+} from "../ts/General.js";
 const { compact } = lodash;
 
 export class PaginationButtons {}

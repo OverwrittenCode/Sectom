@@ -3,6 +3,7 @@ import type {
 	CommandInteraction,
 	InteractionResponse
 } from "discord.js";
+
 import type {
 	AccessGateSubGroupApplicationCommandOptionType,
 	SubCommandActionType

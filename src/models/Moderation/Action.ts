@@ -2,8 +2,8 @@ import type { SubDocumentType } from "@typegoose/typegoose";
 import { pre, prop } from "@typegoose/typegoose";
 import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses.js";
 
-import { ActionType } from "../../utils/type.js";
-import { User } from "../ServerModel.js";
+import { ActionType } from "../../utils/ts/Action.js";
+import { User } from "../Server.js";
 
 import { CounterModel } from "./Counter.js";
 

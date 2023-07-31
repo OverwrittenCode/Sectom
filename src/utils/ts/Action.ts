@@ -10,6 +10,7 @@ import type {
 	StringSelectMenuInteraction,
 	UserSelectMenuInteraction
 } from "discord.js";
+
 import type { TargetClassSingular } from "./Access.js";
 
 export enum ActionType {

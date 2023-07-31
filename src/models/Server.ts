@@ -11,10 +11,11 @@ import type { BeAnObject } from "@typegoose/typegoose/lib/types.js";
 import type { ChangeStreamDocument } from "mongodb";
 import type { Document } from "mongoose";
 
+import { getEntityFromGuild } from "../utils/interaction.js";
 import { logger } from "../utils/logger.js";
-import type { GuildInteraction, MongooseDocumentType } from "../utils/type.js";
+import type { GuildInteraction } from "../utils/ts/Action.js";
+import type { MongooseDocumentType } from "../utils/ts/General.js";
 
-import { getEntityFromGuild } from "../utils/others.js";
 import { Blacklist } from "./Moderation/Blacklist.js";
 import { ModerationCases } from "./Moderation/ModerationCases.js";
 import { Whitelist } from "./Moderation/Whitelist.js";

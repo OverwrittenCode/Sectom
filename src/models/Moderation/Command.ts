@@ -3,9 +3,9 @@ import { post, pre, prop } from "@typegoose/typegoose";
 import type { ButtonInteraction, CommandInteraction } from "discord.js";
 
 import { logger } from "../../utils/logger.js";
-import type { ServerModelSelectionSnowflakeType } from "../../utils/type.js";
+import type { ServerModelSelectionSnowflakeType } from "../../utils/ts/Access.js";
 
-import { AccessSelection } from "./AccessGate.js";
+import { AccessSelection } from "./Access.js";
 
 /**
  * Command class

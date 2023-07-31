@@ -10,22 +10,27 @@ import {
 	SlashOption
 } from "discordx";
 
-import { findOrCreateServer } from "../../models/ServerModel.js";
+import { findOrCreateServer } from "../../models/Server.js";
+import { capitalizeFirstLetter, concatenate } from "../../utils/casing.js";
 import {
 	ButtonComponentMoveSnowflake,
 	PaginationSender
-} from "../../utils/PaginationButtons.js";
-import { capitalizeFirstLetter, concatenate } from "../../utils/casing.js";
+} from "../../utils/components/PaginationButtons.js";
+import { getEntityFromGuild, replyNoData } from "../../utils/interaction.js";
 import { moderationHierarchy } from "../../utils/moderationHierarchy.js";
-import { getEntityFromGuild, replyNoData } from "../../utils/others.js";
 import type {
 	AccessGateSubGroupApplicationCommandOptionType,
+	SubCommandActionType
+} from "../../utils/ts/Access.js";
+import {
+	AccessListBarrier,
+	CombinedTargetClass
+} from "../../utils/ts/Access.js";
+import type { TitleCase } from "../../utils/ts/General.js";
+import type {
 	IBaseListManager,
-	ISubCommandManager,
-	SubCommandActionType,
-	TitleCase
-} from "../../utils/type.js";
-import { AccessListBarrier, CombinedTargetClass } from "../../utils/type.js";
+	ISubCommandManager
+} from "../../utils/ts/Interfaces.js";
 
 enum ListType {
 	BLACKLIST = "blacklist",
@@ -79,7 +84,7 @@ function createBaseListManagerClass(list: `${ListType}`) {
 			commandName: string | undefined,
 			interaction: CommandInteraction
 		) {
-			let retrieveServer = await findOrCreateServer(interaction, true);
+			const retrieveServer = await findOrCreateServer(interaction, true);
 			if (retrieveServer.status == 404) return replyNoData(interaction);
 
 			const server = retrieveServer.object;
@@ -238,9 +243,9 @@ function createSubCommandManagerClass(
 				snowflakePluralType:
 					CombinedTargetClass[
 						`${subCommandType.toUpperCase()}s` as
-							| `USERS`
-							| `ROLES`
-							| `CHANNELS`
+							| "USERS"
+							| "ROLES"
+							| "CHANNELS"
 					],
 				interaction,
 				commandName
