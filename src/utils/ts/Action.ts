@@ -3,15 +3,14 @@ import type {
 	ChannelSelectMenuInteraction,
 	CommandInteraction,
 	ContextMenuCommandInteraction,
+	InteractionReplyOptions,
 	MentionableSelectMenuInteraction,
 	ModalSubmitInteraction,
 	RoleSelectMenuInteraction,
 	StringSelectMenuInteraction,
-	UserSelectMenuInteraction,
-	InteractionReplyOptions,
-	InteractionResponse
+	UserSelectMenuInteraction
 } from "discord.js";
-import type { TargetClassSingular } from "./AccessTypes";
+import type { TargetClassSingular } from "./Access.js";
 
 export enum ActionType {
 	MUTE = "mute",

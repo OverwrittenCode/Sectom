@@ -7,8 +7,8 @@ import type {
 } from "discord.js";
 
 import { NO_DATA_MESSAGE } from "./config.js";
-import type { GuildInteraction, ReplyOptions } from "./ts/ActionTypes.js";
-import type { FilteredKeys } from "./ts/GeneralTypes.js";
+import type { GuildInteraction, ReplyOptions } from "./ts/Action.js";
+import type { FilteredKeys } from "./ts/General.js";
 
 export async function replyOrFollowUp(
 	interaction: CommandInteraction | MessageComponentInteraction,

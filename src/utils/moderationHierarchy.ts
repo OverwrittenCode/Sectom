@@ -9,7 +9,7 @@ import { GuildMember } from "discord.js";
 
 import { logger } from "./logger.js";
 import { getEntityFromGuild } from "./others.js";
-import type { ModerationHierarchy } from "./ts/ActionTypes.js";
+import type { ModerationHierarchy } from "./ts/Action.js";
 
 export async function moderationHierarchy(
 	target: User | Role,

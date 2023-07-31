@@ -29,12 +29,9 @@ import type {
 	TargetClass,
 	TargetClassSingular,
 	TargetType
-} from "./ts/AccessTypes.js";
-import { AccessListBarrier } from "./ts/AccessTypes.js";
-import type {
-	ClassPropertyNames,
-	MongooseDocumentType
-} from "./ts/GeneralTypes.js";
+} from "./ts/Access.js";
+import { AccessListBarrier } from "./ts/Access.js";
+import type { ClassPropertyNames, MongooseDocumentType } from "./ts/General.js";
 const { compact } = lodash;
 
 export class PaginationButtons {}

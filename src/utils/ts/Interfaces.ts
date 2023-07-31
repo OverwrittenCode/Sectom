@@ -1,33 +1,36 @@
 import type {
+	ButtonInteraction,
 	CommandInteraction,
-	InteractionResponse,
-	ButtonInteraction
+	InteractionResponse
 } from "discord.js";
-import type { AccessGateSubGroupApplicationCommandOptionType, SubCommandActionType } from "./AccessTypes";
+import type {
+	AccessGateSubGroupApplicationCommandOptionType,
+	SubCommandActionType
+} from "./Access.js";
 
 export interface IBaseListManager {
 	view: (
-		 commandName: string | undefined,
-		 interaction: CommandInteraction
+		commandName: string | undefined,
+		interaction: CommandInteraction
 	) => Promise<void>;
 }
 
 export interface ISubCommandManager extends IBaseListManager {
 	manageSubCommandAction: (
-		 action: `${SubCommandActionType}`,
-		 target: AccessGateSubGroupApplicationCommandOptionType,
-		 commandName: string | undefined,
-		 interaction: CommandInteraction
+		action: `${SubCommandActionType}`,
+		target: AccessGateSubGroupApplicationCommandOptionType,
+		commandName: string | undefined,
+		interaction: CommandInteraction
 	) => Promise<InteractionResponse<boolean> | undefined>;
 	moveSubCommandType: (interaction: ButtonInteraction) => Promise<void>;
 	add: (
-		 target: AccessGateSubGroupApplicationCommandOptionType,
-		 commandName: string | undefined,
-		 interaction: CommandInteraction
+		target: AccessGateSubGroupApplicationCommandOptionType,
+		commandName: string | undefined,
+		interaction: CommandInteraction
 	) => Promise<void>;
 	remove: (
-		 target: AccessGateSubGroupApplicationCommandOptionType,
-		 commandName: string | undefined,
-		 interaction: CommandInteraction
+		target: AccessGateSubGroupApplicationCommandOptionType,
+		commandName: string | undefined,
+		interaction: CommandInteraction
 	) => Promise<void>;
 }

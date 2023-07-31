@@ -1,5 +1,4 @@
-import type { TitleCase } from "./ts/GeneralTypes";
-
+import type { TitleCase } from "./ts/General";
 
 export function capitalizeFirstLetter<T extends string>(str: T): TitleCase<T> {
 	const value = str.charAt(0).toUpperCase() + str.slice(1);
@@ -24,5 +23,3 @@ export function concatenate<T extends string[]>(...strs: T): Concatenate<T> {
 	}
 	return result as Concatenate<T>;
 }
-
-
