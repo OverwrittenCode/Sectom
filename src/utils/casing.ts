@@ -1,4 +1,5 @@
-import { TitleCase } from "./type";
+import type { TitleCase } from "./ts/GeneralTypes";
+
 
 export function capitalizeFirstLetter<T extends string>(str: T): TitleCase<T> {
 	const value = str.charAt(0).toUpperCase() + str.slice(1);

@@ -20,17 +20,21 @@ import { Server, ServerModel } from "../models/ServerModel.js";
 
 import { MAX_DESCRIPTION_LENGTH } from "./config.js";
 import { replyNoData } from "./others.js";
-import type { ClassPropertyNames, CombinedTargetClass, EnumValues } from "./type.js";
-import {
-	AccessListBarrier,
+import type {
 	ButtonIDFormat,
-	MongooseDocumentType,
+	CombinedTargetClass,
+	EnumValues,
 	PaginationIDBarrier,
 	ServerModelSelectionSnowflakeType,
 	TargetClass,
 	TargetClassSingular,
 	TargetType
-} from "./type.js";
+} from "./ts/AccessTypes.js";
+import { AccessListBarrier } from "./ts/AccessTypes.js";
+import type {
+	ClassPropertyNames,
+	MongooseDocumentType
+} from "./ts/GeneralTypes.js";
 const { compact } = lodash;
 
 export class PaginationButtons {}
