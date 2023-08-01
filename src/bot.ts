@@ -11,7 +11,6 @@ import {
 import { Client } from "discordx";
 import "dotenv/config";
 import mongoose from "mongoose";
-
 import { CounterModel } from "./models/Moderation/Counter.js";
 import { replyOrFollowUp } from "./utils/interaction.js";
 import { logger } from "./utils/logger.js";

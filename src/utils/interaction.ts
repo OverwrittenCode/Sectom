@@ -1,10 +1,8 @@
 import type {
 	CommandInteraction,
-	GuildBasedChannel,
-	GuildMember,
-	MessageComponentInteraction,
-	Role
+	MessageComponentInteraction
 } from "discord.js";
+import { GuildBasedChannel, GuildMember, Role } from "discord.js";
 
 import { NO_DATA_MESSAGE } from "./config.js";
 import type { GuildInteraction, ReplyOptions } from "./ts/Action.js";
@@ -39,7 +37,8 @@ export async function replyNoData(interaction: CommandInteraction) {
 }
 
 type Filter = "members" | "roles" | "channels";
-type SearchFilter = Filter[] | ["all"];
+type UserInputFilters = Filter[];
+type SearchFilter = UserInputFilters | ["all"];
 type Nullable<T> = { [P in keyof T]: T[P] | null };
 
 type Entity = Nullable<{
@@ -48,17 +47,78 @@ type Entity = Nullable<{
 	channels: GuildBasedChannel;
 }>;
 
-type EntityResult<T extends Filter[] | ["all"]> = T extends [infer P]
-	? P extends keyof Entity
-		? Entity[P & keyof Entity]
-		: null
-	: { [P in Extract<T[number], keyof Entity>]: Entity[P & keyof Entity] };
+type EntityMentions = {
+	members: "@";
+	roles: "@&";
+	channels: "#";
+};
 
-function areAllValuesNull(obj: Record<string, unknown>): boolean {
+type EntityKeys = keyof Entity;
+
+type EntityResult<T extends UserInputFilters | ["all"]> = T extends ["all"]
+	? { [P in EntityKeys]: Entity[P] }
+	: T extends [infer P]
+	? P extends EntityKeys
+		? Entity[P & EntityKeys]
+		: null
+	: { [P in Extract<T[number], EntityKeys>]: Entity[P & EntityKeys] };
+
+function isObjectEmpty(obj: Record<string, unknown>): boolean {
 	for (const key in obj) {
 		if (obj[key] !== null) return false;
 	}
 	return true;
+}
+
+const SearchFilterToMentionString: EntityMentions = {
+	members: "@",
+	roles: "@&",
+	channels: "#"
+};
+
+type SingleEntityResult = GuildMember | Role | GuildBasedChannel;
+type MultipleEntityResult = {
+	[P in EntityKeys]?: GuildMember | Role | GuildBasedChannel;
+};
+
+export function getMentionPrefixFromEntity<
+	T extends SingleEntityResult | MultipleEntityResult
+>({ entity }: { entity: T }): EntityMentions[keyof EntityMentions] {
+	if (isSingleEntityResult(entity)) {
+		const key = getEntityKey(entity);
+		return SearchFilterToMentionString[key];
+	} else {
+		const key = Object.keys(entity)[0] as EntityKeys;
+		return SearchFilterToMentionString[key];
+	}
+}
+
+export function isSingleEntityResult(
+	entity: SingleEntityResult | MultipleEntityResult
+): entity is SingleEntityResult {
+	return (
+		entity instanceof GuildMember ||
+		entity instanceof Role ||
+		isGuildBasedChannel(entity)
+	);
+}
+
+function getEntityKey(entity: SingleEntityResult): EntityKeys {
+	if (entity instanceof GuildMember) {
+		return "members";
+	} else if (entity instanceof Role) {
+		return "roles";
+	} else {
+		return "channels";
+	}
+}
+
+function isGuildBasedChannel(channel: unknown): channel is GuildBasedChannel {
+	return (
+		typeof channel === "object" &&
+		channel !== null &&
+		"guild" in (channel as Record<string, unknown>)
+	);
 }
 
 export async function getEntityFromGuild<T extends SearchFilter>(
@@ -68,14 +128,12 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 ): Promise<EntityResult<T> | null> {
 	if (!interaction.guild || !targetId) return null;
 
-	const result: {
-		members: GuildMember | null;
-		roles: Role | null;
-		channels: GuildBasedChannel | null;
+	const entityMap: {
+		[K in Filter]: GuildMember | Role | GuildBasedChannel | null;
 	} = {
-		members: null,
-		roles: null,
-		channels: null
+		members: <GuildMember | null>null,
+		roles: <Role | null>null,
+		channels: <GuildBasedChannel | null>null
 	};
 
 	const filterArray = searchFilter as Array<
@@ -83,38 +141,28 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 	>;
 	const isAll = filterArray.includes("all");
 
-	const keys = ["members", "roles", "channels"];
+	const keys: UserInputFilters = ["members", "roles", "channels"];
 
-	for (const untypedKey of keys) {
-		const key = untypedKey as keyof typeof result;
-
+	for (const key of keys) {
 		if (isAll || filterArray.includes(key)) {
 			const fetched =
 				interaction.guild[key].cache.get(targetId) ||
 				(await interaction.guild[key].fetch(targetId).catch(() => null));
 
-			switch (key) {
-				case "members":
-					result.members = fetched as GuildMember | null;
-					break;
-				case "roles":
-					result.roles = fetched as Role | null;
-					break;
-				case "channels":
-					result.channels = fetched as GuildBasedChannel | null;
-					break;
+			if (fetched) {
+				entityMap[key] = fetched as (typeof entityMap)[Filter];
 			}
 		}
 	}
 
-	if (areAllValuesNull(result)) return null;
+	if (isObjectEmpty(entityMap)) return null;
 
 	if (!isAll && filterArray.length == 1) {
-		const singleResult = result[filterArray[0] as keyof typeof result];
+		const singleResult = entityMap[filterArray[0] as keyof typeof entityMap];
 		return singleResult as EntityResult<T>;
 	}
 
-	return result as EntityResult<T>;
+	return entityMap as EntityResult<T>;
 }
 
 export function typegooseClassProps<T extends object>(obj: T) {

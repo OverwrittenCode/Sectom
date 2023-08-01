@@ -21,7 +21,10 @@ import {
 } from "discord.js";
 
 import { capitalizeFirstLetter } from "../../utils/casing.js";
-import { replyOrFollowUp } from "../../utils/interaction.js";
+import {
+	getEntityFromGuild,
+	replyOrFollowUp
+} from "../../utils/interaction.js";
 import { logger } from "../../utils/logger.js";
 import type {
 	AccessGateSubGroupApplicationCommandOptionType,
@@ -32,8 +35,9 @@ import type {
 	TargetType
 } from "../../utils/ts/Access.js";
 import { TargetClass } from "../../utils/ts/Access.js";
-import { findOrCreateServer } from "../Server.js";
+import { ServerModel } from "../Server.js";
 
+import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../../utils/config.js";
 import { AccessSelection } from "./Access.js";
 import { Command } from "./Command.js";
 import { CounterModel } from "./Counter.js";
@@ -129,13 +133,18 @@ export class Blacklist extends AccessSelection {
 		const { type, commandName, interaction, list, action, transfering } =
 			params;
 
-		const targetClassStr: TargetClass = interaction.guild?.members.cache.has(
+		const entitiyObject = await getEntityFromGuild(
+			interaction,
+			["all"],
 			type.id
-		)
-			? TargetClass.USERS
-			: interaction.guild?.roles.cache.has(type.id)
-			? TargetClass.ROLES
-			: TargetClass.CHANNELS;
+		);
+		if (!entitiyObject) throw new Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
+
+		const entityKey = Object.keys(
+			entitiyObject
+		)[0].toUpperCase() as Uppercase<keyof typeof entitiyObject>;
+
+		const targetClassStr: TargetClass = TargetClass[entityKey];
 
 		const targetTypeStr = capitalizeFirstLetter(
 			targetClassStr.slice(0, -1)
@@ -149,7 +158,20 @@ export class Blacklist extends AccessSelection {
 				: "#"
 		}${type!.id}>`;
 
-		const server = await findOrCreateServer(interaction);
+		let server = await ServerModel.findOne({
+			serverId: interaction.guildId
+		});
+
+		if (!server) {
+			server = await new ServerModel({
+				createdBy: {
+					id: interaction.guild?.ownerId,
+					name: (await interaction.guild?.fetchOwner())!.user.tag
+				},
+				serverId: interaction.guildId,
+				serverName: interaction.guild?.name
+			}).save();
+		}
 
 		const targetObj = {
 			id: type.id,
@@ -160,10 +182,10 @@ export class Blacklist extends AccessSelection {
 
 		const oppositeList = list === "whitelist" ? "blacklist" : "whitelist";
 
-		const serverListObj = server.cases[list] as SubDocumentType<Blacklist>;
+		const serverListObj = server.cases[list] as SubDocumentType<Whitelist>;
 		const serverOppositeListObj = server.cases[
 			oppositeList
-		] as SubDocumentType<Whitelist>;
+		] as SubDocumentType<Blacklist>;
 
 		if (
 			action == "add" &&

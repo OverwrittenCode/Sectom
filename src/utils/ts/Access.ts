@@ -1,6 +1,6 @@
 import type { GuildBasedChannel, Role, User } from "discord.js";
 
-import type {
+import {
 	Channel as ChannelObj,
 	Role as RoleObj,
 	User as UserObj
@@ -17,14 +17,22 @@ export type EnumValues<T extends Record<string, string>> = T[keyof T];
 
 export enum TargetClass {
 	USERS = "users",
+	MEMBERS = "users",
 	ROLES = "roles",
 	CHANNELS = "channels"
 }
 
 export enum TargetClassSingular {
 	USER = "user",
+	MEMBER = "user",
 	ROLE = "role",
 	CHANNEL = "channel"
+};
+
+export const EntityConstants = {
+	MEMBERS: "members",
+	ROLES: TargetClass.ROLES,
+	CHANNELS: TargetClass.CHANNELS
 }
 
 export enum SecondaryTargetClass {
@@ -47,6 +55,7 @@ export const CombinedTargetSingularClass = {
 
 export enum TargetType {
 	USER = "User",
+	MEMBER = "User",
 	CHANNEL = "Channel",
 	ROLE = "Role"
 }

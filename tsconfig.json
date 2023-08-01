@@ -1,4 +1,8 @@
 {
+	"ts-node": {
+		"esModuleInterop": true,
+		"esm": true
+	},
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
@@ -7,16 +11,17 @@
 		"strict": true,
 		"moduleResolution": "Node",
 		"allowSyntheticDefaultImports": true,
-
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"esModuleInterop": true,
 
 		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		"strictNullChecks": true
 	},
-	"ts-node": {
-		"esm": true
+	"baseUrl": "src",
+	"paths": {
+		"@models/*": ["src/utils/models/*"]
 	},
 	"exclude": ["build", "node_modules"]
 }

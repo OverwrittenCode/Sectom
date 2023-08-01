@@ -21,7 +21,10 @@ import {
 } from "discord.js";
 
 import { capitalizeFirstLetter } from "../../utils/casing.js";
-import { replyOrFollowUp } from "../../utils/interaction.js";
+import {
+	getEntityFromGuild,
+	replyOrFollowUp
+} from "../../utils/interaction.js";
 import { logger } from "../../utils/logger.js";
 import type {
 	AccessGateSubGroupApplicationCommandOptionType,
@@ -34,6 +37,7 @@ import type {
 import { TargetClass } from "../../utils/ts/Access.js";
 import { ServerModel } from "../Server.js";
 
+import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../../utils/config.js";
 import { AccessSelection } from "./Access.js";
 import { Blacklist } from "./Blacklist.js";
 import { Command } from "./Command.js";
@@ -129,13 +133,18 @@ export class Whitelist extends AccessSelection {
 		const { type, commandName, interaction, list, action, transfering } =
 			params;
 
-		const targetClassStr: TargetClass = interaction.guild?.members.cache.has(
+		const entitiyObject = await getEntityFromGuild(
+			interaction,
+			["all"],
 			type.id
-		)
-			? TargetClass.USERS
-			: interaction.guild?.roles.cache.has(type.id)
-			? TargetClass.ROLES
-			: TargetClass.CHANNELS;
+		);
+		if (!entitiyObject) throw new Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
+
+		const entityKey = Object.keys(
+			entitiyObject
+		)[0].toUpperCase() as Uppercase<keyof typeof entitiyObject>;
+
+		const targetClassStr: TargetClass = TargetClass[entityKey];
 
 		const targetTypeStr = capitalizeFirstLetter(
 			targetClassStr.slice(0, -1)

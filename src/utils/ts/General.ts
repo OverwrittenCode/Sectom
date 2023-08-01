@@ -48,14 +48,17 @@ export type TitleCaseEnum<T extends string> = {
 	[P in T as Uppercase<P>]: TitleCase<P>;
 };
 
-export type NonNullProperties<T extends Record<string, unknown>> = {
+export type NonNullProperties<T> = {
 	[K in keyof T]: T[K] extends null | undefined ? never : K;
 }[keyof T];
 
-export type NonNullResultKeys<T extends Record<string, unknown>> =
-	NonNullProperties<T>;
+export type NonNullResultKeys<T> = NonNullProperties<T>;
 
-export type NonNullResultValues<T extends Record<string, unknown>> = Exclude<
-	T[NonNullResultKeys<T>],
-	null
->;
+export type NonNullResultValues<T> = Exclude<T[NonNullResultKeys<T>], null>;
+
+export type PromiseOrValue<T> = T extends Promise<any> ? T : Promise<T>;
+
+export type Unwrapped<T> = T extends Promise<infer U> ? U : T;
+export type UnwrappedOrPromise<T> = Unwrapped<T> | Promise<Unwrapped<T>>;
+
+export type ConditionalAwaited<T> = T extends Promise<infer U> ? U : T;
