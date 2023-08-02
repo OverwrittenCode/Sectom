@@ -76,7 +76,7 @@ export enum SubCommandActionType {
 	REMOVE = "remove"
 }
 
-type ButtonIDPrefix = `${PaginationIDBarrier}_${EnumValues<
+export type ButtonIDPrefix = `${PaginationIDBarrier}_${EnumValues<
 	typeof CombinedTargetClass
 >}_`;
 
