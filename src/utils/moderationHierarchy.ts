@@ -1,41 +1,39 @@
 import type {
 	CommandInteraction,
 	MessageContextMenuCommandInteraction,
-	Role,
-	User,
 	UserContextMenuCommandInteraction
 } from "discord.js";
 import { GuildMember } from "discord.js";
 
+import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "./config.js";
 import { getEntityFromGuild } from "./interaction.js";
 import { logger } from "./logger.js";
 import type { ModerationHierarchy } from "./ts/Action.js";
 
+type GuildMemberOrRole = NonNullable<
+	Awaited<ReturnType<typeof getEntityFromGuild<["members", "roles"]>>>
+>;
+
 export async function moderationHierarchy(
-	target: User | Role,
+	interactionTargetObject: GuildMemberOrRole,
 	interaction:
 		| CommandInteraction
 		| UserContextMenuCommandInteraction
 		| MessageContextMenuCommandInteraction
 ): Promise<ModerationHierarchy | void> {
 	try {
-		if (target.id == interaction.user.id) return "You cannot select yourself";
+		const interactionTarget = Object.values(interactionTargetObject)[0];
+		if (!interactionTarget) throw Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
 
-		const targetGuildMember = await getEntityFromGuild(
-			interaction,
-			["members"],
-			target.id,
-			true
-		);
+		const isGuildMember = interactionTarget instanceof GuildMember
 
-		const interactionTarget =
-			targetGuildMember ?? interaction.guild?.roles.cache.get(target.id);
+		if (interactionTarget.id == interaction.user.id) return "You cannot select yourself";
 
 		const interactionAuthor = interaction.guild?.members.cache.get(
 			interaction.user.id
 		);
 
-		if (!interactionTarget || !interactionAuthor) return;
+		if (!interactionAuthor) return;
 
 		if (
 			interactionTarget instanceof GuildMember &&

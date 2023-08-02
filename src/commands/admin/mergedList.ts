@@ -1,6 +1,6 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import type { ButtonInteraction, CommandInteraction, Role } from "discord.js";
-import { ApplicationCommandOptionType, User } from "discord.js";
+import type { ButtonInteraction, CommandInteraction } from "discord.js";
+import { ApplicationCommandOptionType } from "discord.js";
 import {
 	ButtonComponent,
 	Discord,
@@ -65,7 +65,9 @@ const listManagerClasses: {
 	ChannelWhitelist: createSubCommandManagerClass("whitelist", "channel")
 };
 
-function createBaseListManagerClass(list: `${ListType}`) {
+function createBaseListManagerClass<T extends `${ListType}`>(
+	list: `${ListType}`
+) {
 	@Discord()
 	@Category("Admin Commands")
 	@SlashGroup({
@@ -137,11 +139,13 @@ function createSubCommandManagerClass(
 			const guildMemberOrRole = await getEntityFromGuild(
 				interaction,
 				["members", "roles"],
-				target.id
+				target.id,
+				true
 			);
+
 			if (guildMemberOrRole) {
 				const fairCheck = await moderationHierarchy(
-					target as User | Role,
+					guildMemberOrRole,
 					interaction
 				);
 				if (fairCheck)
