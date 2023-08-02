@@ -16,9 +16,10 @@ import { logger } from "../utils/logger.js";
 import type { GuildInteraction } from "../utils/ts/Action.js";
 import type { MongooseDocumentType } from "../utils/ts/General.js";
 
-import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../utils/config.js";
-import { Blacklist, Whitelist } from "./Moderation/List.js";
+import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../utils/config.js";
 import { CasesModel } from "./Moderation/Cases.js";
+import { Blacklist, Whitelist } from "./Moderation/List.js";
+import { ValidationError } from "../utils/errors/ValidationError.js";
 
 @modelOptions({
 	schemaOptions: {
@@ -131,7 +132,7 @@ ServerModelChangeStream.on(
 				change.fullDocument.serverId
 			);
 
-			if (!cases) throw new Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
+			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
 			const { actions } = cases;
 			const action = actions[actions.length - 1];
