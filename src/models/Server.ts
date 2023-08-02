@@ -16,9 +16,9 @@ import { logger } from "../utils/logger.js";
 import type { GuildInteraction } from "../utils/ts/Action.js";
 import type { MongooseDocumentType } from "../utils/ts/General.js";
 
-import { Blacklist } from "./Moderation/Blacklist.js";
-import { ModerationCases } from "./Moderation/ModerationCases.js";
-import { Whitelist } from "./Moderation/Whitelist.js";
+import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../utils/config.js";
+import { Blacklist, Whitelist } from "./Moderation/List.js";
+import { CasesModel } from "./Moderation/Cases.js";
 
 @modelOptions({
 	schemaOptions: {
@@ -62,9 +62,6 @@ export class Channel extends User {}
 export class Server extends TimeStamps {
 	@prop({ required: true })
 	public readonly serverId!: string;
-
-	@prop({ type: () => ModerationCases, default: {} })
-	public cases!: SubDocumentType<ModerationCases>;
 
 	@prop({ required: true })
 	public serverName!: string;
@@ -126,12 +123,21 @@ export async function findOrCreateServer<T extends boolean>(
 const ServerModelChangeStream =
 	ServerModel.watch<Document<unknown, BeAnObject, Server>>();
 
-ServerModelChangeStream.on("change", (change: ChangeStreamDocument<Server>) => {
-	if (change.operationType === "insert" && change.fullDocument.cases.actions) {
-		const { actions } = change.fullDocument.cases;
-		const action = actions[actions.length - 1];
-		logger.http(`A new Action was added: ${action}`);
+ServerModelChangeStream.on(
+	"change",
+	async (change: ChangeStreamDocument<Server>) => {
+		if (change.operationType === "insert") {
+			const cases = await CasesModel.findByServerId(
+				change.fullDocument.serverId
+			);
 
-		// TODO: Log the action to the Discord server using the 'serverID' property
+			if (!cases) throw new Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
+
+			const { actions } = cases;
+			const action = actions[actions.length - 1];
+			logger.http(`A new Action was added: ${action}`);
+
+			// TODO: Log the action to the Discord server using the 'serverID' property
+		}
 	}
-});
+);

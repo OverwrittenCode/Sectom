@@ -27,13 +27,13 @@ export enum TargetClassSingular {
 	MEMBER = "user",
 	ROLE = "role",
 	CHANNEL = "channel"
-};
+}
 
 export const EntityConstants = {
 	MEMBERS: "members",
 	ROLES: TargetClass.ROLES,
 	CHANNELS: TargetClass.CHANNELS
-}
+};
 
 export enum SecondaryTargetClass {
 	GUILDS = "guilds"

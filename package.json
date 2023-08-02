@@ -21,7 +21,7 @@
 		"@discordx/pagination": "^3.4.1",
 		"@discordx/utilities": "^5.2.1",
 		"@typegoose/auto-increment": "^3.3.0",
-		"@typegoose/typegoose": "^11.3.0",
+		"@typegoose/typegoose": "^11.4.1",
 		"@types/chalk": "^2.2.0",
 		"@types/winston": "^2.4.4",
 		"axios": "^1.4.0",

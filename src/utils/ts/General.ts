@@ -48,6 +48,16 @@ export type TitleCaseEnum<T extends string> = {
 	[P in T as Uppercase<P>]: TitleCase<P>;
 };
 
+export type Split<S extends string, D extends string> = string extends S
+	? string[]
+	: S extends ""
+	? []
+	: S extends `${infer T}${D}${infer U}`
+	? [T, ...Split<U, D>]
+	: S extends `${infer T}[${infer U}]${infer V}`
+	? [T, U, ...Split<V, D>]
+	: [S];
+
 export type NonNullProperties<T> = {
 	[K in keyof T]: T[K] extends null | undefined ? never : K;
 }[keyof T];

@@ -13,8 +13,8 @@ import {
 import lodash from "lodash";
 
 import { Blacklist } from "../../models/Moderation/Blacklist.js";
+import { Cases } from "../../models/Moderation/Cases.js";
 import { Command } from "../../models/Moderation/Command.js";
-import { ModerationCases } from "../../models/Moderation/ModerationCases.js";
 import { Whitelist } from "../../models/Moderation/Whitelist.js";
 import { Server, ServerModel } from "../../models/Server.js";
 import { MAX_DESCRIPTION_LENGTH } from "../config.js";
@@ -275,7 +275,7 @@ export async function ButtonComponentMoveSnowflake(
 
 export async function PaginationSender(params: {
 	server: MongooseDocumentType<Server>;
-	list: ClassPropertyNames<ModerationCases>;
+	list: ClassPropertyNames<Cases>;
 	snowflakePluralType: EnumValues<typeof CombinedTargetClass>;
 	interaction: CommandInteraction;
 	commandName?: string;

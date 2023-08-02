@@ -91,7 +91,7 @@ export function getMentionPrefixFromEntity<
 		const key = Object.keys(entity)[0] as EntityKeys;
 		return SearchFilterToMentionString[key];
 	}
-};
+}
 
 export function isSingleEntityResult(
 	entity: SingleEntityResult | MultipleEntityResult

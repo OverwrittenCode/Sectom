@@ -17,7 +17,8 @@
 
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"strictNullChecks": true
+		"strictNullChecks": true,
+		"useUnknownInCatchVariables": true
 	},
 	"baseUrl": "src",
 	"paths": {

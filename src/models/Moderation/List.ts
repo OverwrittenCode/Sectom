@@ -19,37 +19,32 @@ import {
 	CommandInteraction,
 	EmbedBuilder
 } from "discord.js";
-
 import { capitalizeFirstLetter } from "../../utils/casing.js";
+import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../../utils/config.js";
 import {
 	getEntityFromGuild,
 	getMentionPrefixFromEntity,
 	replyOrFollowUp
 } from "../../utils/interaction.js";
-import { logger } from "../../utils/logger.js";
-import type {
+import {
 	AccessGateSubGroupApplicationCommandOptionType,
-	AccessListBarrier,
 	ButtonIDFormat,
 	ServerModelSelectionSnowflakeType,
+	SubCommandActionType,
+	TargetClass,
 	TargetClassSingular,
 	TargetType
 } from "../../utils/ts/Access.js";
-import { TargetClass } from "../../utils/ts/Access.js";
-import { ServerModel } from "../Server.js";
-
-import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../../utils/config.js";
+import { ListType } from "../../utils/ts/Enums.js";
+import { MongooseDocumentType } from "../../utils/ts/General.js";
 import { AccessSelection } from "./Access.js";
-import { Blacklist } from "./Blacklist.js";
+import { Cases } from "./Cases.js";
 import { Command } from "./Command.js";
 import { CounterModel } from "./Counter.js";
 
-/**
- * Whitelist class
- * Represents a whitelist in the system
- */
+type ListClassUnion = Blacklist | Whitelist;
 
-@pre<Whitelist>("save", async function (next) {
+@pre<ListClassUnion>("save", async function (next) {
 	try {
 		const counter = await CounterModel.findOneAndUpdate(
 			{ caseNumber: "" },
@@ -58,14 +53,22 @@ import { CounterModel } from "./Counter.js";
 		);
 		this.caseNumber = counter.seq;
 		next();
-	} catch (error: any) {
-		return next(error);
+	} catch (error) {
+		if (error instanceof Error) return next(error);
+		next();
 	}
 })
-@post<Whitelist>("save", function (doc: DocumentType<Whitelist>) {
-	logger.http("A whitelist document has been saved.", doc.toJSON());
+@post<ListClassUnion>("save", function (doc: DocumentType<ListClassUnion>) {
+	console.log(`A ${doc.listType} document has been saved.`, doc.toJSON());
 })
-export class Whitelist extends AccessSelection {
+class ListManager<T extends `${ListType}`> extends AccessSelection {
+	listType!: T;
+
+	constructor(listType: T) {
+		super();
+		this.listType = listType;
+	}
+
 	@prop({ type: () => [Command], default: [] }, PropType.ARRAY)
 	public commands!: ArraySubDocumentType<Command>[];
 
@@ -88,7 +91,7 @@ export class Whitelist extends AccessSelection {
 	}
 
 	public async addToList(
-		this: SubDocumentType<Whitelist>,
+		this: SubDocumentType<ListManager<T>>,
 		element: ServerModelSelectionSnowflakeType,
 		strProp: `${TargetClass}`
 	) {
@@ -97,7 +100,7 @@ export class Whitelist extends AccessSelection {
 	}
 
 	public async removeFromList(
-		this: SubDocumentType<Whitelist>,
+		this: SubDocumentType<ListManager<T>>,
 		element: ServerModelSelectionSnowflakeType,
 		strProp: `${TargetClass}`
 	) {
@@ -109,20 +112,24 @@ export class Whitelist extends AccessSelection {
 		return await this.ownerDocument().save();
 	}
 
-	public async applicationModifySelection(params: {
-		type: AccessGateSubGroupApplicationCommandOptionType;
-		interaction:
-			| CommandInteraction
-			| ButtonInteraction
-			| UserContextMenuCommandInteraction
-			| MessageContextMenuCommandInteraction;
-		list: AccessListBarrier;
-		action: "add" | "remove";
-		commandName?: string;
-		transfering?: boolean;
-	}) {
-		const { type, commandName, interaction, list, action, transfering } =
-			params;
+	public async applicationModifySelection(
+		this: SubDocumentType<ListManager<T>>,
+		params: {
+			type: AccessGateSubGroupApplicationCommandOptionType;
+			interaction:
+				| CommandInteraction
+				| ButtonInteraction
+				| UserContextMenuCommandInteraction
+				| MessageContextMenuCommandInteraction;
+			action: `${SubCommandActionType}`;
+			commandName?: string;
+			transfering?: boolean;
+		}
+	) {
+		const oppositeList =
+			this.listType === "whitelist" ? "blacklist" : "whitelist";
+
+		const { type, commandName, interaction, action, transfering } = params;
 
 		const entitiyObject = await getEntityFromGuild(
 			interaction,
@@ -148,39 +155,22 @@ export class Whitelist extends AccessSelection {
 			typeof getMentionPrefixFromEntity
 		>;
 
-		let server = await ServerModel.findOne({
-			serverId: interaction.guildId
-		});
-
-		if (!server) {
-			server = await new ServerModel({
-				createdBy: {
-					id: interaction.guild?.ownerId,
-					name: (await interaction.guild?.fetchOwner())!.user.tag
-				},
-				serverId: interaction.guildId,
-				serverName: interaction.guild?.name
-			}).save();
-		}
+		const cases = this.ownerDocument() as MongooseDocumentType<Cases>;
 
 		const targetObj = {
 			id: type.id,
 			name: entitiyObject.members?.user.tag ?? (type as DiscordRole).name
-		};
+		} as ServerModelSelectionSnowflakeType;
 
-		const oppositeList = list === "whitelist" ? "blacklist" : "whitelist";
-
-		const serverListObj = server.cases[list] as SubDocumentType<Whitelist>;
-		const serverOppositeListObj = server.cases[
-			oppositeList
-		] as SubDocumentType<Blacklist>;
+		const serverListObj = cases[this.listType] as typeof this;
+		const serverOppositeListObj = cases[oppositeList] as typeof this;
 
 		if (
 			action == "add" &&
 			(await this.checkIfExists(type, targetClassStr, commandName))
 		) {
 			await replyOrFollowUp(interaction, {
-				content: `${targetMention} is already in the ${list}.`,
+				content: `${targetMention} is already in the ${this.listType}.`,
 				ephemeral: true
 			});
 			return;
@@ -191,7 +181,7 @@ export class Whitelist extends AccessSelection {
 			!(await serverListObj.checkIfExists(type, targetClassStr, commandName))
 		) {
 			await replyOrFollowUp(interaction, {
-				content: `${targetMention} does not exist in the ${list}.`,
+				content: `${targetMention} does not exist in the ${this.listType}.`,
 				ephemeral: true
 			});
 			return;
@@ -211,7 +201,7 @@ export class Whitelist extends AccessSelection {
 				-1
 			) as TargetClassSingular;
 			const buttonIdPrefix =
-				`${list}_${snowflakeSingular}_` as ButtonIDFormat;
+				`${this.listType}_${snowflakeSingular}_` as ButtonIDFormat;
 
 			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
@@ -229,7 +219,9 @@ export class Whitelist extends AccessSelection {
 				.setDescription(
 					`${targetMention} exists in the ${oppositeList} ${
 						commandName ?? "guild"
-					} database. Do you want to move this data to the ${list}?`
+					} database. Do you want to move this data to the ${
+						this.listType
+					}?`
 				)
 				.setColor(Colors.Gold) // Yellow color for confirmation
 				.setAuthor({
@@ -254,12 +246,13 @@ export class Whitelist extends AccessSelection {
 			const functionStr = action == "add" ? "addToList" : "removeFromList";
 			const embedDirectionStr =
 				action == "add" ? "added to" : "removed from";
-			await serverListObj[functionStr](targetObj, strProp);
+
+			await this[functionStr](targetObj, strProp);
 			if (!transfering) {
 				const successEmbed = new EmbedBuilder()
 					.setTitle("Success")
 					.setDescription(
-						`${targetMention} has been ${embedDirectionStr} the ${list}`
+						`${targetMention} has been ${embedDirectionStr} the ${this.listType}`
 					)
 					.setColor(Colors.Green) // Green color for success
 					.setAuthor({
@@ -283,3 +276,7 @@ export class Whitelist extends AccessSelection {
 		}
 	}
 }
+
+export class Blacklist extends ListManager<"blacklist"> {}
+
+export class Whitelist extends ListManager<"whitelist"> {}

@@ -25,9 +25,10 @@ export async function moderationHierarchy(
 		const interactionTarget = Object.values(interactionTargetObject)[0];
 		if (!interactionTarget) throw Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
 
-		const isGuildMember = interactionTarget instanceof GuildMember
+		const isGuildMember = interactionTarget instanceof GuildMember;
 
-		if (interactionTarget.id == interaction.user.id) return "You cannot select yourself";
+		if (interactionTarget.id == interaction.user.id)
+			return "You cannot select yourself";
 
 		const interactionAuthor = interaction.guild?.members.cache.get(
 			interaction.user.id
