@@ -21,15 +21,15 @@ export async function moderationHierarchy(
 	try {
 		if (target.id == interaction.user.id) return "You cannot select yourself";
 
-		const targetIsGuildMember = await getEntityFromGuild(
+		const targetGuildMember = await getEntityFromGuild(
 			interaction,
 			["members"],
-			target.id
+			target.id,
+			true
 		);
 
-		const interactionTarget = interaction.guild?.[
-			targetIsGuildMember ? "members" : "roles"
-		].cache.get(target.id);
+		const interactionTarget =
+			targetGuildMember ?? interaction.guild?.roles.cache.get(target.id);
 
 		const interactionAuthor = interaction.guild?.members.cache.get(
 			interaction.user.id

@@ -47,7 +47,7 @@ type Entity = Nullable<{
 	channels: GuildBasedChannel;
 }>;
 
-type EntityMentions = {
+export type EntityMentions = {
 	members: "@";
 	roles: "@&";
 	channels: "#";
@@ -78,12 +78,12 @@ const SearchFilterToMentionString: EntityMentions = {
 
 type SingleEntityResult = GuildMember | Role | GuildBasedChannel;
 type MultipleEntityResult = {
-	[P in EntityKeys]?: GuildMember | Role | GuildBasedChannel;
+	[P in EntityKeys]: SingleEntityResult | null;
 };
 
 export function getMentionPrefixFromEntity<
 	T extends SingleEntityResult | MultipleEntityResult
->({ entity }: { entity: T }): EntityMentions[keyof EntityMentions] {
+>(entity: T): EntityMentions[keyof EntityMentions] {
 	if (isSingleEntityResult(entity)) {
 		const key = getEntityKey(entity);
 		return SearchFilterToMentionString[key];
@@ -124,7 +124,8 @@ function isGuildBasedChannel(channel: unknown): channel is GuildBasedChannel {
 export async function getEntityFromGuild<T extends SearchFilter>(
 	interaction: GuildInteraction,
 	searchFilter: T,
-	targetId?: string
+	targetId?: string,
+	onlyCache?: boolean
 ): Promise<EntityResult<T> | null> {
 	if (!interaction.guild || !targetId) return null;
 
@@ -145,9 +146,10 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 
 	for (const key of keys) {
 		if (isAll || filterArray.includes(key)) {
-			const fetched =
-				interaction.guild[key].cache.get(targetId) ||
-				(await interaction.guild[key].fetch(targetId).catch(() => null));
+			let fetched =
+				interaction.guild[key].cache.get(targetId) ?? onlyCache
+					? null
+					: await interaction.guild[key].fetch(targetId).catch(() => null);
 
 			if (fetched) {
 				entityMap[key] = fetched as (typeof entityMap)[Filter];

@@ -23,6 +23,7 @@ import {
 import { capitalizeFirstLetter } from "../../utils/casing.js";
 import {
 	getEntityFromGuild,
+	getMentionPrefixFromEntity,
 	replyOrFollowUp
 } from "../../utils/interaction.js";
 import { logger } from "../../utils/logger.js";
@@ -89,13 +90,8 @@ export class Blacklist extends AccessSelection {
 	public async addToList(
 		this: SubDocumentType<Blacklist>,
 		element: ServerModelSelectionSnowflakeType,
-		interaction: CommandInteraction | ButtonInteraction
+		strProp: `${TargetClass}`
 	) {
-		const strProp = interaction.guild!.members.cache.has(element.id)
-			? "users"
-			: interaction.guild!.roles.cache.has(element.id)
-			? "roles"
-			: "channels";
 		(this[strProp]! as ServerModelSelectionSnowflakeType[]).push(element);
 		return await this.ownerDocument().save();
 	}
@@ -103,13 +99,8 @@ export class Blacklist extends AccessSelection {
 	public async removeFromList(
 		this: SubDocumentType<Blacklist>,
 		element: ServerModelSelectionSnowflakeType,
-		interaction: CommandInteraction | ButtonInteraction
+		strProp: `${TargetClass}`
 	) {
-		const strProp = interaction.guild!.members.cache.has(element.id)
-			? "users"
-			: interaction.guild!.roles.cache.has(element.id)
-			? "roles"
-			: "channels";
 		const selection = this[strProp] as ServerModelSelectionSnowflakeType[];
 		(this[strProp] as ServerModelSelectionSnowflakeType[]) = selection.filter(
 			(e) => e.id != element.id
@@ -140,9 +131,11 @@ export class Blacklist extends AccessSelection {
 		);
 		if (!entitiyObject) throw new Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
 
-		const entityKey = Object.keys(
-			entitiyObject
-		)[0].toUpperCase() as Uppercase<keyof typeof entitiyObject>;
+		const strProp = Object.keys(entitiyObject)[0] as `${TargetClass}`;
+
+		const entityKey = strProp.toUpperCase() as Uppercase<
+			keyof typeof entitiyObject
+		>;
 
 		const targetClassStr: TargetClass = TargetClass[entityKey];
 
@@ -150,13 +143,10 @@ export class Blacklist extends AccessSelection {
 			targetClassStr.slice(0, -1)
 		) as TargetType;
 
-		const targetMention = `<${
-			interaction.guild!.members.cache.has(type.id)
-				? "@"
-				: interaction.guild!.roles.cache.has(type.id)
-				? "@&"
-				: "#"
-		}${type!.id}>`;
+		const mentionPrefx = getMentionPrefixFromEntity(entitiyObject);
+		const targetMention = `<${mentionPrefx}${type!.id}>` as ReturnType<
+			typeof getMentionPrefixFromEntity
+		>;
 
 		let server = await ServerModel.findOne({
 			serverId: interaction.guildId
@@ -175,9 +165,7 @@ export class Blacklist extends AccessSelection {
 
 		const targetObj = {
 			id: type.id,
-			name:
-				interaction.guild!.members.cache.get(type.id)?.user.tag ??
-				(type as DiscordRole).name
+			name: entitiyObject.members?.user.tag ?? (type as DiscordRole).name
 		};
 
 		const oppositeList = list === "whitelist" ? "blacklist" : "whitelist";
@@ -251,7 +239,7 @@ export class Blacklist extends AccessSelection {
 					text: `${targetTypeStr} ID: ${targetObj.id}`
 				});
 
-			if (interaction.guild!.members.cache.has(type.id))
+			if (entitiyObject.members)
 				confirmationEmbed.toJSON().author!.icon_url = (
 					type as DiscordUser
 				).displayAvatarURL();
@@ -266,7 +254,7 @@ export class Blacklist extends AccessSelection {
 			const functionStr = action == "add" ? "addToList" : "removeFromList";
 			const embedDirectionStr =
 				action == "add" ? "added to" : "removed from";
-			await serverListObj[functionStr](targetObj, interaction);
+			await serverListObj[functionStr](targetObj, strProp);
 			if (!transfering) {
 				const successEmbed = new EmbedBuilder()
 					.setTitle("Success")
@@ -280,7 +268,7 @@ export class Blacklist extends AccessSelection {
 					.setFooter({ text: `${targetTypeStr} ID: ${targetObj.id}` })
 					.setTimestamp();
 
-				if (interaction.guild!.members.cache.has(type.id))
+				if (entitiyObject.members)
 					successEmbed.toJSON().author!.icon_url = (
 						type as DiscordUser
 					).displayAvatarURL();

@@ -43,14 +43,15 @@ enum SubCommandType {
 	CHANNEL = "channel"
 }
 
+type TitleCaseList = TitleCase<`${ListType}`>;
+
 const GuardDecorator = (() =>
 	Guard(RateLimit(TIME_UNIT.seconds, 3, { ephemeral: true })))();
 
-// Object to store manager classes
 const listManagerClasses: {
 	[K in
-		| TitleCase<`${ListType}`>
-		| `${TitleCase<`${SubCommandType}`>}${TitleCase<`${ListType}`>}`]: K extends TitleCase<`${ListType}`>
+		| TitleCaseList
+		| `${TitleCase<`${SubCommandType}`>}${TitleCaseList}`]: K extends TitleCaseList
 		? new () => IBaseListManager
 		: new () => ISubCommandManager;
 } = {
