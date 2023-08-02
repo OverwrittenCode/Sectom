@@ -17,7 +17,7 @@ import {
 	ButtonComponentMoveSnowflake,
 	PaginationSender
 } from "../../utils/components/PaginationButtons.js";
-import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../../utils/config.js";
+import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../../utils/config.js";
 import { getEntityFromGuild, replyNoData } from "../../utils/interaction.js";
 import { moderationHierarchy } from "../../utils/moderationHierarchy.js";
 import type {
@@ -34,6 +34,7 @@ import type {
 	IBaseListManager,
 	ISubCommandManager
 } from "../../utils/ts/Interfaces.js";
+import { ValidationError } from "../../utils/errors/ValidationError.js";
 
 enum SubCommandType {
 	USER = "user",
@@ -154,7 +155,7 @@ function createSubCommandManagerClass(
 			}
 
 			const cases = await CasesModel.findByServerId(server.serverId);
-			if (!cases) throw new Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
+			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
 			cases.blacklist.applicationModifySelection({
 				type: target,
