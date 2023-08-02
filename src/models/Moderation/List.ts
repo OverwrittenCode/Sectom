@@ -20,7 +20,7 @@ import {
 	EmbedBuilder
 } from "discord.js";
 import { capitalizeFirstLetter } from "../../utils/casing.js";
-import { UNEXPECTED_FALSEY_VALUE__MESSAGE } from "../../utils/config.js";
+import { UNEXPECTED_FALSY_VALUE__MESSAGE, UNEXPECTED_TRUTHY_VALUE_MESSAGE } from "../../utils/config.js";
 import {
 	getEntityFromGuild,
 	getMentionPrefixFromEntity,
@@ -28,11 +28,9 @@ import {
 } from "../../utils/interaction.js";
 import {
 	AccessGateSubGroupApplicationCommandOptionType,
-	ButtonIDFormat,
 	ServerModelSelectionSnowflakeType,
 	SubCommandActionType,
 	TargetClass,
-	TargetClassSingular,
 	TargetType
 } from "../../utils/ts/Access.js";
 import { ListType } from "../../utils/ts/Enums.js";
@@ -41,6 +39,7 @@ import { AccessSelection } from "./Access.js";
 import { Cases } from "./Cases.js";
 import { Command } from "./Command.js";
 import { CounterModel } from "./Counter.js";
+import { ValidationError } from "../../utils/errors/ValidationError.js";
 
 type ListClassUnion = Blacklist | Whitelist;
 
@@ -108,7 +107,6 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 		(this[strProp] as ServerModelSelectionSnowflakeType[]) = selection.filter(
 			(e) => e.id != element.id
 		);
-
 		return await this.ownerDocument().save();
 	}
 
@@ -136,7 +134,8 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 			["all"],
 			type.id
 		);
-		if (!entitiyObject) throw new Error(UNEXPECTED_FALSEY_VALUE__MESSAGE);
+		if (!entitiyObject) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE); 
+		if (entitiyObject.channels) throw new ValidationError(UNEXPECTED_TRUTHY_VALUE_MESSAGE); 
 
 		const strProp = Object.keys(entitiyObject)[0] as `${TargetClass}`;
 
@@ -155,20 +154,22 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 			typeof getMentionPrefixFromEntity
 		>;
 
-		const cases = this.ownerDocument() as MongooseDocumentType<Cases>;
-
 		const targetObj = {
 			id: type.id,
 			name: entitiyObject.members?.user.tag ?? (type as DiscordRole).name
 		} as ServerModelSelectionSnowflakeType;
 
-		const serverListObj = cases[this.listType] as typeof this;
-		const serverOppositeListObj = cases[oppositeList] as typeof this;
+		const cases = this.ownerDocument() as MongooseDocumentType<Cases>;
 
-		if (
-			action == "add" &&
-			(await this.checkIfExists(type, targetClassStr, commandName))
-		) {
+		const oppositeListObj = cases[oppositeList] as typeof this;
+
+		const isExisting = await this.checkIfExists(
+			type,
+			targetClassStr,
+			commandName
+		);
+
+		if (action == "add" && isExisting) {
 			await replyOrFollowUp(interaction, {
 				content: `${targetMention} is already in the ${this.listType}.`,
 				ephemeral: true
@@ -176,10 +177,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 			return;
 		}
 
-		if (
-			action == "remove" &&
-			!(await serverListObj.checkIfExists(type, targetClassStr, commandName))
-		) {
+		if (action == "remove" && !isExisting) {
 			await replyOrFollowUp(interaction, {
 				content: `${targetMention} does not exist in the ${this.listType}.`,
 				ephemeral: true
@@ -190,18 +188,15 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 		if (
 			!transfering &&
 			action == "add" &&
-			(await serverOppositeListObj.checkIfExists(
+			(await oppositeListObj.checkIfExists(
 				type,
 				targetClassStr,
 				commandName
 			))
 		) {
-			const snowflakeSingular = targetClassStr.slice(
-				0,
-				-1
-			) as TargetClassSingular;
-			const buttonIdPrefix =
-				`${this.listType}_${snowflakeSingular}_` as ButtonIDFormat;
+			const snowflakeSingular = targetClassStr.slice(0, -1);
+
+			const buttonIdPrefix = `${this.listType}_${snowflakeSingular}_`;
 
 			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
@@ -232,9 +227,8 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 				});
 
 			if (entitiyObject.members)
-				confirmationEmbed.toJSON().author!.icon_url = (
-					type as DiscordUser
-				).displayAvatarURL();
+				confirmationEmbed.toJSON().author!.icon_url =
+					entitiyObject.members.user.displayAvatarURL();
 			await replyOrFollowUp(interaction, {
 				embeds: [confirmationEmbed],
 				ephemeral: true,
