@@ -213,54 +213,46 @@ export async function ButtonComponentMoveSnowflake(
 			? "members"
 			: (`${targetTypeStr.toLowerCase()}s` as "roles" | "channels");
 
-	const target = (await interaction.guild?.[targetGuildPropertyStr].fetch(
-		confirmationEmbed.footer!.text!.split(" ").at(-1)!
-	))!;
+	const targetId = confirmationEmbed.footer?.text?.split(" ").at(-1);
+	if (!targetId) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
-	const targetMention = `<${
-		interaction.guild!.members.cache.has(target.id)
-			? "@"
-			: interaction.guild!.roles.cache.has(target.id)
-			? "@&"
-			: "#"
-	}${target!.id}>`;
+	const target = await getEntityFromGuild(
+		interaction,
+		[targetGuildPropertyStr],
+		targetId,
+		true
+	);
 
-	const list = messageContentArray.pop()?.slice(0, -1) as AccessListBarrier; // do you want to move this data to the [whitelist | blacklist] -> the one to add to database
+	if (!target) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
-	const listInstance = server.cases[list] as SubDocumentType<
-		Blacklist | Whitelist
-	>;
+	const type = target instanceof GuildMember ? target.user : target;
 
-	const oppositeList: AccessListBarrier =
-		list === AccessListBarrier.WHITELIST
-			? AccessListBarrier.BLACKLIST
-			: AccessListBarrier.WHITELIST; // the one to remove from the database
+	const mentionPrefix = getMentionPrefixFromEntity(target);
 
-	const oppositeListInstance = server.cases[
-		oppositeList
-	] as typeof listInstance;
+	const targetMention = `<${mentionPrefix}${targetId}>`;
+
+	const list = messageContentArray
+		.pop()
+		?.slice(0, -1) as `${AccessListBarrier}`;
+	const listInstance = cases[list];
+
+	const oppositeList = list === "whitelist" ? "blacklist" : "whitelist";
+
+	const oppositeListInstance = cases[oppositeList];
 
 	await oppositeListInstance.applicationModifySelection({
+		type,
+		interaction,
 		action: "remove",
 		commandName,
-		interaction,
-		type: interaction.guild!.members.cache.has(target.id)
-			? (target as GuildMember).user
-			: (target as DiscordRole | GuildBasedChannel),
-		list: oppositeList,
 		transfering: true
 	});
 
-	// in case the bot shutdown unexpectedly, it's better to remove the data first than to have the target in both whitelist and blacklsit
-
 	await listInstance.applicationModifySelection({
+		type,
+		interaction,
 		action: "add",
 		commandName,
-		interaction,
-		type: interaction.guild!.members.cache.has(target.id)
-			? (target as GuildMember).user
-			: (target as DiscordRole | GuildBasedChannel),
-		list,
 		transfering: true
 	});
 
