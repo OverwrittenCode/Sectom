@@ -11,12 +11,12 @@ import {
 import { Client } from "discordx";
 import "dotenv/config";
 import mongoose from "mongoose";
+import { CasesModel } from "./models/Moderation/Cases.js";
 import { CounterModel } from "./models/Moderation/Counter.js";
+import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "./utils/config.js";
+import { ValidationError } from "./utils/errors/ValidationError.js";
 import { replyOrFollowUp } from "./utils/interaction.js";
 import { logger } from "./utils/logger.js";
-import { ValidationError } from "./utils/errors/ValidationError.js";
-import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "./utils/config.js";
-import { CasesModel } from "./models/Moderation/Cases.js";
 
 const { BOT_TOKEN, MONGO_URI } = process.env;
 
@@ -71,8 +71,8 @@ bot.once("ready", async () => {
 bot.on("interactionCreate", handleInteraction);
 
 async function handleInteraction(interaction: Interaction) {
-
-	if (!interaction.guild || !interaction.guildId) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+	if (!interaction.guild || !interaction.guildId)
+		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
 	if (interaction.isButton()) {
 		if (interaction.customId.endsWith("cancel_move"))
@@ -87,6 +87,37 @@ async function handleInteraction(interaction: Interaction) {
 				ephemeral: true
 			});
 		if (interaction.customId.includes("pagination")) return;
+	}
+
+	if (!interaction.isCommand()) return;
+
+	const cases = await CasesModel.findByServerId(interaction.guildId);
+	if (cases) {
+		const { blacklist, whitelist } = cases;
+
+		const isBlacklisted = blacklist.isEntityInList(
+			interaction,
+			interaction.user.id
+		);
+		if (isBlacklisted) {
+			interaction.reply({
+				content: "You are blacklisted from using this command",
+				ephemeral: true
+			});
+			return;
+		}
+
+		const isWhitelisted = whitelist.isEntityInList(
+			interaction,
+			interaction.user.id
+		);
+		if (!isWhitelisted) {
+			interaction.reply({
+				content: "You are not whitelisted to use this command",
+				ephemeral: true
+			});
+			return;
+		}
 	}
 
 	bot.executeInteraction(interaction);

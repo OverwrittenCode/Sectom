@@ -105,7 +105,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 
 		const keys = selection.filter(hasData);
 
-		if (keys.length == 0) return;
+		if (keys.length == 0) return this.listType == "blacklist" ? undefined : true;
 
 		const containsTarget = (entityType: ArraySubDocumentType<User>) =>
 			entityType.id == targetId;
