@@ -16,7 +16,8 @@ import {
 
 import { Server } from "../Server.js";
 import { Action } from "./Action.js";
-import { Blacklist, Whitelist } from "./List.js";
+import type { ListClassUnion } from "./List.js"
+import { Blacklist,  Whitelist } from "./List.js";
 
 interface QueryHelpers {
 	findByCaseNumber: types.AsQueryMethod<typeof findByCaseNumber>;
@@ -40,10 +41,10 @@ function findByCaseNumber(
 @queryMethod(findByCaseNumber)
 export class Cases {
 	@prop({ type: () => Whitelist, default: {} })
-	public whitelist!: SubDocumentType<Whitelist>;
+	public whitelist!: SubDocumentType<ListClassUnion>;
 
 	@prop({ type: () => Blacklist, default: {} })
-	public blacklist!: SubDocumentType<Blacklist>;
+	public blacklist!: SubDocumentType<ListClassUnion>;
 
 	@prop({ type: () => [Action], default: [] }, PropType.ARRAY)
 	public actions!: ArraySubDocumentType<Action>[];
