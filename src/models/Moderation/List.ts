@@ -85,6 +85,43 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 	public caseNumber?: number;
 
 	public async checkIfExists(
+	public isEntityInList(
+		this: SubDocumentType<ListClassUnion>,
+		interaction: GuildInteraction,
+		targetId: string
+	) {
+		if (!interaction.guild || !interaction.guildId || !targetId) return;
+
+		const entityMap: Entity = {
+			users: false,
+			roles: false,
+			channels: false
+		};
+
+		const selection: UserInputFilters = ["users", "roles", "channels"];
+
+		const hasData = (str: Filter) =>
+			this[str].length >= 1 ||
+			this.commands.some((cmd) => cmd[str].length >= 1);
+
+		const keys = selection.filter(hasData);
+
+		if (keys.length == 0) return;
+
+		const containsTarget = (entityType: ArraySubDocumentType<User>) =>
+			entityType.id == targetId;
+
+		for (const key of keys) {
+			entityMap[key] =
+				this[key].some(containsTarget) ||
+				this.commands.some((cmd) => cmd[key].some(containsTarget));
+		}
+
+		return Object.values(entityMap).some((v) => v);
+	}
+
+	public checkIfExists(
+		this: SubDocumentType<ListClassUnion>,
 		target: AccessGateSubGroupApplicationCommandOptionType,
 		targetClassStr: TargetClass,
 		commandName?: string
