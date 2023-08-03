@@ -47,6 +47,11 @@ import { Command } from "./Command.js";
 import { CounterModel } from "./Counter.js";
 
 export type ListClassUnion = ListManager<"blacklist" | "whitelist">;
+type Filter = `${TargetClass}`;
+type UserInputFilters = Filter[];
+type Entity = {
+	[K in Filter]?: boolean;
+};
 
 @pre<ListClassUnion>("save", async function (next) {
 	try {
