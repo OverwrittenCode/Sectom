@@ -92,6 +92,7 @@ export async function findOrCreateServer<T extends boolean>(
 	interaction: GuildInteraction,
 	getStatus?: T
 ) {
+	if (!interaction.guild || !interaction.guildId) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 	let status = 201;
 	let server = await ServerModel.findOne({
 		serverId: interaction.guildId!
@@ -101,12 +102,12 @@ export async function findOrCreateServer<T extends boolean>(
 		status = 404;
 		server = await new ServerModel({
 			createdBy: {
-				id: interaction.guild?.ownerId,
+				id: interaction.guild.ownerId,
 				name: (
 					await getEntityFromGuild(
 						interaction,
 						["members"],
-						interaction.guild?.ownerId
+						interaction.guild.ownerId
 					)
 				)?.user.tag
 			},
