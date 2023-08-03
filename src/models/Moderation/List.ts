@@ -180,8 +180,10 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 			["all"],
 			type.id
 		);
-		if (!entitiyObject) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE); 
-		if (entitiyObject.channels) throw new ValidationError(UNEXPECTED_TRUTHY_VALUE_MESSAGE); 
+		if (!entitiyObject)
+			throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+		if (entitiyObject.channels)
+			throw new ValidationError(UNEXPECTED_TRUTHY_VALUE_MESSAGE);
 
 		const strProp = Object.keys(entitiyObject)[0] as `${TargetClass}`;
 
