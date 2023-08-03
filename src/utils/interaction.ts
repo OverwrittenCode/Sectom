@@ -4,9 +4,10 @@ import type {
 } from "discord.js";
 import { GuildBasedChannel, GuildMember, Role } from "discord.js";
 
-import { NO_DATA_MESSAGE } from "./config.js";
+import { NO_DATA_MESSAGE, UNEXPECTED_FALSY_VALUE__MESSAGE } from "./config.js";
 import type { GuildInteraction, ReplyOptions } from "./ts/Action.js";
 import type { FilteredKeys } from "./ts/General.js";
+import { ValidationError } from "./errors/ValidationError.js";
 
 export async function replyOrFollowUp(
 	interaction: CommandInteraction | MessageComponentInteraction,
@@ -39,7 +40,6 @@ export async function replyNoData(interaction: CommandInteraction) {
 type Filter = "members" | "roles" | "channels";
 type UserInputFilters = Filter[];
 type SearchFilter = UserInputFilters | ["all"];
-type Nullable<T> = { [P in keyof T]: T[P] | null };
 
 type Entity = Partial<{
 	members: GuildMember;
@@ -55,7 +55,7 @@ export type EntityMentions = {
 
 type EntityKeys = keyof Entity;
 
-type EntityResult<T extends UserInputFilters | ["all"]> = T extends ["all"]
+type EntityResult<T extends SearchFilter> = T extends ["all"]
 	? { [P in EntityKeys]: Entity[P] }
 	: T extends [infer P]
 	? P extends EntityKeys
@@ -139,34 +139,34 @@ function isEntityWithoutMembers(
 export async function getEntityFromGuild<T extends SearchFilter>(
 	interaction: GuildInteraction,
 	searchFilter: T,
-	targetId?: string,
+	targetId: string,
 	onlyCache?: boolean
 ): Promise<EntityResult<T> | undefined> {
-	if (!interaction.guild || !targetId) return;
+	if (!interaction.guild || !interaction.guildId) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
 	const entityMap: {
 		[K in Filter]?: GuildMember | Role | GuildBasedChannel;
 	} = {};
 
-	const filterArray = searchFilter as Array<
-		"members" | "roles" | "channels" | "all"
-	>;
+	const filterArray = searchFilter as Array<Filter | "all">;
 	const isAll = filterArray.includes("all");
 
-	const keys: UserInputFilters = ["members", "roles", "channels"];
+	const selection: UserInputFilters = ["members", "roles", "channels"];
+
+	const keys = isAll
+		? selection
+		: selection.filter((str) => filterArray.includes(str));
 
 	for (const key of keys) {
-		if (isAll || filterArray.includes(key)) {
-			let fetched =
-				interaction.guild[key].cache.get(targetId) ?? onlyCache
-					? undefined
-					: await interaction.guild[key]
-							.fetch(targetId)
-							.catch(() => undefined);
+		let fetched =
+			interaction.guild[key].cache.get(targetId) ?? onlyCache
+				? undefined
+				: await interaction.guild[key]
+						.fetch(targetId)
+						.catch(() => undefined);
 
-			if (fetched) {
-				entityMap[key] = fetched as (typeof entityMap)[Filter];
-			}
+		if (fetched) {
+			entityMap[key] = fetched as (typeof entityMap)[Filter];
 		}
 	}
 
