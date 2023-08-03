@@ -71,6 +71,9 @@ bot.once("ready", async () => {
 bot.on("interactionCreate", handleInteraction);
 
 async function handleInteraction(interaction: Interaction) {
+
+	if (!interaction.guild || !interaction.guildId) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+
 	if (interaction.isButton()) {
 		if (interaction.customId.endsWith("cancel_move"))
 			return replyOrFollowUp(interaction, {
