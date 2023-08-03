@@ -136,7 +136,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 	}
 
 	public async addToList(
-		this: SubDocumentType<ListManager<T>>,
+		this: SubDocumentType<ListClassUnion>,
 		element: ServerModelSelectionSnowflakeType,
 		strProp: `${TargetClass}`
 	) {
@@ -145,7 +145,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 	}
 
 	public async removeFromList(
-		this: SubDocumentType<ListManager<T>>,
+		this: SubDocumentType<ListClassUnion>,
 		element: ServerModelSelectionSnowflakeType,
 		strProp: `${TargetClass}`
 	) {
@@ -157,7 +157,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 	}
 
 	public async applicationModifySelection(
-		this: SubDocumentType<ListManager<T>>,
+		this: SubDocumentType<ListClassUnion>,
 		params: {
 			type: AccessGateSubGroupApplicationCommandOptionType;
 			interaction:
