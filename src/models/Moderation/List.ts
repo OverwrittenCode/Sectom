@@ -46,7 +46,7 @@ import type { Cases } from "./Cases.js";
 import { Command } from "./Command.js";
 import { CounterModel } from "./Counter.js";
 
-type ListClassUnion = Blacklist | Whitelist;
+export type ListClassUnion = ListManager<"blacklist" | "whitelist">;
 
 @pre<ListClassUnion>("save", async function (next) {
 	try {
