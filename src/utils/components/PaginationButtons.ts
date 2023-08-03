@@ -1,24 +1,21 @@
 import { Pagination, PaginationType } from "@discordx/pagination";
-import type { SubDocumentType } from "@typegoose/typegoose";
-import type { GuildBasedChannel } from "discord.js";
 import {
 	ButtonInteraction,
 	ButtonStyle,
 	Colors,
 	CommandInteraction,
-	Role as DiscordRole,
 	EmbedBuilder,
 	GuildMember
 } from "discord.js";
 import lodash from "lodash";
 
-import { Blacklist } from "../../models/Moderation/Blacklist.js";
-import { Cases } from "../../models/Moderation/Cases.js";
+import {
+	ArraySubDocumentType,
+	SubDocumentType
+} from "@typegoose/typegoose/lib/types.js";
+import { Action } from "../../models/Moderation/Action.js";
+import { CasesModel } from "../../models/Moderation/Cases.js";
 import { Command } from "../../models/Moderation/Command.js";
-import { Whitelist } from "../../models/Moderation/Whitelist.js";
-import { Server, ServerModel } from "../../models/Server.js";
-import { MAX_DESCRIPTION_LENGTH } from "../config.js";
-import { replyNoData } from "../interaction.js";
 import type {
 	ButtonIDFormat,
 	CombinedTargetClass,
