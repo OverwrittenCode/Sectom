@@ -188,10 +188,13 @@ function createPaginationOptions(prefix: string) {
 export async function ButtonComponentMoveSnowflake(
 	interaction: ButtonInteraction
 ) {
+	if (!interaction.guild || !interaction.guildId)
+		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+
+	const cases = await CasesModel.findByServerId(interaction.guildId);
+	if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+
 	await interaction.deferReply({ ephemeral: true });
-	const server = (await ServerModel.findOne({
-		serverId: interaction.guild?.id
-	}))!;
 
 	const fetchedMessage = interaction.message;
 	const confirmationEmbed = fetchedMessage.embeds[0];
