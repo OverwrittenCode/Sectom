@@ -211,11 +211,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 
 		const oppositeListObj = cases[oppositeList] as typeof this;
 
-		const isExisting = await this.checkIfExists(
-			type,
-			targetClassStr,
-			commandName
-		);
+		const isExisting = this.checkIfExists(type, targetClassStr, commandName);
 
 		if (action == "add" && isExisting) {
 			await replyOrFollowUp(interaction, {
@@ -236,11 +232,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 		if (
 			!transfering &&
 			action == "add" &&
-			(await oppositeListObj.checkIfExists(
-				type,
-				targetClassStr,
-				commandName
-			))
+			oppositeListObj.checkIfExists(type, targetClassStr, commandName)
 		) {
 			const snowflakeSingular = targetClassStr.slice(0, -1);
 
