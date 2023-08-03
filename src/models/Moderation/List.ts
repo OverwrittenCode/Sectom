@@ -84,7 +84,6 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 	@prop()
 	public caseNumber?: number;
 
-	public async checkIfExists(
 	public isEntityInList(
 		this: SubDocumentType<ListClassUnion>,
 		interaction: GuildInteraction,
@@ -123,7 +122,7 @@ class ListManager<T extends `${ListType}`> extends AccessSelection {
 	public checkIfExists(
 		this: SubDocumentType<ListClassUnion>,
 		target: AccessGateSubGroupApplicationCommandOptionType,
-		targetClassStr: TargetClass,
+		targetClassStr: `${TargetClass}`,
 		commandName?: string
 	) {
 		return commandName
