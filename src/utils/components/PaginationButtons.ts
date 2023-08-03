@@ -274,9 +274,17 @@ export async function ButtonComponentMoveSnowflake(
 	});
 }
 
+function isListType(
+	caseDocument:
+		| SubDocumentType<ListClassUnion>
+		| ArraySubDocumentType<Action>[]
+): caseDocument is SubDocumentType<ListClassUnion> {
+	return !Array.isArray(caseDocument);
+}
+
 export async function PaginationSender(params: {
 	server: MongooseDocumentType<Server>;
-	list: ClassPropertyNames<Cases>;
+	list: `${PaginationIDBarrier}`;
 	snowflakePluralType: EnumValues<typeof CombinedTargetClass>;
 	interaction: CommandInteraction;
 	commandName?: string;
@@ -284,10 +292,16 @@ export async function PaginationSender(params: {
 	const { server, list, snowflakePluralType, commandName, interaction } =
 		params;
 
-	let data: string[] = [];
-	if (list === "whitelist" || list === "blacklist") {
-		const accessList = server.cases[list];
+	if (!interaction.guild || !interaction.guildId)
+		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
+	const cases = await CasesModel.findByServerId(interaction.guildId);
+	if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+
+	let data: string[] = [];
+	const accessList = cases[list];
+
+	if (isListType(accessList)) {
 		if (commandName)
 			data = await paginateData(
 				accessList.commands.filter((v) => v.commandName == commandName),
@@ -304,10 +318,9 @@ export async function PaginationSender(params: {
 					: accessList[snowflakePluralType],
 				interaction
 			);
-	} else if (list === "actions") {
-		const actions = server.cases[list];
+	} else {
 		const actionObjects = compact(
-			actions.map((action) => {
+			accessList.map((action) => {
 				if (action.caseNumber)
 					return {
 						id: action.caseNumber.toString(),
