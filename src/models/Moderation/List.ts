@@ -20,7 +20,11 @@ import {
 	EmbedBuilder
 } from "discord.js";
 import { capitalizeFirstLetter } from "../../utils/casing.js";
-import { UNEXPECTED_FALSY_VALUE__MESSAGE, UNEXPECTED_TRUTHY_VALUE_MESSAGE } from "../../utils/config.js";
+import {
+	UNEXPECTED_FALSY_VALUE__MESSAGE,
+	UNEXPECTED_TRUTHY_VALUE_MESSAGE
+} from "../../utils/config.js";
+import { ValidationError } from "../../utils/errors/ValidationError.js";
 import {
 	getEntityFromGuild,
 	getMentionPrefixFromEntity,
@@ -33,13 +37,14 @@ import {
 	TargetClass,
 	TargetType
 } from "../../utils/ts/Access.js";
-import { ListType } from "../../utils/ts/Enums.js";
-import { MongooseDocumentType } from "../../utils/ts/General.js";
+import type { GuildInteraction } from "../../utils/ts/Action.js";
+import type { ListType } from "../../utils/ts/Enums.js";
+import type { MongooseDocumentType } from "../../utils/ts/General.js";
+import type { User } from "../Server.js";
 import { AccessSelection } from "./Access.js";
-import { Cases } from "./Cases.js";
+import type { Cases } from "./Cases.js";
 import { Command } from "./Command.js";
 import { CounterModel } from "./Counter.js";
-import { ValidationError } from "../../utils/errors/ValidationError.js";
 
 type ListClassUnion = Blacklist | Whitelist;
 
