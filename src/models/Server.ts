@@ -28,6 +28,9 @@ import { ValidationError } from "../utils/errors/ValidationError.js";
 })
 export class SnowflakeLog {
 	@prop({ required: true })
+	/**
+	 * The snowflake id
+	 */
 	public readonly id!: string;
 
 	@prop()
