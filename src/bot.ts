@@ -13,6 +13,7 @@ import "dotenv/config";
 import mongoose from "mongoose";
 
 import { CasesModel } from "./models/Moderation/Cases.js";
+import { findOrCreateServer } from "./models/Server.js";
 import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "./utils/config.js";
 import { ValidationError } from "./utils/errors/ValidationError.js";
 import { replyOrFollowUp } from "./utils/interaction.js";
@@ -95,37 +96,38 @@ async function handleInteraction(interaction: Interaction) {
 		if (interaction.customId.includes("pagination")) return;
 	}
 
-	if (!interaction.isCommand()) return;
+	if (interaction.isCommand()) {
+		await interaction.deferReply({ ephemeral: true });
 
-	const cases = await CasesModel.findByServerId(interaction.guildId);
-	if (cases) {
-		const { blacklist, whitelist } = cases;
+		const cases = await CasesModel.findByServerId(interaction.guildId);
+		if (cases) {
+			const { blacklist, whitelist } = cases;
 
-		const isBlacklisted = blacklist.isEntityInList(
-			interaction,
-			interaction.user.id
-		);
-		if (isBlacklisted) {
-			interaction.reply({
-				content: "You are blacklisted from using this command",
-				ephemeral: true
-			});
-			return;
-		}
+			const isBlacklisted = blacklist.isEntityInList(
+				interaction,
+				interaction.user.id
+			);
+			if (isBlacklisted) {
+				interaction.editReply({
+					content: "You are blacklisted from using this command"
+				});
+				return;
+			}
 
-		const isWhitelisted = whitelist.isEntityInList(
-			interaction,
-			interaction.user.id
-		);
-		if (!isWhitelisted) {
-			interaction.reply({
-				content: "You are not whitelisted to use this command",
-				ephemeral: true
-			});
-			return;
+			const isWhitelisted = whitelist.isEntityInList(
+				interaction,
+				interaction.user.id
+			);
+			if (!isWhitelisted) {
+				interaction.editReply({
+					content: "You are not whitelisted to use this command"
+				});
+				return;
+			}
+		} else {
+			await findOrCreateServer(interaction);
 		}
 	}
-
 	bot.executeInteraction(interaction);
 }
 
