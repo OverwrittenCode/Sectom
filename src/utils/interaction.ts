@@ -31,7 +31,7 @@ export async function replyOrFollowUp(
 	return;
 }
 
-export async function replyNoData(interaction: CommandInteraction) {
+export async function replyNoData(interaction: GuildInteraction) {
 	await replyOrFollowUp(interaction, {
 		content: NO_DATA_MESSAGE,
 		ephemeral: true
@@ -160,12 +160,13 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 		: selection.filter((str) => filterArray.includes(str));
 
 	for (const key of keys) {
-		let fetched =
-			interaction.guild[key].cache.get(targetId) ?? onlyCache
+		const fetched =
+			interaction.guild[key].cache.get(targetId) ??
+			(onlyCache
 				? undefined
 				: await interaction.guild[key]
 						.fetch(targetId)
-						.catch(() => undefined);
+						.catch(() => undefined));
 
 		if (fetched) {
 			entityMap[key] = fetched as (typeof entityMap)[Filter];
