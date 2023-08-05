@@ -20,9 +20,5 @@
 		"strictNullChecks": true,
 		"useUnknownInCatchVariables": true
 	},
-	"baseUrl": "src",
-	"paths": {
-		"@models/*": ["src/utils/models/*"]
-	},
 	"exclude": ["build", "node_modules"]
 }
