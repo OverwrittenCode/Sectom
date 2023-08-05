@@ -64,9 +64,7 @@ const listManagerClasses: {
 	ChannelWhitelist: createSubCommandManagerClass("whitelist", "channel")
 };
 
-function createBaseListManagerClass<T extends `${ListType}`>(
-	list: `${ListType}`
-) {
+function createBaseListManagerClass(list: `${ListType}`) {
 	@Discord()
 	@Category("Admin Commands")
 	@SlashGroup({
@@ -84,18 +82,18 @@ function createBaseListManagerClass<T extends `${ListType}`>(
 				type: ApplicationCommandOptionType.String
 			})
 			commandName: string | undefined,
-			interaction: CommandInteraction
+			interaction: ChatInputCommandInteraction
 		) {
-			const retrieveServer = await findOrCreateServer(interaction, true);
-			if (retrieveServer.status == 404) return replyNoData(interaction);
+			if (!interaction.guild || !interaction.guildId)
+				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			const cases = await CasesModel.findByServerId(interaction.guildId);
 
-			const server = retrieveServer.object;
+			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
-			PaginationSender({
-				server,
-				list,
-				snowflakePluralType: CombinedTargetClass.GUILDS,
+			await cases.PaginateData({
 				interaction,
+				caseType: list,
+				searchFilter: ["all"],
 				commandName
 			});
 		}
@@ -116,9 +114,6 @@ function createSubCommandManagerClass(
 	const targetTypeNumber =
 		ApplicationCommandOptionType[capitalizeFirstLetter(subCommandType)];
 
-	const list =
-		AccessListBarrier[root.toUpperCase() as Uppercase<`${ListType}`>];
-
 	@Discord()
 	@SlashGroup({
 		description,
@@ -131,7 +126,7 @@ function createSubCommandManagerClass(
 			action: `${SubCommandActionType}`,
 			target: AccessGateSubGroupApplicationCommandOptionType,
 			commandName: string | undefined,
-			interaction: CommandInteraction
+			interaction: ChatInputCommandInteraction
 		) {
 			const server = await findOrCreateServer(interaction);
 
@@ -148,7 +143,7 @@ function createSubCommandManagerClass(
 					interaction
 				);
 				if (fairCheck)
-					return interaction.reply({
+					return replyOrFollowUp(interaction, {
 						content: fairCheck,
 						ephemeral: true
 					});
@@ -157,7 +152,7 @@ function createSubCommandManagerClass(
 			const cases = await CasesModel.findByServerId(server.serverId);
 			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
-			cases.blacklist.applicationModifySelection({
+			cases[root].applicationModifySelection({
 				type: target,
 				commandName,
 				interaction,
@@ -188,7 +183,7 @@ function createSubCommandManagerClass(
 				type: ApplicationCommandOptionType.String
 			})
 			commandName: string | undefined,
-			interaction: CommandInteraction
+			interaction: ChatInputCommandInteraction
 		) {
 			await this.manageSubCommandAction(
 				"add",
@@ -217,7 +212,7 @@ function createSubCommandManagerClass(
 				type: ApplicationCommandOptionType.String
 			})
 			commandName: string | undefined,
-			interaction: CommandInteraction
+			interaction: ChatInputCommandInteraction
 		) {
 			await this.manageSubCommandAction(
 				"remove",
@@ -241,19 +236,16 @@ function createSubCommandManagerClass(
 			commandName: string | undefined,
 			interaction: CommandInteraction
 		) {
-			const server = await findOrCreateServer(interaction);
+			if (!interaction.guild || !interaction.guildId)
+				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			const cases = await CasesModel.findByServerId(interaction.guildId);
 
-			PaginationSender({
-				server,
-				list: root,
-				snowflakePluralType:
-					CombinedTargetClass[
-						`${subCommandType.toUpperCase()}s` as
-							| "USERS"
-							| "ROLES"
-							| "CHANNELS"
-					],
+			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+
+			await cases.PaginateData({
 				interaction,
+				caseType: root,
+				searchFilter: [`${subCommandType}s`],
 				commandName
 			});
 		}
