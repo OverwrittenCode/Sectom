@@ -42,7 +42,7 @@ export type FilteredKeys<T> = {
 export type TitleCase<T extends string> =
 	T extends `${infer First}${infer Rest}`
 		? `${Uppercase<First>}${Lowercase<Rest>}`
-		: never;
+		: T;
 
 export type TitleCaseEnum<T extends string> = {
 	[P in T as Uppercase<P>]: TitleCase<P>;
@@ -61,6 +61,8 @@ export type Split<S extends string, D extends string> = string extends S
 export type NonNullProperties<T> = {
 	[K in keyof T]: T[K] extends null | undefined ? never : K;
 }[keyof T];
+
+export type ObjectValues<T> = T[keyof T];
 
 export type NonNullResultKeys<T> = NonNullProperties<T>;
 
