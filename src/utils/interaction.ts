@@ -10,8 +10,8 @@ import type { GuildInteraction, ReplyOptions } from "./ts/Action.js";
 import type { FilteredKeys } from "./ts/General.js";
 
 export async function replyOrFollowUp(
-	interaction: CommandInteraction | MessageComponentInteraction,
-	replyOptions: ReplyOptions | string
+	interaction: GuildInteraction,
+	replyOptions: ReplyOptions
 ) {
 	// if interaction is already replied
 	if (interaction.replied) {
