@@ -9,7 +9,7 @@
 		"build": "tsc",
 		"build:changelog": "npx @discordx/changelog --src src",
 		"dev": "set \"NODE_OPTIONS=--trace-warnings\" && ts-node src/bot.ts",
-		"start": "node --trace-warnings build/bot.js",
+		"start": "node --trace-warnings build/bot.ts",
 		"watch": "nodemon --exec --trace-warnings ts-node-esm src/bot.ts",
 		"lint": "eslint --fix \"./**/*.{js,ts,tsx}\""
 	},
@@ -41,7 +41,7 @@
 		"@types/axios": "^0.14.0",
 		"@types/lodash": "^4.14.196",
 		"@types/module-alias": "^2.0.1",
-		"@types/node": "^20.3.1",
+		"@types/node": "^20.4.6",
 		"@typescript-eslint/eslint-plugin": "^6.2.0",
 		"@typescript-eslint/parser": "^6.2.0",
 		"eslint": "^8.46.0",
@@ -52,7 +52,7 @@
 		"prettier": "^3.0.0",
 		"ts-node": "^10.9.1",
 		"tsconfig-paths": "^4.2.0",
-		"typescript": "5.1.3"
+		"typescript": "^5.1.3"
 	},
 	"engines": {
 		"node": ">=16.0.0",
