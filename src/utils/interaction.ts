@@ -21,6 +21,7 @@ export async function replyOrFollowUp(
 
 	// if interaction is deferred but not replied
 	if (interaction.deferred) {
+		if ("ephemeral" in replyOptions) delete replyOptions.ephemeral;
 		await interaction.editReply(replyOptions);
 		return;
 	}
