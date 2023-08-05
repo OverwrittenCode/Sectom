@@ -142,24 +142,12 @@ export async function findOrCreateServer<T extends boolean>(
 
 	return server as MongooseDocumentType<Server>;
 }
-const ServerModelChangeStream =
-	ServerModel.watch<Document<unknown, BeAnObject, Server>>();
+// const ServerModelChangeStream =
+// 	ServerModel.watch<Document<unknown, BeAnObject, Server>>();
 
-ServerModelChangeStream.on(
-	"change",
-	async (change: ChangeStreamDocument<Server>) => {
-		if (change.operationType === "insert") {
-			const cases = await CasesModel.findByServerId(
-				change.fullDocument.serverId
-			);
-
-			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-
-			const { actions } = cases;
-			const action = actions[actions.length - 1];
-			logger.http(`A new Action was added: ${action}`);
-
-			// TODO: Log the action to the Discord server using the 'serverID' property
-		}
-	}
-);
+// ServerModelChangeStream.on(
+// 	"change",
+// 	async (change: ChangeStreamDocument<Server>) => {
+// 		if (change.operationType === "insert") {  }
+// 	}
+// );
