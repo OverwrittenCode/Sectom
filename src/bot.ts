@@ -58,8 +58,8 @@ export const bot = new Client({
 
 bot.once("ready", async () => {
 	try {
-		await bot.guilds.fetch();
-		await bot.clearApplicationCommands();
+		// await bot.guilds.fetch();
+		// await bot.clearApplicationCommands();
 		await bot.initApplicationCommands();
 		console.log(`Logged in as ${bot.user!.tag}`);
 	} catch (e) {
