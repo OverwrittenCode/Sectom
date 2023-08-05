@@ -1,5 +1,6 @@
 import type { GuildBasedChannel, Role, User } from "discord.js";
 
+import { CaseType } from "../../models/Moderation/Cases.js";
 import {
 	Channel as ChannelObj,
 	Role as RoleObj,
@@ -76,7 +77,7 @@ export enum SubCommandActionType {
 	REMOVE = "remove"
 }
 
-export type ButtonIDPrefix = `${PaginationIDBarrier}_${EnumValues<
+export type ButtonIDPrefix = `${CaseType}_${EnumValues<
 	typeof CombinedTargetClass
 >}_`;
 
