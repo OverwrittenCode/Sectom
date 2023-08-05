@@ -11,6 +11,8 @@ import type { BeAnObject } from "@typegoose/typegoose/lib/types.js";
 import type { ChangeStreamDocument } from "mongodb";
 import type { Document } from "mongoose";
 
+import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../utils/config.js";
+import { ValidationError } from "../utils/errors/ValidationError.js";
 import { getEntityFromGuild } from "../utils/interaction.js";
 import { logger } from "../utils/logger.js";
 import type { GuildInteraction } from "../utils/ts/Action.js";
@@ -56,12 +58,12 @@ export class Channel extends User {}
 
 @pre<Server>("save", function (next) {
 	// This pre-save hook will run before a document is saved
-	logger.http("A server document is going to be saved.");
+	console.log("A server document is going to be saved.");
 	next();
 })
 @post<Server>("save", function (doc: DocumentType<Server>) {
 	// This post-save hook will run after a document is saved
-	logger.http("A server document has been saved.", doc.toJSON());
+	console.log("A server document has been saved.", doc.toJSON());
 })
 export class Server extends TimeStamps {
 	@prop({ required: true })
@@ -92,7 +94,8 @@ export async function findOrCreateServer<T extends boolean>(
 	interaction: GuildInteraction,
 	getStatus?: T
 ) {
-	if (!interaction.guild || !interaction.guildId) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+	if (!interaction.guild || !interaction.guildId)
+		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 	let status = 201;
 	let server = await ServerModel.findOne({
 		serverId: interaction.guildId!

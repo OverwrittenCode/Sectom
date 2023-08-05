@@ -11,12 +11,11 @@ import {
 import { Client } from "discordx";
 import "dotenv/config";
 import mongoose from "mongoose";
+
 import { CasesModel } from "./models/Moderation/Cases.js";
-import { CounterModel } from "./models/Moderation/Counter.js";
 import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "./utils/config.js";
 import { ValidationError } from "./utils/errors/ValidationError.js";
 import { replyOrFollowUp } from "./utils/interaction.js";
-import { logger } from "./utils/logger.js";
 
 const { BOT_TOKEN, MONGO_URI } = process.env;
 
@@ -62,9 +61,11 @@ bot.once("ready", async () => {
 		await bot.guilds.fetch();
 		await bot.clearApplicationCommands();
 		await bot.initApplicationCommands();
-		logger.info(`Logged in as ${bot.user!.tag}`);
-	} catch (error) {
-		logger.error("An error occurred: ", error);
+		console.log(`Logged in as ${bot.user!.tag}`);
+	} catch (e) {
+		if (e instanceof Error)
+			return console.error("An error occured:", e.stack);
+		console.log(e);
 	}
 });
 
@@ -126,17 +127,10 @@ async function handleInteraction(interaction: Interaction) {
 try {
 	await importx(`${dirname(import.meta.url)}/{events,commands}/**/*.{ts,js}`);
 	const mongoClient = await mongoose.connect(MONGO_URI);
-	const checkCounterPresence = await CounterModel.count();
-	if (!checkCounterPresence) {
-		const counter = new CounterModel();
-		await counter.save();
-
-		logger.http("Created Counter Model", counter.toJSON());
-	}
-	logger.info(
+	console.log(
 		`Disconnected from previous MongoDB connection and now connected to ${mongoClient.connection.db.databaseName} database`
 	);
 	await bot.login(BOT_TOKEN);
-} catch (error) {
-	logger.error("An error occurred launching", error);
+} catch (e) {
+	if (e instanceof Error) console.error(e.stack);
 }

@@ -6,10 +6,9 @@ import type {
 import { GuildMember } from "discord.js";
 
 import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "./config.js";
-import { getEntityFromGuild } from "./interaction.js";
-import { logger } from "./logger.js";
-import type { ModerationHierarchy } from "./ts/Action.js";
 import { ValidationError } from "./errors/ValidationError.js";
+import { getEntityFromGuild } from "./interaction.js";
+import type { ModerationHierarchy } from "./ts/Action.js";
 
 type GuildMemberOrRole = NonNullable<
 	Awaited<ReturnType<typeof getEntityFromGuild<["members", "roles"]>>>
@@ -24,7 +23,8 @@ export async function moderationHierarchy(
 ): Promise<ModerationHierarchy | void> {
 	try {
 		const interactionTarget = Object.values(interactionTargetObject)[0];
-		if (!interactionTarget) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+		if (!interactionTarget)
+			throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
 		const isGuildMember = interactionTarget instanceof GuildMember;
 
@@ -54,7 +54,8 @@ export async function moderationHierarchy(
 				interactionTarget instanceof GuildMember ? "user" : "role"
 			} as they are higher or equal to your target in the role hierarchy`;
 		}
-	} catch (error) {
-		logger.error(error);
+	} catch (e) {
+		if (e instanceof Error) return console.error(e);
+		console.log(e);
 	}
 }

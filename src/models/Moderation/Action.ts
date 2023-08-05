@@ -5,21 +5,7 @@ import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses.js";
 import { ActionType } from "../../utils/ts/Action.js";
 import { User } from "../Server.js";
 
-import { CounterModel } from "./Counter.js";
-
-@pre<Action>("save", async function (next) {
-	try {
-		const counter = await CounterModel.findOneAndUpdate(
-			{ caseNumber: "" },
-			{ $inc: { seq: 1 } },
-			{ new: true, upsert: true }
-		);
-		this.caseNumber = counter.seq;
-		next();
-	} catch (error: any) {
-		return next(error);
-	}
-})
+@pre<Action>("save", async function () {})
 export class Action extends TimeStamps {
 	@prop({ type: () => User, required: true })
 	public target!: SubDocumentType<User>;

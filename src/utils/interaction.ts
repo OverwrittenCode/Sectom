@@ -5,9 +5,9 @@ import type {
 import { GuildBasedChannel, GuildMember, Role } from "discord.js";
 
 import { NO_DATA_MESSAGE, UNEXPECTED_FALSY_VALUE__MESSAGE } from "./config.js";
+import { ValidationError } from "./errors/ValidationError.js";
 import type { GuildInteraction, ReplyOptions } from "./ts/Action.js";
 import type { FilteredKeys } from "./ts/General.js";
-import { ValidationError } from "./errors/ValidationError.js";
 
 export async function replyOrFollowUp(
 	interaction: CommandInteraction | MessageComponentInteraction,
@@ -142,7 +142,8 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 	targetId: string,
 	onlyCache?: boolean
 ): Promise<EntityResult<T> | undefined> {
-	if (!interaction.guild || !interaction.guildId) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+	if (!interaction.guild || !interaction.guildId)
+		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
 	const entityMap: {
 		[K in Filter]?: GuildMember | Role | GuildBasedChannel;

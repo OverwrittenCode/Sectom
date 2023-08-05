@@ -2,7 +2,6 @@ import type { DocumentType, SubDocumentType } from "@typegoose/typegoose";
 import { post, pre, prop } from "@typegoose/typegoose";
 import type { ButtonInteraction, CommandInteraction } from "discord.js";
 
-import { logger } from "../../utils/logger.js";
 import type { ServerModelSelectionSnowflakeType } from "../../utils/ts/Access.js";
 
 import { AccessSelection } from "./Access.js";
@@ -13,11 +12,11 @@ import { AccessSelection } from "./Access.js";
  */
 
 @pre<Command>("save", function (next) {
-	logger.http("A command document is going to be saved.");
+	console.log("A command document is going to be saved.");
 	next();
 })
 @post<Command>("save", function (doc: DocumentType<Command>) {
-	logger.http("A command document has been saved.", doc.toJSON());
+	console.log("A command document has been saved.", doc.toJSON());
 })
 export class Command extends AccessSelection {
 	@prop({ required: true })
