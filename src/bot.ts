@@ -69,7 +69,12 @@ bot.once("ready", async () => {
 	}
 });
 
-bot.on("interactionCreate", handleInteraction);
+bot.on("interactionCreate", (interaction: Interaction) => {
+	handleInteraction(interaction).catch((e) => {
+		if (e instanceof Error) console.error(e.stack);
+		else console.log(e);
+	});
+});
 
 async function handleInteraction(interaction: Interaction) {
 	if (!interaction.guild || !interaction.guildId)
