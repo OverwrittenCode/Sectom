@@ -5,6 +5,7 @@ import type {
 	ContextMenuCommandInteraction,
 	InteractionReplyOptions,
 	MentionableSelectMenuInteraction,
+	MessageComponentInteraction,
 	ModalSubmitInteraction,
 	RoleSelectMenuInteraction,
 	StringSelectMenuInteraction,
@@ -27,12 +28,12 @@ export type ModerationHierarchy =
 			| TargetClassSingular.ROLE} as they are higher or equal to your target in the role hierarchy`;
 
 export type ReplyOptions = InteractionReplyOptions & { ephemeral?: boolean };
-
 export type GuildInteraction =
 	| ButtonInteraction
 	| ChannelSelectMenuInteraction
 	| CommandInteraction
 	| ContextMenuCommandInteraction
+	| MessageComponentInteraction
 	| MentionableSelectMenuInteraction
 	| ModalSubmitInteraction
 	| RoleSelectMenuInteraction
