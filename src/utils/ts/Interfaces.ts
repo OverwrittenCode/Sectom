@@ -1,11 +1,12 @@
-import type { CommandInteraction, InteractionResponse } from "discord.js";
+import type { ChatInputCommandInteraction } from "discord.js";
+
 import type {
 	AccessGateSubGroupApplicationCommandOptionType,
 	SubCommandActionType
 } from "./Access.js";
 
 type CommandName = string | undefined;
-type CommonParams = [CommandName, CommandInteraction];
+type CommonParams = [CommandName, ChatInputCommandInteraction];
 type InteractionCommand = (...args: CommonParams) => Promise<void>;
 
 type SubCommandModifier = (
@@ -29,5 +30,5 @@ export interface ISubCommandManager
 		action: `${SubCommandActionType}`,
 		target: AccessGateSubGroupApplicationCommandOptionType,
 		...args: CommonParams
-	) => Promise<InteractionResponse<boolean> | undefined>;
+	) => Promise<void | undefined>;
 }
