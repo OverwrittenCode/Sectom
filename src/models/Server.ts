@@ -7,21 +7,15 @@ import {
 	prop
 } from "@typegoose/typegoose";
 import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses.js";
-import type { BeAnObject } from "@typegoose/typegoose/lib/types.js";
-import type { ChangeStreamDocument } from "mongodb";
-import type { Document } from "mongoose";
 
 import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../utils/config.js";
 import { ValidationError } from "../utils/errors/ValidationError.js";
 import { getEntityFromGuild } from "../utils/interaction.js";
-import { logger } from "../utils/logger.js";
 import type { GuildInteraction } from "../utils/ts/Action.js";
 import type { MongooseDocumentType } from "../utils/ts/General.js";
 
-import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../utils/config.js";
 import { CasesModel } from "./Moderation/Cases.js";
 import { Blacklist, Whitelist } from "./Moderation/List.js";
-import { ValidationError } from "../utils/errors/ValidationError.js";
 
 @modelOptions({
 	schemaOptions: {
@@ -101,22 +95,42 @@ export async function findOrCreateServer<T extends boolean>(
 		serverId: interaction.guildId!
 	});
 
+	const guildOwner = await getEntityFromGuild(
+		interaction,
+		["members"],
+		interaction.guild.ownerId
+	);
+
+	if (!guildOwner) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+
 	if (!server) {
+		await interaction.editReply({
+			content: "Server configuration not found, setting up database..."
+		});
+
 		status = 404;
 		server = await new ServerModel({
 			createdBy: {
 				id: interaction.guild.ownerId,
-				name: (
-					await getEntityFromGuild(
-						interaction,
-						["members"],
-						interaction.guild.ownerId
-					)
-				)?.user.tag
+				name: guildOwner.user.tag
 			},
 			serverId: interaction.guildId,
 			serverName: interaction.guild?.name
 		}).save();
+
+		await interaction.editReply({
+			content: "Setting up other models..."
+		});
+
+		await new CasesModel({
+			server: server._id
+		}).save();
+
+		if (interaction.isCommand())
+			await interaction.editReply({
+				content:
+					"Database queries have already been sent, and caching has not been setup, so this command may take longer than usual due to prior database calls."
+			});
 	}
 
 	if (getStatus) {
