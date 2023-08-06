@@ -21,7 +21,7 @@ import {
 	MessageComponentInteraction
 } from "discord.js";
 
-import { capitalizeFirstLetter } from "../../utils/casing.js";
+import { capitalizeFirstLetter, concatenate } from "../../utils/casing.js";
 import {
 	MAX_DESCRIPTION_LENGTH,
 	UNEXPECTED_FALSY_VALUE__MESSAGE
@@ -33,10 +33,15 @@ import {
 	TargetClass,
 	TargetClassSingular
 } from "../../utils/ts/Access.js";
+import { GuildInteraction } from "../../utils/ts/Action.js";
 import { ClassPropertyNames, ObjectValues } from "../../utils/ts/General.js";
-import { Server } from "../Server.js";
+import { Server, User } from "../Server.js";
 
 import { Blacklist, Whitelist } from "./List.js";
+
+type SubList = SubDocumentType<
+	InstanceType<typeof Whitelist | typeof Blacklist>
+>;
 
 type Filter = `${TargetClass}`;
 type InputFilters = Filter[];
@@ -46,6 +51,7 @@ type SnowflakeTypeMention = {
 	roles: "@&";
 	channels: "#";
 };
+
 type PaginationData = {
 	id: string;
 	name: string;
@@ -55,18 +61,26 @@ type PaginationElement =
 	`<${ObjectValues<SnowflakeTypeMention>}${number}>\`${string}\``;
 
 export type CaseType = Exclude<ClassPropertyNames<Cases>, "server">;
-interface PaginationOptions<T extends SearchFilter> {
+interface PaginationButtonOptions<T extends SearchFilter> {
 	caseType: CaseType;
 	searchFilter: T;
 }
 
 interface PaginationSenderOptions<T extends SearchFilter>
-	extends PaginationOptions<T> {
+	extends PaginationButtonOptions<T> {
 	interaction:
 		| CommandInteraction
 		| MessageComponentInteraction
 		| ContextMenuCommandInteraction;
 	commandName?: string;
+}
+
+interface EmbedCreationOptions {
+	interaction: GuildInteraction;
+	data: PaginationData[];
+	mappedData: string[];
+	caseType: CaseType;
+	isAll: boolean;
 }
 
 interface QueryHelpers {
@@ -91,10 +105,10 @@ function findByCaseNumber(
 @queryMethod(findByCaseNumber)
 export class Cases {
 	@prop({ type: () => Whitelist, default: {} })
-	public whitelist!: SubDocumentType<InstanceType<typeof Whitelist>>;
+	public whitelist!: SubList;
 
 	@prop({ type: () => Blacklist, default: {} })
-	public blacklist!: SubDocumentType<InstanceType<typeof Blacklist>>;
+	public blacklist!: SubList;
 
 	@prop({ ref: () => Server, unique: true })
 	public readonly server!: Ref<Server>;
@@ -127,7 +141,7 @@ export class Cases {
 
 	public createPaginationButtons<T extends SearchFilter>(
 		this: DocumentType<Cases>,
-		options: PaginationOptions<T>
+		options: PaginationButtonOptions<T>
 	) {
 		const { caseType, searchFilter } = options;
 		const filterArray = searchFilter as Array<Filter | "all">;
@@ -145,82 +159,75 @@ export class Cases {
 		return this.createPaginationOptions(prefix);
 	}
 
-	public async PaginateData<T extends SearchFilter>(
+	public getMatchingCases(
 		this: DocumentType<Cases>,
-		options: PaginationSenderOptions<T>
-	) {
-		const { interaction, searchFilter, caseType, commandName } = options;
+		keys: InputFilters,
+		caseType: CaseType,
+		commandName?: string
+	): InputFilters {
+		const { commands } = this[caseType];
+		return keys.filter((key) =>
+			commandName
+				? commands.some(
+						(cmd) =>
+							cmd.commandName == commandName && cmd[key].length >= 1
+				  )
+				: this[caseType][key].length >= 1
+		);
+	}
 
-		if (!interaction.guild || !interaction.guildId)
-			throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-
-		const data: PaginationData[] = [];
-
-		const filterArray = searchFilter as Array<Filter | "all">;
-		const isAll = filterArray.includes("all");
-		const selection: InputFilters = ["users", "roles", "channels"];
-
-		const keys = isAll
-			? selection
-			: selection.filter((str) => filterArray.includes(str));
+	public getSnowflakeArr(
+		this: DocumentType<Cases>,
+		matchingCase: Filter,
+		caseType: CaseType,
+		commandName?: string
+	): PaginationData[] {
+		let SnowflakeSubDocument: types.ArraySubDocumentType<User>[] =
+			this[caseType][matchingCase];
 
 		if (commandName) {
-			const { commands } = this[caseType];
-			const matchingCases = keys.filter((key) =>
-				commands.find(
-					(cmd) => cmd.commandName == commandName && cmd[key].length >= 1
-				)
+			const cmd = this[caseType].commands.find(
+				(cmd) => cmd.commandName == matchingCase
 			);
-			if (matchingCases.length == 0) return await replyNoData(interaction);
+			if (!cmd) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
-			for (const matchingCase of matchingCases) {
-				const cmd = commands.find((cmd) => cmd.commandName == matchingCase);
-				if (!cmd)
-					throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-
-				const snowflakeArr = cmd[matchingCase].map((v) => {
-					return {
-						id: v.id as string,
-						name: v.name,
-						snowflakeType: matchingCase
-					};
-				});
-
-				data.push(...snowflakeArr);
-			}
-		} else {
-			const matchingCases = keys.filter(
-				(key) => this[caseType][key].length >= 1
-			);
-			if (matchingCases.length == 0) return await replyNoData(interaction);
-
-			for (const matchingCase of matchingCases) {
-				const snowflakeArr = this[caseType][matchingCase].map((v) => {
-					const { id, name } = v;
-					return {
-						id,
-						name,
-						snowflakeType: matchingCase
-					};
-				});
-
-				data.push(...snowflakeArr);
-			}
+			SnowflakeSubDocument = cmd[matchingCase];
 		}
 
+		return SnowflakeSubDocument.map((doc) => {
+			return {
+				id: doc.id as string,
+				name: doc.name as string,
+				snowflakeType: matchingCase
+			};
+		});
+	}
+
+	public mapDataToMention(
+		this: DocumentType<Cases>,
+		data: PaginationData[]
+	): PaginationElement[] {
 		const snowflakeMentionObj: SnowflakeTypeMention = {
 			users: "@",
 			roles: "@&",
 			channels: "#"
 		};
 
-		const mappedData = data.map(
+		return data.map(
 			(paginationData) =>
 				`<${snowflakeMentionObj[paginationData.snowflakeType]}${
 					paginationData.id
 				}> \`(${paginationData.name})\`` as PaginationElement
 		);
+	}
 
+	public createEmbeds(
+		this: DocumentType<Cases>,
+		options: EmbedCreationOptions
+	): EmbedBuilder[] {
+		const { mappedData, interaction, data, caseType, isAll } = options;
+		if (!interaction.guild || !interaction.guildId)
+			throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 		let embeds: EmbedBuilder[] = [];
 		let description: string = "";
 
@@ -242,12 +249,15 @@ export class Cases {
 							) as `${TargetClassSingular}`
 					  );
 				const CapitaliseCaseType = capitalizeFirstLetter(caseType);
-
-				const title = `${guildName} ${CapitaliseSubCommandType} ${CapitaliseCaseType}`;
+				const title = concatenate(
+					guildName,
+					CapitaliseSubCommandType,
+					CapitaliseCaseType
+				);
 
 				const embed = new EmbedBuilder()
 					.setTitle(title)
-					.setColor(Colors.Gold)
+					.setColor(Colors.DarkGold)
 					.setDescription(description);
 
 				embeds.push(embed);
@@ -261,7 +271,50 @@ export class Cases {
 			embeds = embeds.map((embed, index, arr) =>
 				embed.setFooter({ text: `Page ${index + 1}/${arr.length}` })
 			);
-		else if (embeds.length == 1)
+
+		return embeds;
+	}
+
+	public async PaginateData<T extends SearchFilter>(
+		this: DocumentType<Cases>,
+		options: PaginationSenderOptions<T>
+	) {
+		const { interaction, searchFilter, caseType, commandName } = options;
+
+		if (!interaction.guild || !interaction.guildId)
+			throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+
+		const filterArray = searchFilter as Array<Filter | "all">;
+		const isAll = filterArray.includes("all");
+		const selection: InputFilters = ["users", "roles", "channels"];
+
+		const keys = isAll
+			? selection
+			: selection.filter((str) => filterArray.includes(str));
+
+		const data: PaginationData[] = [];
+		const matchingCases = this.getMatchingCases(keys, caseType, commandName);
+
+		if (matchingCases.length == 0) return await replyNoData(interaction);
+
+		for (const matchingCase of matchingCases) {
+			const snowflakeArr = this.getSnowflakeArr(
+				matchingCase,
+				caseType,
+				commandName
+			);
+			data.push(...snowflakeArr);
+		}
+
+		const mappedData = this.mapDataToMention(data);
+		const embeds = this.createEmbeds({
+			interaction,
+			data,
+			mappedData,
+			caseType,
+			isAll
+		});
+		if (embeds.length == 1)
 			return await replyOrFollowUp(interaction, {
 				embeds,
 				ephemeral: true
