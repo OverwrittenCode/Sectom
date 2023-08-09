@@ -1,10 +1,20 @@
-import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import {
+	Category,
+	// Category,
+	RateLimit,
+	TIME_UNIT
+} from "@discordx/utilities";
 import type {
 	ButtonInteraction,
 	ChatInputCommandInteraction,
 	CommandInteraction
 } from "discord.js";
-import { ApplicationCommandOptionType } from "discord.js";
+import {
+	ApplicationCommandOptionType,
+	Colors,
+	EmbedBuilder,
+	GuildMember
+} from "discord.js";
 import {
 	ButtonComponent,
 	Discord,
@@ -14,27 +24,24 @@ import {
 	SlashOption
 } from "discordx";
 
-import { CasesModel } from "../../models/Moderation/Cases.js";
-import { findOrCreateServer } from "../../models/Server.js";
+import { RedisCache } from "../../DB/cache/index.js";
+import { CasesModel } from "../../DB/models/Moderation/Cases.js";
 import { capitalizeFirstLetter, concatenate } from "../../utils/casing.js";
-import { ButtonComponentMoveSnowflake } from "../../utils/components/PaginationButtons.js";
 import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../../utils/config.js";
 import { ValidationError } from "../../utils/errors/ValidationError.js";
 import {
 	getEntityFromGuild,
+	getMentionPrefixFromEntity,
 	replyOrFollowUp
 } from "../../utils/interaction.js";
 import { moderationHierarchy } from "../../utils/moderationHierarchy.js";
 import type {
 	AccessGateSubGroupApplicationCommandOptionType,
-	SubCommandActionType
+	AccessListBarrier,
+	SubCommandActionType,
+	TargetType
 } from "../../utils/ts/Access.js";
 import { ListType } from "../../utils/ts/Enums.js";
-import type { TitleCase } from "../../utils/ts/General.js";
-import type {
-	IBaseListManager,
-	ISubCommandManager
-} from "../../utils/ts/Interfaces.js";
 
 enum SubCommandType {
 	USER = "user",
