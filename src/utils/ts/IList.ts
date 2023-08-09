@@ -13,15 +13,14 @@ type SubCommandModifier = (
 	target: AccessGateSubGroupApplicationCommandOptionType,
 	...args: CommonParams
 ) => Promise<void>;
+type SubCommandManagerModifiers = Record<
+	SubCommandActionType,
+	SubCommandModifier
+>;
 
 export interface IBaseListManager {
 	view: InteractionCommand;
 }
-
-export type SubCommandManagerModifiers = Record<
-	SubCommandActionType,
-	SubCommandModifier
->;
 
 export interface ISubCommandManager
 	extends IBaseListManager,
