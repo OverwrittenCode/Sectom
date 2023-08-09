@@ -43,6 +43,8 @@ import type {
 } from "../../utils/ts/Access.js";
 import { ListType } from "../../utils/ts/Enums.js";
 
+const { cases } = RedisCache;
+
 enum SubCommandType {
 	USER = "user",
 	ROLE = "role",
@@ -69,7 +71,7 @@ function createBaseListManagerClass(list: `${ListType}`) {
 		name: list
 	})
 	@SlashGroup(list)
-	class BaseListManager implements IBaseListManager {
+	class BaseListManager {
 		@Slash({ description: `View the ${list}`, name: "view" })
 		@GuardDecorator
 		async view(
@@ -81,13 +83,13 @@ function createBaseListManagerClass(list: `${ListType}`) {
 			commandName: string | undefined,
 			interaction: ChatInputCommandInteraction
 		) {
-			if (!interaction.guild || !interaction.guildId)
+			if (!interaction.guild || !interaction.guildId) {
 				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-			const cases = await CasesModel.findByServerId(interaction.guildId);
+			}
 
-			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			const cachedCasesDocument = await cases.getByServerId(interaction);
 
-			await cases.PaginateData({
+			await cases.PaginateData(cachedCasesDocument, {
 				interaction,
 				caseType: list,
 				searchFilter: ["all"],
@@ -118,38 +120,37 @@ function createSubCommandManagerClass(
 		root
 	})
 	@SlashGroup(subCommandType, root)
-	class SubCommandManager implements ISubCommandManager {
+	class SubCommandManager {
 		async manageSubCommandAction(
 			action: `${SubCommandActionType}`,
 			target: AccessGateSubGroupApplicationCommandOptionType,
 			commandName: string | undefined,
 			interaction: ChatInputCommandInteraction
 		) {
-			const server = await findOrCreateServer(interaction);
-
+			const cachedCasesDocument = await cases.getByServerId(interaction);
 			const guildMemberOrRole = await getEntityFromGuild(
 				interaction,
 				["members", "roles"],
 				target.id,
 				true
 			);
-
 			if (guildMemberOrRole) {
 				const fairCheck = await moderationHierarchy(
 					guildMemberOrRole,
 					interaction
 				);
-				if (fairCheck)
+				if (fairCheck) {
 					return replyOrFollowUp(interaction, {
 						content: fairCheck,
 						ephemeral: true
 					});
+				}
 			}
-
-			const cases = await CasesModel.findByServerId(server.serverId);
-			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-
-			cases[root].applicationModifySelection({
+			const CasesDB = await CasesModel.findById(cachedCasesDocument._id);
+			if (!CasesDB) {
+				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			}
+			CasesDB[root].applicationModifySelection({
 				type: target,
 				commandName,
 				interaction,
@@ -159,7 +160,93 @@ function createSubCommandManagerClass(
 
 		@ButtonComponent({ id: `${root}_${subCommandType}_move_target` })
 		async moveSubCommandType(interaction: ButtonInteraction) {
-			ButtonComponentMoveSnowflake(interaction);
+			if (!interaction.guild || !interaction.guildId) {
+				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			}
+
+			const cases = await CasesModel.findByServerId(interaction.guildId);
+			if (!cases) {
+				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			}
+
+			await interaction.deferReply({ ephemeral: true });
+
+			const fetchedMessage = interaction.message;
+			const confirmationEmbed = fetchedMessage.embeds[0];
+			const messageContentArray = confirmationEmbed.description!.split(" ");
+			const footerWordArr = confirmationEmbed.footer!.text.split(" ");
+
+			let commandName: string | undefined;
+
+			if (messageContentArray.indexOf("guild") == -1) {
+				commandName =
+					messageContentArray[messageContentArray.indexOf("database") - 1];
+			}
+
+			const targetTypeStr = footerWordArr[0] as TargetType;
+			const targetGuildPropertyStr =
+				targetTypeStr == "User"
+					? "members"
+					: (`${targetTypeStr.toLowerCase()}s` as "roles" | "channels");
+
+			const targetId = confirmationEmbed.footer?.text?.split(" ").at(-1);
+			if (!targetId) {
+				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			}
+
+			const target = await getEntityFromGuild(
+				interaction,
+				[targetGuildPropertyStr],
+				targetId,
+				true
+			);
+			if (!target) {
+				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			}
+
+			const type = target instanceof GuildMember ? target.user : target;
+			const mentionPrefix = getMentionPrefixFromEntity(target);
+			const targetMention = `<${mentionPrefix}${targetId}>`;
+			const list = messageContentArray
+				.pop()
+				?.slice(0, -1) as `${AccessListBarrier}`;
+
+			const listInstance = cases[list];
+
+			const oppositeList = list === "whitelist" ? "blacklist" : "whitelist";
+			const oppositeListInstance = cases[oppositeList];
+			await oppositeListInstance.applicationModifySelection({
+				type,
+				interaction,
+				action: "remove",
+				commandName,
+				transfering: true
+			});
+
+			await listInstance.applicationModifySelection({
+				type,
+				interaction,
+				action: "add",
+				commandName,
+				transfering: true
+			});
+
+			const confirmedEmbed = new EmbedBuilder()
+				.setTitle("Success")
+				.setDescription(
+					`${targetMention} has been moved from the ${oppositeList} to the ${list} ${
+						commandName ?? "guild"
+					}`
+				)
+				.setColor(Colors.Green)
+				.setAuthor(confirmationEmbed.author)
+				.setFooter(confirmationEmbed.footer)
+				.setTimestamp();
+
+			await replyOrFollowUp(interaction, {
+				embeds: [confirmedEmbed],
+				components: []
+			});
 		}
 		@Slash({
 			description: `Add a ${subCommandType} to the ${root}`,
@@ -233,13 +320,12 @@ function createSubCommandManagerClass(
 			commandName: string | undefined,
 			interaction: CommandInteraction
 		) {
-			if (!interaction.guild || !interaction.guildId)
+			if (!interaction.guild || !interaction.guildId) {
 				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-			const cases = await CasesModel.findByServerId(interaction.guildId);
+			}
+			const cachedCasesDocument = await cases.getByServerId(interaction);
 
-			if (!cases) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-
-			await cases.PaginateData({
+			await cases.PaginateData(cachedCasesDocument, {
 				interaction,
 				caseType: root,
 				searchFilter: [`${subCommandType}s`],
