@@ -23,19 +23,23 @@ export async function moderationHierarchy(
 ): Promise<ModerationHierarchy | void> {
 	try {
 		const interactionTarget = Object.values(interactionTargetObject)[0];
-		if (!interactionTarget)
+		if (!interactionTarget) {
 			throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+		}
 
 		const isGuildMember = interactionTarget instanceof GuildMember;
 
-		if (interactionTarget.id == interaction.user.id)
+		if (interactionTarget.id == interaction.user.id) {
 			return "You cannot select yourself";
+		}
 
 		const interactionAuthor = interaction.guild?.members.cache.get(
 			interaction.user.id
 		);
 
-		if (!interactionAuthor) return;
+		if (!interactionAuthor) {
+			return;
+		}
 
 		if (
 			interactionTarget instanceof GuildMember &&
@@ -55,7 +59,9 @@ export async function moderationHierarchy(
 			} as they are higher or equal to your target in the role hierarchy`;
 		}
 	} catch (e) {
-		if (e instanceof Error) return console.error(e);
+		if (e instanceof Error) {
+			return console.error(e);
+		}
 		console.log(e);
 	}
 }

@@ -1,13 +1,8 @@
-import type {
-	CommandInteraction,
-	MessageComponentInteraction
-} from "discord.js";
 import { GuildBasedChannel, GuildMember, Role } from "discord.js";
 
 import { NO_DATA_MESSAGE, UNEXPECTED_FALSY_VALUE__MESSAGE } from "./config.js";
 import { ValidationError } from "./errors/ValidationError.js";
 import type { GuildInteraction, ReplyOptions } from "./ts/Action.js";
-import type { FilteredKeys } from "./ts/General.js";
 
 export async function replyOrFollowUp(
 	interaction: GuildInteraction,
@@ -21,7 +16,9 @@ export async function replyOrFollowUp(
 
 	// if interaction is deferred but not replied
 	if (interaction.deferred) {
-		if ("ephemeral" in replyOptions) delete replyOptions.ephemeral;
+		if ("ephemeral" in replyOptions) {
+			delete replyOptions.ephemeral;
+		}
 		await interaction.editReply(replyOptions);
 		return;
 	}
@@ -143,8 +140,9 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 	targetId: string,
 	onlyCache?: boolean
 ): Promise<EntityResult<T> | undefined> {
-	if (!interaction.guild || !interaction.guildId)
+	if (!interaction.guild || !interaction.guildId) {
 		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+	}
 
 	const entityMap: {
 		[K in Filter]?: GuildMember | Role | GuildBasedChannel;
@@ -173,7 +171,9 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 		}
 	}
 
-	if (isEmptyObject(entityMap)) return;
+	if (isEmptyObject(entityMap)) {
+		return;
+	}
 
 	if (!isAll && filterArray.length == 1) {
 		const singleResult = entityMap[filterArray[0] as keyof typeof entityMap];
@@ -191,20 +191,4 @@ export async function getEntityFromGuild<T extends SearchFilter>(
 	} else {
 		throw new Error("Entity has unexpected properties");
 	}
-}
-
-export function typegooseClassProps<T extends object>(obj: T) {
-	const result: {
-		[key: string]: any;
-	} = {};
-
-	for (const key in obj) {
-		const typedKey = key as keyof T;
-
-		if (!key.startsWith("_") && typeof obj[typedKey] !== "function") {
-			result[typedKey as any] = obj[typedKey];
-		}
-	}
-
-	return result as Omit<FilteredKeys<T>, "_id">;
 }

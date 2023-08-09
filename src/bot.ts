@@ -62,10 +62,12 @@ bot.once("ready", async () => {
 		// await bot.guilds.fetch();
 		// await bot.clearApplicationCommands();
 		await bot.initApplicationCommands();
+
 		console.log(`Logged in as ${bot.user!.tag}`);
 	} catch (e) {
-		if (e instanceof Error)
+		if (e instanceof Error) {
 			return console.error("An error occured:", e.stack);
+		}
 		console.log(e);
 	}
 });
@@ -73,7 +75,9 @@ bot.once("ready", async () => {
 bot.on("interactionCreate", (interaction: Interaction) => {
 	handleInteraction(interaction).catch((e) => {
 		if (e instanceof Error) console.error(e.stack);
-		else console.log(e);
+		else {
+			console.log(e);
+		}
 	});
 });
 
@@ -82,7 +86,7 @@ async function handleInteraction(interaction: Interaction) {
 		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
 
 	if (interaction.isButton()) {
-		if (interaction.customId.endsWith("cancel_move"))
+		if (interaction.customId.endsWith("cancel_move")) {
 			return replyOrFollowUp(interaction, {
 				embeds: [
 					EmbedBuilder.from(interaction.message.embeds[0])
@@ -93,7 +97,10 @@ async function handleInteraction(interaction: Interaction) {
 				components: [],
 				ephemeral: true
 			});
-		if (interaction.customId.includes("pagination")) return;
+		}
+		if (interaction.customId.includes("pagination")) {
+			return;
+		}
 	}
 
 	if (interaction.isCommand()) {
@@ -139,5 +146,9 @@ try {
 	);
 	await bot.login(BOT_TOKEN);
 } catch (e) {
-	if (e instanceof Error) console.error(e.stack);
+	if (e instanceof Error) {
+		console.error(e.stack);
+	} else {
+		console.log(e);
+	}
 }
