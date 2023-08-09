@@ -49,27 +49,17 @@ enum SubCommandType {
 	CHANNEL = "channel"
 }
 
-type TitleCaseList = TitleCase<`${ListType}`>;
-
 const GuardDecorator = (() =>
 	Guard(RateLimit(TIME_UNIT.seconds, 3, { ephemeral: true })))();
 
-const listManagerClasses: {
-	[K in
-		| TitleCaseList
-		| `${TitleCase<`${SubCommandType}`>}${TitleCaseList}`]: K extends TitleCaseList
-		? new () => IBaseListManager
-		: new () => ISubCommandManager;
-} = {
-	Blacklist: createBaseListManagerClass("blacklist"),
-	Whitelist: createBaseListManagerClass("whitelist"),
-	UserBlacklist: createSubCommandManagerClass("blacklist", "user"),
-	RoleBlacklist: createSubCommandManagerClass("blacklist", "role"),
-	ChannelBlacklist: createSubCommandManagerClass("blacklist", "channel"),
-	UserWhitelist: createSubCommandManagerClass("whitelist", "user"),
-	RoleWhitelist: createSubCommandManagerClass("whitelist", "role"),
-	ChannelWhitelist: createSubCommandManagerClass("whitelist", "channel")
-};
+createBaseListManagerClass("blacklist");
+createBaseListManagerClass("whitelist");
+createSubCommandManagerClass("blacklist", "user");
+createSubCommandManagerClass("blacklist", "role");
+createSubCommandManagerClass("blacklist", "channel");
+createSubCommandManagerClass("whitelist", "user");
+createSubCommandManagerClass("whitelist", "role");
+createSubCommandManagerClass("whitelist", "channel");
 
 function createBaseListManagerClass(list: `${ListType}`) {
 	@Discord()
@@ -260,5 +250,3 @@ function createSubCommandManagerClass(
 
 	return SubCommandManager;
 }
-
-export default listManagerClasses;
