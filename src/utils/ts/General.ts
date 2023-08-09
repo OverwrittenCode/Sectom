@@ -27,8 +27,24 @@ export type ClassPropertyNames<T> = {
 	? U
 	: never;
 
+export type ClassType = { new (...args: any[]): {} };
 
+export type UnionProperties<T, U> = {
+	[K in keyof T as T[K] extends U ? K : never]: T[K];
+};
 
+export type UnionKeys<T, U> = keyof UnionProperties<T, U>;
+
+export type OmitType<T, V> = {
+	[K in keyof T as T[K] extends V ? never : K]: T[K];
+};
+
+export type DeepOmitType<T, V, PassiveObjectTypes = Date> = {
+	[K in keyof T as T[K] extends V ? never : K]: T[K] extends object
+		? T[K] extends Date | any[] | PassiveObjectTypes
+			? T[K]
+			: DeepOmitType<T[K], V, PassiveObjectTypes>
+		: T[K];
 };
 
 export type TitleCase<T extends string> =
