@@ -20,13 +20,18 @@ module.exports = {
 		"@typescript-eslint/no-unused-vars": "off",
 		"@typescript-eslint/no-explicit-any": "off",
 		"@typescript-eslint/no-duplicate-enum-values": "off",
+		"@typescript-eslint/no-namespace": "off",
+		"object-curly-spacing": ["error", "always"],
 		"comma-dangle": "off",
-		indent: "off",
+		"brace-style": ["error", "1tbs", { allowSingleLine: true }],
 		"linebreak-style": ["error", "unix"],
-		quotes: ["error", "double"],
-		semi: ["error", "always"],
 		"arrow-body-style": "off",
 		"prefer-arrow-callback": "off",
+		indent: "off",
+		quotes: ["error", "double"],
+		curly: ["error", "multi-line"],
+		semi: ["error", "always"],
+
 		"import/order": [
 			"error",
 			{
