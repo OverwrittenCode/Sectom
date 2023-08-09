@@ -136,7 +136,9 @@ async function handleInteraction(interaction: Interaction) {
 }
 
 try {
+	console.log("Importing files...");
 	await importx(`${dirname(import.meta.url)}/{events,commands}/**/*.{ts,js}`);
+	console.log("Connecting to MongoDB...");
 	const mongoClient = await mongoose.connect(MONGO_URI);
 	console.log(
 		`Disconnected from previous MongoDB connection and now connected to ${mongoClient.connection.db.databaseName} database`
