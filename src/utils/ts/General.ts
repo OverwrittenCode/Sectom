@@ -8,7 +8,7 @@ export type ModelUpdateProperties<I> = {
 	[K in keyof Omit<I, "_id" | "__v">]?: I[K];
 };
 
-export type MongooseDocumentType<T = any> = mongoose.Document<
+export type TypegooseDocumentType<T = any> = mongoose.Document<
 	unknown,
 	BeAnObject,
 	T
