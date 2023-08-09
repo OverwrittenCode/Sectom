@@ -31,5 +31,3 @@ export async function importx(...paths: string[]): Promise<void> {
 	const files = await resolve(...paths);
 	await Promise.all(files.map((file) => import(file)));
 }
-
-// await importx(`${dirname(import.meta.url)}/{events,commands}/**/*.{ts,js}`);
