@@ -1,11 +1,11 @@
 import type { GuildBasedChannel, Role, User } from "discord.js";
 
-import { CaseType } from "../../models/Moderation/Cases.js";
+import { CaseType } from "../../DB/cache/Cases";
 import {
 	Channel as ChannelObj,
 	Role as RoleObj,
 	User as UserObj
-} from "../../models/Server.js";
+} from "../../DB/models/Server.js";
 
 export type AccessGateSubGroupApplicationCommandOptionType =
 	| User
