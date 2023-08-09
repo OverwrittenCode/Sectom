@@ -2,7 +2,7 @@ import type { DocumentType, SubDocumentType } from "@typegoose/typegoose";
 import { post, pre, prop } from "@typegoose/typegoose";
 import type { ButtonInteraction, CommandInteraction } from "discord.js";
 
-import type { ServerModelSelectionSnowflakeType } from "../../utils/ts/Access.js";
+import type { ServerModelSelectionSnowflakeType } from "../../../utils/ts/Access.js";
 
 import { AccessSelection } from "./Access.js";
 

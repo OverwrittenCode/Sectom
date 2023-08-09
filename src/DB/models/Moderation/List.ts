@@ -18,27 +18,27 @@ import {
 	EmbedBuilder
 } from "discord.js";
 
-import { capitalizeFirstLetter } from "../../utils/casing.js";
+import { capitalizeFirstLetter } from "../../../utils/casing.js";
 import {
 	UNEXPECTED_FALSY_VALUE__MESSAGE,
 	UNEXPECTED_TRUTHY_VALUE_MESSAGE
-} from "../../utils/config.js";
-import { ValidationError } from "../../utils/errors/ValidationError.js";
+} from "../../../utils/config.js";
+import { ValidationError } from "../../../utils/errors/ValidationError.js";
 import {
 	getEntityFromGuild,
 	getMentionPrefixFromEntity,
 	replyOrFollowUp
-} from "../../utils/interaction.js";
+} from "../../../utils/interaction.js";
 import {
 	AccessGateSubGroupApplicationCommandOptionType,
 	ServerModelSelectionSnowflakeType,
 	SubCommandActionType,
 	TargetClass,
 	TargetType
-} from "../../utils/ts/Access.js";
-import type { GuildInteraction } from "../../utils/ts/Action.js";
-import type { ListType } from "../../utils/ts/Enums.js";
-import type { MongooseDocumentType } from "../../utils/ts/General.js";
+} from "../../../utils/ts/Access.js";
+import type { GuildInteraction } from "../../../utils/ts/Action.js";
+import type { ListType } from "../../../utils/ts/Enums.js";
+import type { TypegooseDocumentType } from "../../../utils/ts/General.js";
 import type { User } from "../Server.js";
 
 import { AccessSelection } from "./Access.js";
@@ -55,8 +55,9 @@ export function createListClass(listType: `${ListType}`) {
 		next();
 	})
 	@post<ListManager>("save", function (doc: DocumentType<ListManager>) {
-		if (this.updatedAt?.toISOString() == this.createdAt?.toISOString())
+		if (this.updatedAt?.toISOString() == this.createdAt?.toISOString()) {
 			return;
+		}
 		console.log(`A ${doc.listType()} has been saved`, doc.toJSON());
 	})
 	class ListManager extends AccessSelection {
@@ -76,11 +77,14 @@ export function createListClass(listType: `${ListType}`) {
 			interaction: GuildInteraction,
 			targetId: string
 		) {
-			if (!interaction.guild || !interaction.guildId)
+			if (!interaction.guild || !interaction.guildId) {
 				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+			}
 			const accessBarrierBoolean =
 				this.listType() == "blacklist" ? undefined : true;
-			if (interaction.guild.ownerId == targetId) return accessBarrierBoolean;
+			if (interaction.guild.ownerId == targetId) {
+				return accessBarrierBoolean;
+			}
 
 			const entityMap: Entity = {
 				users: false,
@@ -96,7 +100,9 @@ export function createListClass(listType: `${ListType}`) {
 
 			const keys = selection.filter(hasData);
 
-			if (keys.length == 0) return accessBarrierBoolean;
+			if (keys.length == 0) {
+				return accessBarrierBoolean;
+			}
 
 			const containsTarget = (entityType: ArraySubDocumentType<User>) =>
 				entityType.id == targetId;
@@ -168,10 +174,12 @@ export function createListClass(listType: `${ListType}`) {
 				["all"],
 				type.id
 			);
-			if (!entitiyObject)
+			if (!entitiyObject) {
 				throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
-			if (entitiyObject.channels)
+			}
+			if (entitiyObject.channels) {
 				throw new ValidationError(UNEXPECTED_TRUTHY_VALUE_MESSAGE);
+			}
 
 			const firstValue = Object.keys(
 				entitiyObject
@@ -196,7 +204,7 @@ export function createListClass(listType: `${ListType}`) {
 				name: entitiyObject.members?.user.tag ?? (type as DiscordRole).name
 			} as ServerModelSelectionSnowflakeType;
 
-			const cases = this.ownerDocument() as MongooseDocumentType<Cases>;
+			const cases = this.ownerDocument() as TypegooseDocumentType<Cases>;
 
 			const oppositeListObj = cases[
 				oppositeList
@@ -259,9 +267,10 @@ export function createListClass(listType: `${ListType}`) {
 						text: `${targetTypeStr} ID: ${targetObj.id}`
 					});
 
-				if (entitiyObject.members)
+				if (entitiyObject.members) {
 					confirmationEmbed.toJSON().author!.icon_url =
 						entitiyObject.members.user.displayAvatarURL();
+				}
 				await replyOrFollowUp(interaction, {
 					embeds: [confirmationEmbed],
 					ephemeral: true,
@@ -289,10 +298,11 @@ export function createListClass(listType: `${ListType}`) {
 						.setFooter({ text: `${targetTypeStr} ID: ${targetObj.id}` })
 						.setTimestamp();
 
-					if (entitiyObject.members)
+					if (entitiyObject.members) {
 						successEmbed.toJSON().author!.icon_url = (
 							type as DiscordUser
 						).displayAvatarURL();
+					}
 
 					await replyOrFollowUp(interaction, {
 						embeds: [successEmbed],
@@ -311,6 +321,5 @@ export function createListClass(listType: `${ListType}`) {
 export const Blacklist = createListClass("blacklist");
 export const Whitelist = createListClass("whitelist");
 
-export type ListInstanceUnion = InstanceType<
-	typeof Whitelist | typeof Blacklist
->;
+export type ListUnion = typeof Whitelist | typeof Blacklist;
+export type ListInstanceUnion = InstanceType<ListUnion>;

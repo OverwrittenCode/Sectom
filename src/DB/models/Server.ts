@@ -1,34 +1,19 @@
-import type { DocumentType, SubDocumentType } from "@typegoose/typegoose";
-import {
-	getModelForClass,
-	modelOptions,
-	post,
-	pre,
-	prop
-} from "@typegoose/typegoose";
+import type { SubDocumentType } from "@typegoose/typegoose";
+import { getModelForClass, post, pre, prop } from "@typegoose/typegoose";
 import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses.js";
 
-import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../utils/config.js";
-import { ValidationError } from "../utils/errors/ValidationError.js";
-import { getEntityFromGuild } from "../utils/interaction.js";
-import type { GuildInteraction } from "../utils/ts/Action.js";
-import type { MongooseDocumentType } from "../utils/ts/General.js";
+import { UNEXPECTED_FALSY_VALUE__MESSAGE } from "../../utils/config.js";
+import { ValidationError } from "../../utils/errors/ValidationError.js";
+import { getEntityFromGuild } from "../../utils/interaction.js";
+import type { GuildInteraction } from "../../utils/ts/Action.js";
+import type { TypegooseDocumentType } from "../../utils/ts/General.js";
+import { RedisCache } from "../cache/index.js";
 
+import { BaseDeclaredID } from "./Base.js";
 import { CasesModel } from "./Moderation/Cases.js";
 import { Blacklist, Whitelist } from "./Moderation/List.js";
 
-@modelOptions({
-	schemaOptions: {
-		timestamps: true
-	}
-})
-export class SnowflakeLog {
-	@prop({ required: true })
-	/**
-	 * The snowflake id
-	 */
-	public readonly id!: string;
-
+export class SnowflakeLog extends BaseDeclaredID {
 	@prop()
 	public expired?: boolean;
 }
@@ -39,7 +24,9 @@ export class SnowflakeLog {
  */
 @pre<User>("save", function () {
 	// This pre-save hook will run before a document is saved
-	if (this.name.endsWith("#0")) this.name = this.name.slice(0, -2);
+	if (this.name.endsWith("#0")) {
+		this.name = this.name.slice(0, -2);
+	}
 })
 export class User extends SnowflakeLog {
 	@prop({ required: true })
@@ -55,8 +42,8 @@ export class Channel extends User {}
 	console.log("A server document is going to be saved.");
 	next();
 })
-@post<Server>("save", function (doc: DocumentType<Server>) {
-	// This post-save hook will run after a document is saved
+@post<Server>("save", async function (doc) {
+	await RedisCache.server.set(doc);
 	console.log("A server document has been saved.", doc.toJSON());
 })
 export class Server extends TimeStamps {
@@ -77,19 +64,20 @@ export const WhitelistModel = getModelForClass(Whitelist);
 
 export async function findOrCreateServer(
 	interaction: GuildInteraction
-): Promise<MongooseDocumentType<Server>>;
+): Promise<TypegooseDocumentType<Server>>;
 
 export async function findOrCreateServer(
 	interaction: GuildInteraction,
 	getStatus: true
-): Promise<{ status: 201 | 404; object: MongooseDocumentType<Server> }>;
+): Promise<{ status: 201 | 404; object: TypegooseDocumentType<Server> }>;
 
 export async function findOrCreateServer<T extends boolean>(
 	interaction: GuildInteraction,
 	getStatus?: T
 ) {
-	if (!interaction.guild || !interaction.guildId)
+	if (!interaction.guild || !interaction.guildId) {
 		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+	}
 	let status = 201;
 	let server = await ServerModel.findOne({
 		serverId: interaction.guildId!
@@ -101,7 +89,9 @@ export async function findOrCreateServer<T extends boolean>(
 		interaction.guild.ownerId
 	);
 
-	if (!guildOwner) throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+	if (!guildOwner) {
+		throw new ValidationError(UNEXPECTED_FALSY_VALUE__MESSAGE);
+	}
 
 	if (!server) {
 		await interaction.editReply({
@@ -126,21 +116,22 @@ export async function findOrCreateServer<T extends boolean>(
 			server: server._id
 		}).save();
 
-		if (interaction.isCommand())
+		if (interaction.isCommand()) {
 			await interaction.editReply({
 				content:
 					"Database queries have already been sent, and caching has not been setup, so this command may take longer than usual due to prior database calls."
 			});
+		}
 	}
 
 	if (getStatus) {
 		return {
 			status,
-			object: server as MongooseDocumentType<Server>
+			object: server as TypegooseDocumentType<Server>
 		};
 	}
 
-	return server as MongooseDocumentType<Server>;
+	return server as TypegooseDocumentType<Server>;
 }
 // const ServerModelChangeStream =
 // 	ServerModel.watch<Document<unknown, BeAnObject, Server>>();

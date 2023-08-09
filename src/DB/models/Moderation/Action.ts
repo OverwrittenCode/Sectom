@@ -2,7 +2,7 @@ import type { SubDocumentType } from "@typegoose/typegoose";
 import { pre, prop } from "@typegoose/typegoose";
 import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses.js";
 
-import { ActionType } from "../../utils/ts/Action.js";
+import { ActionType } from "../../../utils/ts/Action.js";
 import { User } from "../Server.js";
 
 @pre<Action>("save", async function () {})

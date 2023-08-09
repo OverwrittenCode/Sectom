@@ -1,10 +1,10 @@
 import type { ArraySubDocumentType } from "@typegoose/typegoose";
 import { PropType, prop } from "@typegoose/typegoose";
-import { TimeStamps } from "@typegoose/typegoose/lib/defaultClasses.js";
 
+import { Base } from "../Base.js";
 import { Channel, Role, User } from "../Server.js";
 
-export class AccessSelection extends TimeStamps {
+export class AccessSelection extends Base {
 	@prop({ type: () => [User], default: [] }, PropType.ARRAY)
 	public users!: ArraySubDocumentType<User>[];
 
