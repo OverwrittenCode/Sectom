@@ -27,26 +27,14 @@ export type ClassPropertyNames<T> = {
 	? U
 	: never;
 
-export type FunctionPropertyNames<T> = {
-	[K in keyof T]: T[K] extends Function ? K : never;
-}[keyof T];
 
-export type NonFunctionPropertyNames<T> = {
-	[K in keyof T]: T[K] extends Function ? never : K;
-}[keyof T];
 
-export type FilteredKeys<T> = {
-	[K in keyof T as T[K] extends Function ? never : K]: T[K];
 };
 
 export type TitleCase<T extends string> =
 	T extends `${infer First}${infer Rest}`
 		? `${Uppercase<First>}${Lowercase<Rest>}`
 		: T;
-
-export type TitleCaseEnum<T extends string> = {
-	[P in T as Uppercase<P>]: TitleCase<P>;
-};
 
 export type Split<S extends string, D extends string> = string extends S
 	? string[]
@@ -58,15 +46,7 @@ export type Split<S extends string, D extends string> = string extends S
 	? [T, U, ...Split<V, D>]
 	: [S];
 
-export type NonNullProperties<T> = {
-	[K in keyof T]: T[K] extends null | undefined ? never : K;
-}[keyof T];
-
 export type ObjectValues<T> = T[keyof T];
-
-export type NonNullResultKeys<T> = NonNullProperties<T>;
-
-export type NonNullResultValues<T> = Exclude<T[NonNullResultKeys<T>], null>;
 
 export type PromiseOrValue<T> = T extends Promise<any> ? T : Promise<T>;
 
