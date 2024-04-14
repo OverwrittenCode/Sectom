@@ -1,0 +1,56 @@
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@managers/*": [
+				"src/models/framework/manager/*"
+			],
+			"@framework/*": [
+				"src/models/framework/*"
+			],
+			"@models/*": [
+				"src/models/*"
+			],
+			"@ts/*": [
+				"src/ts/*"
+			],
+			"@utils/*": [
+				"src/utils/*"
+			],
+			"@constants": [
+				"src/constants.js"
+			],
+			"@decorators/*": [
+				"src/decorators/*"
+			]
+		},
+		"target": "ESNext",
+		"module": "ESNext",
+		"rootDir": "src",
+		"outDir": "build",
+		"sourceMap": true,
+		"noEmitOnError": true,
+		"strict": true,
+		"pretty": true,
+		"moduleResolution": "Node",
+		"allowSyntheticDefaultImports": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"noErrorTruncation": true,
+		"strictNullChecks": true,
+		"useUnknownInCatchVariables": true,
+		"types": [
+			"jest"
+		]
+	},
+	"include": [
+		"src/**/*"
+	],
+	"exclude": [
+		"build",
+		"node_modules"
+	]
+}

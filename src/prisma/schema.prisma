@@ -1,0 +1,125 @@
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+}
+
+generator json {
+    provider = "prisma-json-types-generator"
+    allowAny = false
+}
+
+datasource db {
+    provider     = "postgresql"
+    url          = env("DATABASE_URL")
+    extensions   = [citext]
+    directUrl    = env("DIRECT_URL")
+    relationMode = "prisma"
+}
+
+model Entity {
+    id                  String               @id @unique
+    createdAt           DateTime             @default(now())
+    updatedAt           DateTime             @updatedAt
+    type                EntityType
+    name                String?              @db.Text
+    avatarUrl           String?              @db.Text
+    perpetratorCases    Case[]               @relation(name: "Perpetrator")
+    targetedCases       Case[]               @relation(name: "Target")
+    channelCases        Case[]               @relation(name: "Channel")
+    levelingData        Leveling?
+    guild               Guild                @relation(name: "Guild-Entity", fields: [guildId], references: [id])
+    guildId             String
+    logChannelGuild     Guild?               @relation(name: "LogChannel", fields: [logChannelGuildId], references: [id])
+    logChannelGuildType LogChannelGuildType?
+    logChannelGuildId   String?
+
+    @@index(fields: [guildId, logChannelGuildType])
+    @@index([guildId])
+    @@index([logChannelGuildId])
+}
+
+model Case {
+    id            String         @id @unique
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
+    type          CaseType       @default(AUTO)
+    action        CaseActionType
+    reason        String         @default("No reason provided.") @db.Citext
+    expiryDate    DateTime?
+    /// [Embed]
+    embeds        Json[]
+    perpetrator   Entity         @relation(name: "Perpetrator", fields: [perpetratorId], references: [id], onUpdate: Restrict)
+    perpetratorId String
+    target        Entity         @relation(name: "Target", fields: [targetId], references: [id], onUpdate: Restrict)
+    targetId      String
+    channel       Entity         @relation(name: "Channel", fields: [channelId], references: [id], onUpdate: Restrict)
+    channelId     String
+    guild         Guild          @relation(fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+    guildId       String
+
+    @@index(fields: [guildId, id])
+    @@index([perpetratorId])
+    @@index([guildId])
+    @@index([targetId])
+    @@index([channelId])
+}
+
+model Leveling {
+    createdAt            DateTime @default(now())
+    updatedAt            DateTime @updatedAt
+    stackRoleMultipliers Boolean  @default(true)
+    currentXp            Int      @default(0)
+    xpMultiplier         Int      @default(0)
+    xpCooldown           Int      @default(0)
+    entity               Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+    entityId             String   @unique
+    guild                Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+    guildId              String
+
+    @@id([guildId, entityId])
+    @@index([guildId])
+    @@index([entityId])
+}
+
+model Guild {
+    id                         String     @id @unique
+    createdAt                  DateTime   @default(now())
+    updatedAt                  DateTime   @updatedAt
+    levelingData               Leveling[]
+    levelingGlobalXPCooldown   Int        @default(3)
+    levelingGlobalXPMultiplier Int        @default(1)
+    cases                      Case[]
+    entities                   Entity[]   @relation(name: "Guild-Entity")
+    logChannels                Entity[]   @relation(name: "LogChannel")
+}
+
+enum EntityType {
+    USER
+    ROLE
+    CHANNEL
+}
+
+enum CaseType {
+    AUTO
+    MANUAL
+}
+
+enum CaseActionType {
+    PURGE_MESSAGES
+    KICKED_USER
+	SOFT_BANNED_USER
+    BANNED_USER_ADDED
+    BANNED_USER_REMOVED
+    TIMED_OUT_USER_ADDED
+    TIMED_OUT_USER_UPDATED
+    TIMED_OUT_USER_REMOVED
+	SERVER_DEAFEN_USER_ADDED
+	SERVER_DEAFEN_USER_REMOVED
+    SERVER_MUTE_USER_ADDED
+    SERVER_MUTE_USER_REMOVED
+}
+
+enum LogChannelGuildType {
+    MODERATIVE
+    PASSIVE
+}

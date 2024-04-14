@@ -1,0 +1,20 @@
+# Set the default line ending to LF for all files
+* text=auto eol=lf
+
+# Ensure consistent line endings for specific file types
+*.js    eol=lf
+*.jsx   eol=lf
+*.json eol=lf
+*.ts    eol=lf
+*.tsx   eol=lf
+
+# Custom diff for TypeScript files to make reviewing changes easier
+*.ts diff=typescript
+*.tsx diff=typescript
+
+# Mark binary files to prevent Git from attempting to merge them
+*.png binary
+*.jpg binary
+*.gif binary
+*.mp3 binary
+*.mp4 binary
