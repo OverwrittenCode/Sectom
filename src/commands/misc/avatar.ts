@@ -1,55 +1,56 @@
-import assert from "node:assert";
-
+import { TargetSlashOption } from "@decorators/slashOptions/target.js";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
+import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
 import { InteractionUtils } from "@utils/interaction.js";
-import type { ChatInputCommandInteraction, User } from "discord.js";
-import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
-import { Discord, Guard, Slash, SlashChoice, SlashOption } from "discordx";
-
-enum AvatarType {
-	server = "server",
-	global = "global"
-}
+import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
+import { EmbedBuilder } from "discord.js";
+import { Discord, Guard, Slash, SlashGroup } from "discordx";
 
 @Discord()
 @Category(COMMAND_CATEGORY.MISC)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
+@SlashGroup({
+	description: "Display the avatar of a user",
+	name: "avatar"
+})
+@SlashGroup("avatar")
 export abstract class Avatar {
-	@Slash({ description: "Display the global or server avatar of a user" })
-	public avatar(
-		@SlashOption({
-			description: "The user",
-			name: "user",
-			type: ApplicationCommandOptionType.User
-		})
-		user: User | undefined,
-		@SlashChoice(AvatarType.server, AvatarType.global)
-		@SlashOption({
-			description: "Display the user's global avatar or server avatar",
-			name: "type",
-			type: ApplicationCommandOptionType.String
-		})
-		type: `${AvatarType}` | undefined,
+	private sizeURLSuffix = "?size=4096";
+	@Slash({ description: "Display the server avatar of a user or global avatar otherwise" })
+	public server(
+		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE])
+		target: GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		if (!user) {
-			user = interaction.user;
-		}
-		const name = user.username;
-
-		const sizeURLSuffix = "?size=4096";
-		let iconURL: string;
-
-		if (type == "global") {
-			iconURL = user.displayAvatarURL();
-		} else {
-			const guildMember = interaction.guild.members.cache.get(user.id);
-			assert(guildMember);
-			iconURL = guildMember.displayAvatarURL();
+		if (!target) {
+			target = interaction.member;
 		}
 
-		const embed = new EmbedBuilder().setAuthor({ name, iconURL }).setImage(iconURL + sizeURLSuffix);
+		const name = target.nickname ?? target.displayName;
+
+		const iconURL = target.displayAvatarURL();
+
+		const embed = new EmbedBuilder().setAuthor({ name, iconURL }).setImage(iconURL + this.sizeURLSuffix);
+
+		InteractionUtils.replyOrFollowUp(interaction, {
+			embeds: [embed]
+		});
+	}
+
+	@Slash({ description: "Display the global avatar of a user" })
+	public global(
+		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE])
+		target: User | GuildMember | undefined,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		target = interaction.client.users.resolve(target ?? interaction.user)!;
+
+		const { displayName: name } = target;
+
+		const iconURL = target.displayAvatarURL();
+
+		const embed = new EmbedBuilder().setAuthor({ name, iconURL }).setImage(iconURL + this.sizeURLSuffix);
 
 		InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed]
