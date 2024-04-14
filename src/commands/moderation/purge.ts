@@ -27,7 +27,7 @@ import type {
 	Role,
 	User
 } from "discord.js";
-import { ApplicationCommandOptionType, MessageMentions, channelMention } from "discord.js";
+import { ApplicationCommandOptionType, MessageMentions, PermissionFlagsBits, channelMention } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";
 import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
@@ -49,13 +49,14 @@ const givenChannelSlashOptionFlags = [
 const givenChannelSlashOptionDescriptionSuffix =
 	CommandUtils.generateSlashOptionTargetDescriptionSuffix(givenChannelSlashOptionFlags);
 
+const mutalPermissions = [PermissionFlagsBits.ManageMessages];
 @Discord()
 @Category("Moderation")
 @Guard(
 	RateLimit(TIME_UNIT.seconds, 3),
-	BotRequiredPermissions(["ManageMessages"], givenChannelSlashOptionDescriptionSuffix)
+	BotRequiredPermissions(mutalPermissions, givenChannelSlashOptionDescriptionSuffix)
 )
-@SlashGroup({ name: "purge", description: "purge messages in the channel with a filter" })
+@SlashGroup({ description: "purge messages in the channel with a filter", name: "purge" })
 @SlashGroup("purge")
 export abstract class Purge {
 	@Slash({ description: "purge all messages in the channel" })

@@ -5,17 +5,19 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { CaseActionType, EntityType } from "@prisma/client";
 import { InteractionUtils } from "@utils/interaction.js";
 import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
-import { ApplicationCommandOptionType } from "discord.js";
+import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
 import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
 
 import { ActionModerationManager } from "../../models/framework/manager/ActionModerationManager.js";
 
+const mutalPermissions = [PermissionFlagsBits.BanMembers];
+
 @Discord()
 @Category("Moderation")
 export abstract class Ban {
-	@Slash({ description: "Ban a user from the server" })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(["BanMembers"]))
+	@Slash({ description: "Ban a user from the server", defaultMemberPermissions: mutalPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
 	public async ban(
 		@TargetSlashOption()
 		target: User | GuildMember,
@@ -69,8 +71,11 @@ export abstract class Ban {
 		});
 	}
 
-	@Slash({ description: "Ban a user to prune their messages and then immediately unban them from the server" })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(["BanMembers"]))
+	@Slash({
+		description: "Ban a user to prune their messages and then immediately unban them from the server",
+		defaultMemberPermissions: mutalPermissions
+	})
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
 	public async softban(
 		@TargetSlashOption()
 		target: User | GuildMember,
@@ -129,8 +134,8 @@ export abstract class Ban {
 		});
 	}
 
-	@Slash({ description: "Unban a user from the server" })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(["BanMembers"]))
+	@Slash({ description: "Unban a user from the server", defaultMemberPermissions: mutalPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
 	public async unban(
 		@TargetSlashOption()
 		target: User | GuildMember,

@@ -3,16 +3,16 @@ import assert from "assert";
 import { COMMAND_DESCRIPTION_NEVER } from "@constants";
 import { EmbedBuilder } from "@discordjs/builders";
 import { InteractionUtils } from "@utils/interaction.js";
-import type { CommandInteraction, PermissionResolvable } from "discord.js";
-import { Colors, PermissionsBitField, bold, unorderedList } from "discord.js";
+import type { CommandInteraction, PermissionFlags } from "discord.js";
+import { Colors, bold, unorderedList } from "discord.js";
 import { type GuardFunction } from "discordx";
 
+type BotPermissions = PermissionFlags[keyof PermissionFlags];
+
 export function BotRequiredPermissions(
-	permissions: PermissionResolvable[],
+	permissions: BotPermissions[],
 	channelSlashOptionDescriptionSuffix: string = COMMAND_DESCRIPTION_NEVER
 ): GuardFunction<CommandInteraction> {
-	const requiredPermissions = PermissionsBitField.resolve(permissions);
-
 	const description = "I cannot perform this action: insufficient permissions.";
 
 	const missingPermissionEmbed = new EmbedBuilder().setColor(Colors.Red).setDescription(description);
@@ -45,9 +45,7 @@ export function BotRequiredPermissions(
 		const me = interaction.guild.members.me ?? (await interaction.guild.members.fetchMe());
 
 		const myCurrentPermissions = me.permissionsIn(permissionChannelId);
-		const missingPermissions = unorderedList(
-			myCurrentPermissions.missing(requiredPermissions).map((str) => bold(str))
-		);
+		const missingPermissions = unorderedList(myCurrentPermissions.missing(permissions).map((str) => bold(str)));
 
 		if (missingPermissions) {
 			missingPermissionEmbed.addFields([

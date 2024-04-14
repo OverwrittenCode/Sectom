@@ -6,19 +6,20 @@ import { CaseActionType, EntityType } from "@prisma/client";
 import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
 import { InteractionUtils } from "@utils/interaction.js";
 import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
-import { ApplicationCommandOptionType } from "discord.js";
+import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
 import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
 
 import { ActionModerationManager } from "../../models/framework/manager/ActionModerationManager.js";
 
+const mutalPermissions = [PermissionFlagsBits.ModerateMembers];
 @Discord()
 @Category("Moderation")
 export abstract class Timeout {
 	private checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
 
-	@Slash({ description: "Timeout a user on the server" })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(["ModerateMembers"]))
+	@Slash({ description: "Timeout a user on the server", defaultMemberPermissions: mutalPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
 	public async timeout(
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,
@@ -66,8 +67,8 @@ export abstract class Timeout {
 		});
 	}
 
-	@Slash({ description: "Remove a timeout a user on the server" })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(["ModerateMembers"]))
+	@Slash({ description: "Remove a timeout a user on the server", defaultMemberPermissions: mutalPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
 	public async untimeout(
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,
