@@ -8,9 +8,10 @@ import { NotBot } from "@discordx/utilities";
 import { Beans } from "@framework/DI/Beans.js";
 import { DBConnectionManager } from "@managers/DBConnectionManager.js";
 import { ActivityType, IntentsBitField, Partials } from "discord.js";
-import { type ArgsOf, Client, DIService, Discord, On, tsyringeDependencyRegistryEngine } from "discordx";
+import { Client, DIService, Discord, On, tsyringeDependencyRegistryEngine, type ArgsOf } from "discordx";
 import dotenv from "dotenv";
 import { container } from "tsyringe";
+import { TargetValidator } from "./guards/TargetValidator.js";
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ export abstract class Main {
 		partials: [Partials.Channel, Partials.GuildMember, Partials.User],
 
 		silent: false,
-		guards: [NotBot],
+		guards: [NotBot, TargetValidator],
 		presence: {
 			activities: [
 				{

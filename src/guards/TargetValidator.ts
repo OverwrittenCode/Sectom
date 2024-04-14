@@ -18,6 +18,8 @@ interface TargetData {
 	description: string;
 	type: (typeof TargetCommandOptionTypes)[number];
 	value: string;
+	subCommandGroupName: string | null;
+	subCommandName: string | null;
 }
 
 export const TargetValidator: GuardFunction<CommandInteraction> = async (interaction, client, next) => {
@@ -25,23 +27,65 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 		await next();
 	} else {
 		if (interaction.isChatInputCommand() && interaction.inCachedGuild() && interaction.command) {
-			const { guild, member, client, command } = interaction;
+			const { guild, member, client, command, options } = interaction;
 
-			const permissionChannelOptionName = command.options.flatMap((data) =>
-				"options" in data && !!data.options ? data.options.flat(2) : [data]
-			);
+			const activeSubCommandGroupName = options.getSubcommandGroup(false);
+			const activeSubCommandName = options.getSubcommand(false);
+
+			const flatMapOptionData = command.options
+				.map((data) => {
+					let subCommandGroupName: string | null = null;
+					let subCommandName: string | null = null;
+
+					if (!("options" in data) || !data.options)
+						return [{ subCommandGroupName, subCommandName, ...data }];
+
+					if (data.type === ApplicationCommandOptionType.SubcommandGroup) {
+						subCommandGroupName = data.name;
+						subCommandName = data.options[0].name;
+					} else {
+						subCommandName = data.name;
+					}
+
+					return data.options.flat(2).map(({ description, name }) => ({
+						subCommandGroupName,
+						subCommandName,
+						description,
+						name
+					}));
+				})
+				.flat()
+				.filter(
+					(data) =>
+						!activeSubCommandGroupName ||
+						!activeSubCommandName ||
+						(data.subCommandGroupName === activeSubCommandGroupName &&
+							data.subCommandName === activeSubCommandName)
+				);
 
 			const targetData = CommandUtils.retrieveCommandInteractionOption(interaction)
-				.map(({ type, name, value }) => ({
-					description: permissionChannelOptionName.find((option) => option.name === name)?.description,
-					type,
-					value
-				}))
+				.map(({ name, type, value }) => {
+					const linkedData = flatMapOptionData.find(
+						(data) =>
+							data.name === name &&
+							data.subCommandGroupName === activeSubCommandGroupName &&
+							data.subCommandName === activeSubCommandName
+					);
+					return {
+						description: linkedData?.description || "",
+						subCommandGroupName: linkedData?.subCommandGroupName || null,
+						subCommandName: linkedData?.subCommandName || null,
+						type,
+						value
+					};
+				})
 				.filter(
-					({ description, type, value }) =>
-						description?.includes(COMMAND_TARGET_OPTION_DESCRIPTION) &&
-						TargetCommandOptionTypes.some((targetType) => targetType === type) &&
-						StringUtils.isValidString(value)
+					({ subCommandGroupName, subCommandName, description, type, value }) =>
+						subCommandGroupName === activeSubCommandGroupName &&
+						subCommandName === activeSubCommandName &&
+						description.includes(COMMAND_TARGET_OPTION_DESCRIPTION) &&
+						StringUtils.isValidString(value) &&
+						TargetCommandOptionTypes.includes(type)
 				) as TargetData[];
 
 			if (targetData.length) {
@@ -50,7 +94,12 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 					roles: { cache: roleCache }
 				} = guild;
 
-				const isInvalidSnowflakeID = targetData.some(({ value }) => !SNOWFLAKE_REGEX.test(value));
+				const userTypeFilter = (data: TargetData) => data.type === ApplicationCommandOptionType.User;
+
+				const isInvalidSnowflakeID = targetData.some(
+					(data) =>
+						!SNOWFLAKE_REGEX.test(data.value) || (userTypeFilter(data) && !client.users.resolve(data.value))
+				);
 
 				if (isInvalidSnowflakeID) {
 					return await InteractionUtils.replyOrFollowUp(interaction, {
@@ -58,8 +107,6 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 						ephemeral: true
 					});
 				}
-
-				const userTypeFilter = (data: TargetData) => data.type === ApplicationCommandOptionType.User;
 
 				const isNotInGuild = targetData.some(
 					({ description, value }) =>
@@ -93,6 +140,17 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 						});
 					}
 
+					const isClientPunishment = targetData.some(
+						(data) => userTypeFilter(data) && data.value === client.user.id
+					);
+
+					if (isClientPunishment) {
+						return await InteractionUtils.replyOrFollowUp(interaction, {
+							content: "I cannot perform this action: target must not be me.",
+							ephemeral: true
+						});
+					}
+
 					const isGuildOwnerPunishment = targetData.some(
 						(data) => userTypeFilter(data) && guild.ownerId === data.value
 					);
@@ -100,20 +158,6 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 					if (isGuildOwnerPunishment) {
 						return await InteractionUtils.replyOrFollowUp(interaction, {
 							content: "I cannot perform this action: target must not be the server owner.",
-							ephemeral: true
-						});
-					}
-
-					const isBotPunishment = targetData.some(
-						(data) =>
-							userTypeFilter(data) &&
-							(client.user.id === data.value ||
-								memberCache.some((m) => m.user.bot && m.id === data.value))
-					);
-
-					if (isBotPunishment) {
-						return await InteractionUtils.replyOrFollowUp(interaction, {
-							content: "I cannot perform this action: target must not be a bot.",
 							ephemeral: true
 						});
 					}
