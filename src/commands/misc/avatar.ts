@@ -1,6 +1,7 @@
 import assert from "node:assert";
 
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
 import { InteractionUtils } from "@utils/interaction.js";
 import type { ChatInputCommandInteraction, User } from "discord.js";
 import { ApplicationCommandOptionType, EmbedBuilder } from "discord.js";
@@ -12,7 +13,7 @@ enum AvatarType {
 }
 
 @Discord()
-@Category("Misc")
+@Category(COMMAND_CATEGORY.MISC)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Avatar {
 	@Slash({ description: "Display the global or server avatar of a user" })

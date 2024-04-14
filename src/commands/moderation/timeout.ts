@@ -3,6 +3,7 @@ import { ReasonSlashOption } from "@decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "@decorators/slashOptions/target.js";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { CaseActionType, EntityType } from "@prisma/client";
+import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
 import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
 import { InteractionUtils } from "@utils/interaction.js";
 import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
@@ -14,7 +15,7 @@ import { ActionModerationManager } from "../../models/framework/manager/ActionMo
 
 const mutalPermissions = [PermissionFlagsBits.ModerateMembers];
 @Discord()
-@Category("Moderation")
+@Category(COMMAND_CATEGORY.MODERATION)
 export abstract class Timeout {
 	private checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
 

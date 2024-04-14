@@ -4,6 +4,7 @@ import { Pagination, PaginationType } from "@discordx/pagination";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { DBConnectionManager } from "@managers/DBConnectionManager.js";
 import { RedisCache } from "@models/DB/cache/index.js";
+import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
 import type { Typings } from "@ts/Typings.js";
 import { InteractionUtils } from "@utils/interaction.js";
 import { ObjectUtils } from "@utils/object.js";
@@ -15,9 +16,9 @@ import ms from "ms";
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 
 @Discord()
-@Category("Moderation")
+@Category(COMMAND_CATEGORY.MODERATION)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
-@SlashGroup({ name: "case", description: "container of all cases in the server" })
+@SlashGroup({ description: "container of all cases in the server", name: "case" })
 @SlashGroup("case")
 export abstract class Case {
 	@Slash({ description: "Lists all cases on the server" })

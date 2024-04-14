@@ -14,6 +14,7 @@ import { TargetSlashOption } from "@decorators/slashOptions/target.js";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionModerationManager } from "@managers/ActionModerationManager.js";
 import { CaseActionType } from "@prisma/client";
+import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
 import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
 import { CommandUtils } from "@utils/command.js";
 import { InteractionUtils } from "@utils/interaction.js";
@@ -51,7 +52,7 @@ const givenChannelSlashOptionDescriptionSuffix =
 
 const mutalPermissions = [PermissionFlagsBits.ManageMessages];
 @Discord()
-@Category("Moderation")
+@Category(COMMAND_CATEGORY.MODERATION)
 @Guard(
 	RateLimit(TIME_UNIT.seconds, 3),
 	BotRequiredPermissions(mutalPermissions, givenChannelSlashOptionDescriptionSuffix)
