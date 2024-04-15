@@ -121,8 +121,7 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 				}
 
 				const isNotPassiveTarget = targetData.some(
-					(data) =>
-						userTypeFilter(data) && !data.description.includes(COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE)
+					(data) => !data.description.includes(COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE)
 				);
 
 				if (isNotPassiveTarget) {
@@ -159,10 +158,9 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 						});
 					}
 
-					const targetHighestPositions = targetData.map((data) =>
-						data.type === ApplicationCommandOptionType.Role
-							? memberCache.get(data.value)?.roles.highest.position ?? -1
-							: roleCache.get(data.value)?.position ?? -1
+					const targetHighestPositions = targetData.map(
+						({ value }) =>
+							members.resolve(value)?.roles.highest.position ?? roles.resolve(value)?.position ?? -1
 					);
 					const myHighestRolePosition = interaction.guild.members.me!.roles.highest.position;
 					const userHighestRolePosition = member.roles.highest.position;
