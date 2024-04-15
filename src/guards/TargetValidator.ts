@@ -89,10 +89,7 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 				) as TargetData[];
 
 			if (targetData.length) {
-				const {
-					members: { cache: memberCache },
-					roles: { cache: roleCache }
-				} = guild;
+				const { members, roles, channels } = guild;
 
 				const userTypeFilter = (data: TargetData) => data.type === ApplicationCommandOptionType.User;
 
@@ -111,9 +108,9 @@ export const TargetValidator: GuardFunction<CommandInteraction> = async (interac
 				const isNotInGuild = targetData.some(
 					({ description, value }) =>
 						description.includes(COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD) &&
-						!guild.members.resolve(value) &&
-						!guild.roles.resolve(value) &&
-						!guild.channels.resolve(value)
+						!members.resolve(value) &&
+						!roles.resolve(value) &&
+						!channels.resolve(value)
 				);
 
 				if (isNotInGuild) {
