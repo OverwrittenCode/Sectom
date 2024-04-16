@@ -1,9 +1,10 @@
 import { FIELD_NAME_SEPARATOR, LINE_BREAK, TAB_CHARACTER } from "@constants";
 import { type APIEmbedField, type EmbedBuilder, bold } from "discord.js";
 
-interface Field {
-	name: string;
-	value: string | Field[];
+interface BaseField extends Omit<APIEmbedField, "inline"> {}
+
+interface Field extends Pick<APIEmbedField, "name"> {
+	value: string | BaseField[];
 }
 
 interface IndentFieldOptions {
