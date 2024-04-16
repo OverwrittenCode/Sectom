@@ -13,14 +13,14 @@ import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
 
 import { ActionModerationManager } from "../../models/framework/manager/ActionModerationManager.js";
 
-const mutalPermissions = [PermissionFlagsBits.ModerateMembers];
+const mutualPermissions = [PermissionFlagsBits.ModerateMembers];
 @Discord()
 @Category(COMMAND_CATEGORY.MODERATION)
 export abstract class Timeout {
 	private checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
 
-	@Slash({ description: "Timeout a user on the server", defaultMemberPermissions: mutalPermissions })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Slash({ description: "Timeout a user on the server", defaultMemberPermissions: mutualPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async timeout(
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,

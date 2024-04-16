@@ -11,12 +11,12 @@ import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
 
 import { ActionModerationManager } from "../../models/framework/manager/ActionModerationManager.js";
 
-const mutalPermissions = [PermissionFlagsBits.KickMembers];
+const mutualPermissions = [PermissionFlagsBits.KickMembers];
 @Discord()
 @Category(COMMAND_CATEGORY.MODERATION)
 export abstract class Kick {
-	@Slash({ description: "Kick a user from the server", defaultMemberPermissions: mutalPermissions })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Slash({ description: "Kick a user from the server", defaultMemberPermissions: mutualPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public kick(
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,

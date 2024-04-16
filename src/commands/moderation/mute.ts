@@ -14,12 +14,12 @@ import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
 
 import { ActionModerationManager } from "../../models/framework/manager/ActionModerationManager.js";
 
-const mutalPermissions = [PermissionFlagsBits.MuteMembers];
+const mutualPermissions = [PermissionFlagsBits.MuteMembers];
 @Discord()
 @Category(COMMAND_CATEGORY.MODERATION)
 export abstract class Mute {
-	@Slash({ description: "Mute a user in a voice channel on the server", defaultMemberPermissions: mutalPermissions })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Slash({ description: "Mute a user in a voice channel on the server", defaultMemberPermissions: mutualPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async mute(
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,

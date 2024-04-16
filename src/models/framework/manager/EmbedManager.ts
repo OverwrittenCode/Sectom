@@ -12,7 +12,7 @@ interface IndentFieldOptions {
 	seperator?: string;
 }
 
-interface MutalField {
+interface MutualField {
 	indexPosition: number | "end";
 	data: APIEmbedField;
 }
@@ -49,12 +49,12 @@ export abstract class EmbedManager {
 			.join(LINE_BREAK);
 	}
 
-	public static addMutalFields(embeds: EmbedBuilder[], mutalFields: MutalField[]): EmbedBuilder[] {
+	public static addMutualFields(embeds: EmbedBuilder[], mutualFields: MutualField[]): EmbedBuilder[] {
 		return embeds.map((embed) => {
 			const embedFieldLength = embed.toJSON().fields?.length;
 
-			for (let i = 0; i < mutalFields.length; i++) {
-				const { indexPosition, data } = mutalFields[i];
+			for (let i = 0; i < mutualFields.length; i++) {
+				const { indexPosition, data } = mutualFields[i];
 				const index = indexPosition === "end" ? embedFieldLength : indexPosition;
 
 				if (!index) {

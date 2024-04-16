@@ -12,13 +12,13 @@ import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
 
 import { ActionModerationManager } from "../../models/framework/manager/ActionModerationManager.js";
 
-const mutalPermissions = [PermissionFlagsBits.BanMembers];
+const mutualPermissions = [PermissionFlagsBits.BanMembers];
 
 @Discord()
 @Category(COMMAND_CATEGORY.MODERATION)
 export abstract class Ban {
-	@Slash({ description: "Ban a user from the server", defaultMemberPermissions: mutalPermissions })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Slash({ description: "Ban a user from the server", defaultMemberPermissions: mutualPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async ban(
 		@TargetSlashOption()
 		target: User | GuildMember,
@@ -74,9 +74,9 @@ export abstract class Ban {
 
 	@Slash({
 		description: "Ban a user to prune their messages and then immediately unban them from the server",
-		defaultMemberPermissions: mutalPermissions
+		defaultMemberPermissions: mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async softban(
 		@TargetSlashOption()
 		target: User | GuildMember,
@@ -135,8 +135,8 @@ export abstract class Ban {
 		});
 	}
 
-	@Slash({ description: "Unban a user from the server", defaultMemberPermissions: mutalPermissions })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Slash({ description: "Unban a user from the server", defaultMemberPermissions: mutualPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async unban(
 		@TargetSlashOption()
 		target: User | GuildMember,

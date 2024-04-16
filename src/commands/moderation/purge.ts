@@ -50,12 +50,12 @@ const givenChannelSlashOptionFlags = [
 const givenChannelSlashOptionDescriptionSuffix =
 	CommandUtils.generateSlashOptionTargetDescriptionSuffix(givenChannelSlashOptionFlags);
 
-const mutalPermissions = [PermissionFlagsBits.ManageMessages];
+const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 @Discord()
 @Category(COMMAND_CATEGORY.MODERATION)
 @Guard(
 	RateLimit(TIME_UNIT.seconds, 3),
-	BotRequiredPermissions(mutalPermissions, givenChannelSlashOptionDescriptionSuffix)
+	BotRequiredPermissions(mutualPermissions, givenChannelSlashOptionDescriptionSuffix)
 )
 @SlashGroup({ description: "purge messages in the channel with a filter", name: "purge" })
 @SlashGroup("purge")
