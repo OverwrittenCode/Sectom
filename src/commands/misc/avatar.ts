@@ -1,10 +1,11 @@
+import { LIGHT_GOLD } from "@constants";
 import { TargetSlashOption } from "@decorators/slashOptions/target.js";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
 import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
 import { InteractionUtils } from "@utils/interaction.js";
-import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
-import { EmbedBuilder } from "discord.js";
+import type { ChatInputCommandInteraction, User } from "discord.js";
+import { EmbedBuilder, GuildMember } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup } from "discordx";
 
 @Discord()
@@ -29,7 +30,10 @@ export abstract class Avatar {
 
 		const iconURL = target.displayAvatarURL();
 
-		const embed = new EmbedBuilder().setAuthor({ name, iconURL }).setImage(iconURL + this.sizeURLSuffix);
+		const embed = new EmbedBuilder()
+			.setAuthor({ name, iconURL })
+			.setColor(target.displayHexColor)
+			.setImage(iconURL + this.sizeURLSuffix);
 
 		InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed]
@@ -44,11 +48,18 @@ export abstract class Avatar {
 	) {
 		target ??= interaction.member;
 
+		const colour = target instanceof GuildMember ? target.displayHexColor : target.hexAccentColor ?? LIGHT_GOLD;
+
+		target = interaction.client.users.resolve(target)!;
+
 		const { displayName: name } = target;
 
 		const iconURL = target.displayAvatarURL();
 
-		const embed = new EmbedBuilder().setAuthor({ name, iconURL }).setImage(iconURL + this.sizeURLSuffix);
+		const embed = new EmbedBuilder()
+			.setAuthor({ name, iconURL })
+			.setColor(colour)
+			.setImage(iconURL + this.sizeURLSuffix);
 
 		InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed]
