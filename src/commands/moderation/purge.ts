@@ -57,7 +57,11 @@ const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 	RateLimit(TIME_UNIT.seconds, 3),
 	BotRequiredPermissions(mutualPermissions, givenChannelSlashOptionDescriptionSuffix)
 )
-@SlashGroup({ description: "purge messages in the channel with a filter", name: "purge" })
+@SlashGroup({
+	description: "purge messages in the channel with a filter",
+	name: "purge",
+	defaultMemberPermissions: mutualPermissions
+})
 @SlashGroup("purge")
 export abstract class Purge {
 	@Slash({ description: "purge all messages in the channel" })
