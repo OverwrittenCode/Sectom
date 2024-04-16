@@ -23,9 +23,7 @@ export abstract class Avatar {
 		target: GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		if (!target) {
-			target = interaction.member;
-		}
+		target ??= interaction.member;
 
 		const name = target.nickname ?? target.displayName;
 
@@ -44,7 +42,7 @@ export abstract class Avatar {
 		target: User | GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		target = interaction.client.users.resolve(target ?? interaction.user)!;
+		target ??= interaction.member;
 
 		const { displayName: name } = target;
 
