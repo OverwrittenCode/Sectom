@@ -17,7 +17,7 @@ import { EntityManager } from "./EntityManager.js";
 
 interface ActionConditionOptions {
 	msDuration?: number;
-	pastTense: string;
+	pastTense?: string;
 	checkPossible?: (guildMember: GuildMember) => boolean;
 	pendingExecution: () => Promise<any>;
 }
