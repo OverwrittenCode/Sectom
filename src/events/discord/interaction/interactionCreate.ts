@@ -54,7 +54,7 @@ export class InteractionCreate {
 			}
 		}
 
-		if (interaction.isButton()) {
+		if (interaction.isButton() || interaction.isStringSelectMenu()) {
 			const isPaginationButton = WILD_CARDS.some((str) => interaction.customId.toLowerCase().includes(str));
 
 			if (isPaginationButton) {

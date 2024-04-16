@@ -1,4 +1,5 @@
 import { LIGHT_GOLD, LINE_BREAK } from "@constants";
+import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "@discordjs/builders";
 import type { PaginationItem } from "@discordx/pagination";
 import { Pagination, PaginationType } from "@discordx/pagination";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
@@ -9,7 +10,15 @@ import type { Typings } from "@ts/Typings.js";
 import { InteractionUtils } from "@utils/interaction.js";
 import { ObjectUtils } from "@utils/object.js";
 import type { ChatInputCommandInteraction } from "discord.js";
-import { ApplicationCommandOptionType, EmbedBuilder, TimestampStyles, bold, inlineCode, time } from "discord.js";
+import {
+	ApplicationCommandOptionType,
+	bold,
+	ComponentType,
+	EmbedBuilder,
+	inlineCode,
+	time,
+	TimestampStyles
+} from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";
 
@@ -69,17 +78,55 @@ export abstract class Case {
 				.setDescription(embedDescription)
 				.setFooter({ text: `Page ${index + 1} / ${arr.length}` });
 
-			paginationPages.push({ embeds: [embed] });
+			const selectMenu = new StringSelectMenuBuilder()
+				.setCustomId(`string_select_menu_pagination_${index}`)
+				.setPlaceholder("View a case");
+
+			const caseIDArray = chunk.map((str) => str.split(" ")[0].slice(1, -1));
+
+			const selectMenuOptions = caseIDArray.map((caseID) =>
+				new StringSelectMenuOptionBuilder().setLabel(caseID).setValue(caseID)
+			);
+
+			selectMenu.addOptions(selectMenuOptions);
+
+			const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+			paginationPages.push({ embeds: [embed], components: [actionRow] });
 		});
 
+		const paginationTime = ms("10m");
 		const pagination = new Pagination(interaction, paginationPages, {
 			filter: (v) => v.user.id === interaction.user.id,
 			enableExit: true,
-			time: ms("10m"),
+			time: paginationTime,
 			type: PaginationType.Button
 		});
 
-		pagination.send();
+		const { message } = await pagination.send();
+
+		const collector = message.createMessageComponentCollector({
+			componentType: ComponentType.StringSelect,
+			time: paginationTime,
+			filter: (v) => v.user.id === interaction.user.id
+		});
+
+		collector.on("collect", async (i) => {
+			const caseID = i.values[0];
+
+			const { embeds } = rawDocuments.find((doc) => doc.id === caseID)!;
+			if (!embeds.length) {
+				await InteractionUtils.replyNoData(i);
+				return;
+			}
+
+			await InteractionUtils.replyOrFollowUp(i, {
+				embeds,
+				ephemeral: true
+			});
+
+			return;
+		});
 	}
 
 	@Slash({ description: "View a case on the server" })
