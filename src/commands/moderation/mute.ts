@@ -63,9 +63,9 @@ export abstract class Mute {
 
 	@Slash({
 		description: "Unmute a user in a voice channel on the server",
-		defaultMemberPermissions: mutalPermissions
+		defaultMemberPermissions: mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async unmute(
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,

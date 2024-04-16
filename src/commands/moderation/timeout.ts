@@ -68,8 +68,8 @@ export abstract class Timeout {
 		});
 	}
 
-	@Slash({ description: "Remove a timeout a user on the server", defaultMemberPermissions: mutalPermissions })
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutalPermissions))
+	@Slash({ description: "Remove a timeout a user on the server", defaultMemberPermissions: mutualPermissions })
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async untimeout(
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,
