@@ -18,7 +18,9 @@ export abstract class Kick {
 	@Slash({ description: "Kick a user from the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public kick(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+		})
 		target: GuildMember,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,

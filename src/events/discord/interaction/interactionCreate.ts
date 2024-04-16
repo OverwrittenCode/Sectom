@@ -11,9 +11,10 @@ import { DBConnectionManager } from "@managers/DBConnectionManager.js";
 import { RedisCache } from "@models/DB/cache/index.js";
 import { InteractionUtils } from "@utils/interaction.js";
 import type { APIActionRowComponent, APIButtonComponent } from "discord.js";
-import { Colors, ComponentType, EmbedBuilder } from "discord.js";
+import { AutocompleteInteraction, Colors, ComponentType, EmbedBuilder } from "discord.js";
 import type { ArgsOf, Client } from "discordx";
 import { Discord, On } from "discordx";
+import { ValidationError } from "src/errors/ValidationError.js";
 import { container, injectable } from "tsyringe";
 
 const {
@@ -128,18 +129,32 @@ export class InteractionCreate {
 
 		const bot = container.resolve<Client>(Beans.ISectomToken);
 
-		bot.executeInteraction(interaction);
-
 		const end = Date.now();
 
 		const timeElapsed = end - start;
 		const setTimeoutDelay = MAX_DEFER_RESPONSE_WAIT - timeElapsed;
 
-		if (interaction.isChatInputCommand()) {
-			await this.sleep(setTimeoutDelay);
-			if (!interaction.replied && !interaction.deferred) {
-				await interaction.deferReply().catch(() => {});
+		const autoDeferInteractionPromise = new Promise<"OK">(async (resolve) => {
+			if (interaction.isChatInputCommand()) {
+				await this.sleep(setTimeoutDelay);
+				if (!interaction.replied && !interaction.deferred) {
+					await interaction.deferReply().catch(() => {});
+					resolve("OK");
+				}
 			}
+		});
+
+		try {
+			await Promise.all([bot.executeInteraction(interaction), autoDeferInteractionPromise]);
+		} catch (err) {
+			if (err instanceof ValidationError && !(interaction instanceof AutocompleteInteraction)) {
+				return await InteractionUtils.replyOrFollowUp(interaction, {
+					content: `Validation Error: ${err.message}`,
+					ephemeral: true
+				});
+			}
+
+			throw err;
 		}
 	}
 

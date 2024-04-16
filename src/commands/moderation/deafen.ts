@@ -24,7 +24,9 @@ export abstract class Deafen {
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async deafen(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+		})
 		target: GuildMember,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,
@@ -69,8 +71,10 @@ export abstract class Deafen {
 		defaultMemberPermissions: mutualPermissions
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions([PermissionFlagsBits.MuteMembers]))
-	public async undeafened(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
+	public async undeafen(
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+		})
 		target: GuildMember,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,

@@ -28,7 +28,13 @@ import type {
 	Role,
 	User
 } from "discord.js";
-import { ApplicationCommandOptionType, MessageMentions, PermissionFlagsBits, channelMention } from "discord.js";
+import {
+	ApplicationCommandOptionType,
+	FormattingPatterns,
+	MessageMentions,
+	PermissionFlagsBits,
+	channelMention
+} from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";
 import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
@@ -83,11 +89,11 @@ export abstract class Purge {
 
 	@Slash({ description: "purge all or specific snowflake mention messages in the channel" })
 	public mentions(
-		@TargetSlashOption(
-			[COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
-			COMMAND_ENTITY_TYPE.SNOWFLAKE,
-			false
-		)
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
+			entityType: COMMAND_ENTITY_TYPE.SNOWFLAKE,
+			required: false
+		})
 		target: User | GuildMember | Role | Channel | undefined,
 		@SlashOption({
 			description: "If everyone and here mentions should be considered",
@@ -186,10 +192,10 @@ export abstract class Purge {
 
 	@Slash({ description: "purge all messages of users with a given role in the channel" })
 	public role(
-		@TargetSlashOption(
-			[COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
-			COMMAND_ENTITY_TYPE.ROLE
-		)
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
+			entityType: COMMAND_ENTITY_TYPE.ROLE
+		})
 		target: Role,
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -566,12 +572,12 @@ export abstract class Purge {
 
 function GivenChannelSlashOption() {
 	return function (target: Record<string, any>, propertyKey: string, parameterIndex: number) {
-		TargetSlashOption(
-			givenChannelSlashOptionFlags,
-			COMMAND_ENTITY_TYPE.CHANNEL,
-			false,
-			"in"
-		)(target, propertyKey, parameterIndex);
+		TargetSlashOption({
+			flags: givenChannelSlashOptionFlags,
+			entityType: COMMAND_ENTITY_TYPE.CHANNEL,
+			namePrefix: "in",
+			required: false
+		})(target, propertyKey, parameterIndex);
 	};
 }
 

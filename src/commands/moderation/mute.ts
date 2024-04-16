@@ -21,7 +21,9 @@ export abstract class Mute {
 	@Slash({ description: "Mute a user in a voice channel on the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async mute(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+		})
 		target: GuildMember,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,
@@ -67,7 +69,9 @@ export abstract class Mute {
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async unmute(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+		})
 		target: GuildMember,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,

@@ -20,7 +20,9 @@ export abstract class Avatar {
 	private sizeURLSuffix = "?size=4096";
 	@Slash({ description: "Display the server avatar of a user or global avatar otherwise" })
 	public server(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
+		})
 		target: GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
@@ -42,7 +44,9 @@ export abstract class Avatar {
 
 	@Slash({ description: "Display the global avatar of a user" })
 	public global(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
+		})
 		target: User | GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {

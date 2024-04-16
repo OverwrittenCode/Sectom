@@ -22,7 +22,9 @@ export abstract class Timeout {
 	@Slash({ description: "Timeout a user on the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async timeout(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+		})
 		target: GuildMember,
 		@SlashOption({
 			description: "The duration of the timeout. Ex: (30m, 1h, 1 day)",
@@ -71,7 +73,9 @@ export abstract class Timeout {
 	@Slash({ description: "Remove a timeout a user on the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async untimeout(
-		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
+		@TargetSlashOption({
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+		})
 		target: GuildMember,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,
