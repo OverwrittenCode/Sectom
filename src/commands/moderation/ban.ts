@@ -23,7 +23,7 @@ export abstract class Ban {
 		@TargetSlashOption()
 		target: User | GuildMember,
 		@SlashOption({
-			description: "The duration to prune messages. Ex: (30m, 1h, 1 day).",
+			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
 			name: "prune_messages_duration",
 			type: ApplicationCommandOptionType.String
 		})
@@ -81,7 +81,7 @@ export abstract class Ban {
 		@TargetSlashOption()
 		target: User | GuildMember,
 		@SlashOption({
-			description: "The duration to prune messages. Ex: (30m, 1h, 1 day).",
+			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
 			name: "prune_messages_duration",
 			type: ApplicationCommandOptionType.String,
 			required: true

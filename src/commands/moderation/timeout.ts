@@ -25,7 +25,7 @@ export abstract class Timeout {
 		@TargetSlashOption([COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD])
 		target: GuildMember,
 		@SlashOption({
-			description: "The duration of the timeout. Ex: (30m, 1h, 1 day).",
+			description: "The duration of the timeout. Ex: (30m, 1h, 1 day)",
 			name: "duration",
 			type: ApplicationCommandOptionType.String,
 			required: true
