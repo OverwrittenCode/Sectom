@@ -381,6 +381,26 @@ export abstract class Purge {
 		});
 	}
 
+	public emojis(
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@CountSlashOption()
+		count: number = DEFAULT_MESSAGE_FETCH_LIMIT,
+		@InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = NO_REASON,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			channel,
+			count,
+			reason,
+			inverse,
+			messageFilter: (msg) => !!FormattingPatterns.Emoji.test(msg.content)
+		});
+	}
+
 	@Slash({ description: "purge all messages before a given messageId in the channel" })
 	public async before(
 		@SlashOption({
