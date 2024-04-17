@@ -14,8 +14,9 @@ import type { APIActionRowComponent, APIButtonComponent } from "discord.js";
 import { AutocompleteInteraction, Colors, ComponentType, EmbedBuilder } from "discord.js";
 import type { ArgsOf, Client } from "discordx";
 import { Discord, On } from "discordx";
-import { ValidationError } from "src/errors/ValidationError.js";
 import { container, injectable } from "tsyringe";
+
+import { ValidationError } from "../../../helpers/errors/ValidationError.js";
 
 const {
 	ID: {

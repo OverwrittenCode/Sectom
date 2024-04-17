@@ -12,12 +12,12 @@ import { ObjectUtils } from "@utils/object.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 import {
 	ApplicationCommandOptionType,
-	bold,
 	ComponentType,
 	EmbedBuilder,
+	TimestampStyles,
+	bold,
 	inlineCode,
-	time,
-	TimestampStyles
+	time
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";

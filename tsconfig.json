@@ -20,8 +20,8 @@
 			"@constants": [
 				"src/constants.js"
 			],
-			"@decorators/*": [
-				"src/decorators/*"
+			"@helpers/*": [
+				"src/helpers/*"
 			]
 		},
 		"target": "ESNext",

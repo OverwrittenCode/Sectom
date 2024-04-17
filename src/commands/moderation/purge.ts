@@ -9,9 +9,10 @@ import {
 	NO_REASON,
 	SNOWFLAKE_REGEX
 } from "@constants";
-import { ReasonSlashOption } from "@decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "@decorators/slashOptions/target.js";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { ReasonSlashOption } from "@helpers/decorators/slashOptions/reason.js";
+import { TargetSlashOption } from "@helpers/decorators/slashOptions/target.js";
+import { BotRequiredPermissions } from "@helpers/guards/BotRequiredPermissions.js";
 import { ActionModerationManager } from "@managers/ActionModerationManager.js";
 import { CaseActionType } from "@prisma/client";
 import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
@@ -37,7 +38,6 @@ import {
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";
-import { BotRequiredPermissions } from "src/guards/BotRequiredPermissions.js";
 
 interface PurgeHandlerOptions {
 	channel?: GuildTextBasedChannel;

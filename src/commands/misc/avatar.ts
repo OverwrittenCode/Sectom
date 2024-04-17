@@ -1,6 +1,6 @@
 import { LIGHT_GOLD } from "@constants";
-import { TargetSlashOption } from "@decorators/slashOptions/target.js";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { TargetSlashOption } from "@helpers/decorators/slashOptions/target.js";
 import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
 import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
 import { InteractionUtils } from "@utils/interaction.js";

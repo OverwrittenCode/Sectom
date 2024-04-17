@@ -1,10 +1,10 @@
 import { COMMAND_ENTITY_TYPE } from "@constants";
+import { TargetTransformer } from "@helpers/transformers/TargetValidator.js";
 import type { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
 import { StringUtils } from "@utils/string.js";
 import { ApplicationCommandOptionType, ChannelType } from "discord.js";
 import type { SlashOptionOptions } from "discordx";
 import { SlashOption } from "discordx";
-import { TargetTransformer } from "src/transformers/TargetValidator.js";
 
 interface TargetSlashOptionArguments {
 	flags?: COMMAND_SLASH_OPTION_TARGET_FLAGS[];
