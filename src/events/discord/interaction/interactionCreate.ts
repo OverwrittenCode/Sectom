@@ -135,13 +135,18 @@ export class InteractionCreate {
 		const timeElapsed = end - start;
 		const setTimeoutDelay = MAX_DEFER_RESPONSE_WAIT - timeElapsed;
 
-		const autoDeferInteractionPromise = new Promise<"OK">(async (resolve) => {
+		const autoDeferInteractionPromise = new Promise<"OK">((resolve) => {
 			if (interaction.isChatInputCommand()) {
-				await this.sleep(setTimeoutDelay);
-				if (!interaction.replied && !interaction.deferred) {
-					await interaction.deferReply().catch(() => {});
-					resolve("OK");
-				}
+				this.sleep(setTimeoutDelay).then(() => {
+					if (!interaction.replied && !interaction.deferred) {
+						interaction
+							.deferReply()
+							.catch(() => {})
+							.then(() => {
+								resolve("OK");
+							});
+					}
+				});
 			}
 		});
 
