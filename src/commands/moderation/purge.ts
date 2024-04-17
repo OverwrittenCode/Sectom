@@ -8,7 +8,8 @@ import {
 	MAX_MESSAGE_FETCH_LIMIT,
 	MAX_PURGE_COUNT_LIMIT,
 	NO_REASON,
-	SNOWFLAKE_REGEX
+	SNOWFLAKE_REGEX,
+	UNICODE_EMOJI_REGEX
 } from "@constants";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ReasonSlashOption } from "@helpers/decorators/slashOptions/reason.js";
@@ -381,6 +382,7 @@ export abstract class Purge {
 		});
 	}
 
+	@Slash({ description: "purge all messages containing discord emojis in the current or given channel" })
 	public emojis(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -397,7 +399,8 @@ export abstract class Purge {
 			count,
 			reason,
 			inverse,
-			messageFilter: (msg) => !!FormattingPatterns.Emoji.test(msg.content)
+			messageFilter: (msg) =>
+				[FormattingPatterns.Emoji, UNICODE_EMOJI_REGEX].some((regex) => regex.test(msg.content))
 		});
 	}
 
