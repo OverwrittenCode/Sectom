@@ -7,6 +7,7 @@ import {
 	MAX_DEFER_RESPONSE_WAIT
 } from "@constants";
 import { Beans } from "@framework/DI/Beans.js";
+import { ValidationError } from "@helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "@managers/DBConnectionManager.js";
 import { RedisCache } from "@models/DB/cache/index.js";
 import { InteractionUtils } from "@utils/interaction.js";
@@ -15,8 +16,6 @@ import { AutocompleteInteraction, Colors, ComponentType, EmbedBuilder } from "di
 import type { ArgsOf, Client } from "discordx";
 import { Discord, On } from "discordx";
 import { container, injectable } from "tsyringe";
-
-import { ValidationError } from "../../../helpers/errors/ValidationError.js";
 
 const {
 	ID: {
