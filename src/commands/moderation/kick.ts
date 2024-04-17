@@ -18,6 +18,7 @@ export abstract class Kick {
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public kick(
 		@TargetSlashOption({
+			entityType: EntityType.USER,
 			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
 		})
 		target: GuildMember,

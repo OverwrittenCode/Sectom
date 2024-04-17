@@ -33,6 +33,7 @@ export abstract class Nick {
 	@Slash({ description: "set the nickname of a member in the server" })
 	public set(
 		@TargetSlashOption({
+			entityType: EntityType.USER,
 			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
 		})
 		target: GuildMember,
@@ -67,6 +68,7 @@ export abstract class Nick {
 	@Slash({ description: "reset the nickname of a member in the server" })
 	public reset(
 		@TargetSlashOption({
+			entityType: EntityType.USER,
 			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
 		})
 		target: GuildMember,

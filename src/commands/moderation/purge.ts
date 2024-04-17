@@ -1,6 +1,7 @@
 import {
 	BOT_INVITE_REGEX,
 	COMMAND_ENTITY_TYPE,
+	COMMAND_OPTION_NAME_CHANNEL_PERMISSION,
 	DEFAULT_MESSAGE_FETCH_LIMIT,
 	INVITE_REGEX,
 	LINK_REGEX,
@@ -17,7 +18,6 @@ import { ActionModerationManager } from "@managers/ActionModerationManager.js";
 import { CaseActionType } from "@prisma/client";
 import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
 import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
-import { CommandUtils } from "@utils/command.js";
 import { InteractionUtils } from "@utils/interaction.js";
 import { NumberUtils } from "@utils/number.js";
 import type {
@@ -53,16 +53,10 @@ const givenChannelSlashOptionFlags = [
 	COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE
 ];
 
-const givenChannelSlashOptionDescriptionSuffix =
-	CommandUtils.generateSlashOptionTargetDescriptionSuffix(givenChannelSlashOptionFlags);
-
 const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 @Discord()
 @Category(COMMAND_CATEGORY.MODERATION)
-@Guard(
-	RateLimit(TIME_UNIT.seconds, 3),
-	BotRequiredPermissions(mutualPermissions, givenChannelSlashOptionDescriptionSuffix)
-)
+@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 @SlashGroup({
 	description: "purge messages in the channel with a filter",
 	name: "purge",
@@ -573,9 +567,9 @@ export abstract class Purge {
 function GivenChannelSlashOption() {
 	return function (target: Record<string, any>, propertyKey: string, parameterIndex: number) {
 		TargetSlashOption({
-			flags: givenChannelSlashOptionFlags,
 			entityType: COMMAND_ENTITY_TYPE.CHANNEL,
-			namePrefix: "in",
+			flags: givenChannelSlashOptionFlags,
+			name: COMMAND_OPTION_NAME_CHANNEL_PERMISSION,
 			required: false
 		})(target, propertyKey, parameterIndex);
 	};

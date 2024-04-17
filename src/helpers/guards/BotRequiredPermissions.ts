@@ -1,6 +1,6 @@
 import assert from "assert";
 
-import { COMMAND_DESCRIPTION_NEVER } from "@constants";
+import { COMMAND_OPTION_NAME_CHANNEL_PERMISSION } from "@constants";
 import { EmbedBuilder } from "@discordjs/builders";
 import { InteractionUtils } from "@utils/interaction.js";
 import type { CommandInteraction, PermissionFlags } from "discord.js";
@@ -9,10 +9,7 @@ import { type GuardFunction } from "discordx";
 
 type BotPermissions = PermissionFlags[keyof PermissionFlags];
 
-export function BotRequiredPermissions(
-	permissions: BotPermissions[],
-	channelSlashOptionDescriptionSuffix: string = COMMAND_DESCRIPTION_NEVER
-): GuardFunction<CommandInteraction> {
+export function BotRequiredPermissions(permissions: BotPermissions[]): GuardFunction<CommandInteraction> {
 	const description = "I cannot perform this action: insufficient permissions.";
 
 	const missingPermissionEmbed = new EmbedBuilder().setColor(Colors.Red).setDescription(description);
@@ -24,14 +21,9 @@ export function BotRequiredPermissions(
 				interaction.channel &&
 				interaction.inCachedGuild()
 		);
-		const { command, options } = interaction;
-
-		const permissionChannelOptionName = command.options
-			.flatMap((data) => ("options" in data && !!data.options ? data.options.flat(2)! : [data]))
-			.find((data) => data.description.endsWith(channelSlashOptionDescriptionSuffix))?.name;
 
 		const permissionChannelId =
-			options.data
+			interaction.options.data
 				.flatMap((data) =>
 					data.options
 						? data.options.some((o) => !!o.options)
@@ -39,7 +31,7 @@ export function BotRequiredPermissions(
 							: data.options
 						: [data]
 				)
-				.find((data) => data.name === permissionChannelOptionName)
+				.find((data) => data.name === COMMAND_OPTION_NAME_CHANNEL_PERMISSION)
 				?.value?.toString() ?? interaction.channelId;
 
 		const me = interaction.guild.members.me ?? (await interaction.guild.members.fetchMe());

@@ -22,6 +22,7 @@ export abstract class Timeout {
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async timeout(
 		@TargetSlashOption({
+			entityType: EntityType.USER,
 			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
 		})
 		target: GuildMember,
@@ -73,6 +74,7 @@ export abstract class Timeout {
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async untimeout(
 		@TargetSlashOption({
+			entityType: EntityType.USER,
 			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
 		})
 		target: GuildMember,

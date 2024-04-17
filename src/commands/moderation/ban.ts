@@ -1,4 +1,4 @@
-import { NO_REASON } from "@constants";
+import { COMMAND_ENTITY_TYPE, NO_REASON } from "@constants";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ReasonSlashOption } from "@helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "@helpers/decorators/slashOptions/target.js";
@@ -19,7 +19,7 @@ export abstract class Ban {
 	@Slash({ description: "Ban a user from the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async ban(
-		@TargetSlashOption()
+		@TargetSlashOption({ entityType: COMMAND_ENTITY_TYPE.USER })
 		target: User | GuildMember,
 		@SlashOption({
 			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
@@ -77,7 +77,7 @@ export abstract class Ban {
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async softban(
-		@TargetSlashOption()
+		@TargetSlashOption({ entityType: COMMAND_ENTITY_TYPE.USER })
 		target: User | GuildMember,
 		@SlashOption({
 			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
@@ -137,7 +137,7 @@ export abstract class Ban {
 	@Slash({ description: "Unban a user from the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async unban(
-		@TargetSlashOption()
+		@TargetSlashOption({ entityType: COMMAND_ENTITY_TYPE.USER })
 		target: User | GuildMember,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,

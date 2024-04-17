@@ -1,4 +1,4 @@
-import { LIGHT_GOLD } from "@constants";
+import { COMMAND_ENTITY_TYPE, LIGHT_GOLD } from "@constants";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { TargetSlashOption } from "@helpers/decorators/slashOptions/target.js";
 import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
@@ -21,6 +21,7 @@ export abstract class Avatar {
 	@Slash({ description: "Display the server avatar of a user or global avatar otherwise" })
 	public server(
 		@TargetSlashOption({
+			entityType: COMMAND_ENTITY_TYPE.USER,
 			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
 		})
 		target: GuildMember | undefined,
@@ -45,6 +46,7 @@ export abstract class Avatar {
 	@Slash({ description: "Display the global avatar of a user" })
 	public global(
 		@TargetSlashOption({
+			entityType: COMMAND_ENTITY_TYPE.USER,
 			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
 		})
 		target: User | GuildMember | undefined,
