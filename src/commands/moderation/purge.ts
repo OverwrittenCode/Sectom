@@ -41,9 +41,9 @@ import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";
 
 interface PurgeHandlerOptions {
-	channel?: GuildTextBasedChannel;
 	count: number;
 	reason: string;
+	channel?: GuildTextBasedChannel;
 	inverse?: boolean;
 	target?: User | GuildMember | Role | Channel;
 	messageFilter?: (msg: Message<true>) => boolean;
@@ -59,13 +59,13 @@ const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 @Category(COMMAND_CATEGORY.MODERATION)
 @Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 @SlashGroup({
-	description: "purge messages in the channel with a filter",
+	description: "purge messages in the current or given channel with a filter",
 	name: "purge",
 	defaultMemberPermissions: mutualPermissions
 })
 @SlashGroup("purge")
 export abstract class Purge {
-	@Slash({ description: "purge all messages in the channel" })
+	@Slash({ description: "purge all messages in the current or given channel" })
 	public all(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -82,11 +82,11 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all or specific snowflake mention messages in the channel" })
+	@Slash({ description: "purge all or specific snowflake mention messages in the current or given channel" })
 	public mentions(
 		@TargetSlashOption({
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
 			entityType: COMMAND_ENTITY_TYPE.SNOWFLAKE,
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
 			required: false
 		})
 		target: User | GuildMember | Role | Channel | undefined,
@@ -117,53 +117,21 @@ export abstract class Purge {
 		}
 
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) =>
 				target ? msg.mentions.has(target) : messageMentionRegexArray.some((regex) => regex.test(msg.content))
 		});
 	}
 
-	@Slash({ description: "purge a specific user's messages in the channel" })
-	public user(
-		@SlashOption({
-			description: `The user mention or userId. Ex: 1090725120628111864. ${CommandUtils.generateSlashOptionTargetDescriptionSuffix(
-				[COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
-			)}`,
-			name: "user",
-			type: ApplicationCommandOptionType.User,
-			required: true
-		})
-		target: User | GuildMember,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@CountSlashOption()
-		count: number = DEFAULT_MESSAGE_FETCH_LIMIT,
-		@InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = NO_REASON,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			channel,
-			count,
-			reason,
-			inverse,
-			messageFilter: (msg) => msg.author.id === target.id
-		});
-	}
-
-	@Slash({ description: "purge all or a specific bot's messages in the channel" })
-	public bots(
-		@SlashOption({
-			description: `The user mention or userId. Ex: 1090725120628111864. ${CommandUtils.generateSlashOptionTargetDescriptionSuffix(
-				[COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
-			)}`,
-			name: "user",
-			type: ApplicationCommandOptionType.User
+	@Slash({ description: "purge all or a specific user's messages in the current or given channel" })
+	public users(
+		@TargetSlashOption({
+			entityType: COMMAND_ENTITY_TYPE.USER,
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
+			required: false
 		})
 		target: User | GuildMember | undefined,
 		@GivenChannelSlashOption()
@@ -177,19 +145,46 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
-			messageFilter: (msg) => msg.author.bot && (target ? msg.author.id === target.id : true)
+			messageFilter: (msg) => (target ? msg.author.id === target.id : !msg.author.bot)
 		});
 	}
 
-	@Slash({ description: "purge all messages of users with a given role in the channel" })
+	@Slash({ description: "purge all or a specific bot's messages in the current or given channel" })
+	public bots(
+		@TargetSlashOption({
+			entityType: COMMAND_ENTITY_TYPE.USER,
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
+			required: false
+		})
+		target: User | GuildMember | undefined,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@CountSlashOption()
+		count: number = DEFAULT_MESSAGE_FETCH_LIMIT,
+		@InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = NO_REASON,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => msg.author.bot && (!target || msg.author.id === target.id)
+		});
+	}
+
+	@Slash({ description: "purge all messages of users with a given role in the current or given channel" })
 	public role(
 		@TargetSlashOption({
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE],
-			entityType: COMMAND_ENTITY_TYPE.ROLE
+			entityType: COMMAND_ENTITY_TYPE.ROLE,
+			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
 		})
 		target: Role,
 		@GivenChannelSlashOption()
@@ -203,15 +198,17 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => !!msg.member?.roles.cache.has(target.id)
 		});
 	}
 
-	@Slash({ description: "purge all messages containing a given text (case insensitive) in the channel" })
+	@Slash({
+		description: "purge all messages containing a given text (case insensitive) in the current or given channel"
+	})
 	public wildcard(
 		@SlashOption({
 			description: "The text to match",
@@ -232,15 +229,18 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => msg.content.toLowerCase().includes(content)
 		});
 	}
 
-	@Slash({ description: "purge all messages that start with a given text (case insensitive) in the channel" })
+	@Slash({
+		description:
+			"purge all messages that start with a given text (case insensitive) in the current or given channel"
+	})
 	public startswith(
 		@SlashOption({
 			description: "The text to match",
@@ -261,15 +261,17 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => msg.content.toLowerCase().startsWith(content)
 		});
 	}
 
-	@Slash({ description: "purge all messages that ends with a given text (case insensitive) in the channel" })
+	@Slash({
+		description: "purge all messages that ends with a given text (case insensitive) in the current or given channel"
+	})
 	public endswith(
 		@SlashOption({
 			description: "The text to match",
@@ -290,15 +292,15 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => msg.content.toLowerCase().endsWith(content)
 		});
 	}
 
-	@Slash({ description: "purge all messages containing attachments in the channel" })
+	@Slash({ description: "purge all messages containing attachments in the current or given channel" })
 	public attachments(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -311,15 +313,15 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => !!msg.attachments.size
 		});
 	}
 
-	@Slash({ description: "purge all messages containing embeds in the channel" })
+	@Slash({ description: "purge all messages containing embeds in the current or given channel" })
 	public embeds(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -332,15 +334,15 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => !!msg.embeds.length
 		});
 	}
 
-	@Slash({ description: "purge all messages containing links in the channel" })
+	@Slash({ description: "purge all messages containing links in the current or given channel" })
 	public links(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -353,15 +355,15 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => !!LINK_REGEX.test(msg.content)
 		});
 	}
 
-	@Slash({ description: "purge all messages containing discord invites in the channel" })
+	@Slash({ description: "purge all messages containing discord invites in the current or given channel" })
 	public invites(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -374,9 +376,9 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => [INVITE_REGEX, BOT_INVITE_REGEX].some((regex) => regex.test(msg.content))
 		});
@@ -395,16 +397,16 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) =>
 				[FormattingPatterns.Emoji, UNICODE_EMOJI_REGEX].some((regex) => regex.test(msg.content))
 		});
 	}
 
-	@Slash({ description: "purge all messages before a given messageId in the channel" })
+	@Slash({ description: "purge all messages before a given messageId in the current or given channel" })
 	public async before(
 		@SlashOption({
 			description: "The messageId to match",
@@ -442,15 +444,15 @@ export abstract class Purge {
 		}
 
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => msg.createdTimestamp < message.createdTimestamp
 		});
 	}
 
-	@Slash({ description: "purge all messages after a given messageId in the channel" })
+	@Slash({ description: "purge all messages after a given messageId in the current or given channel" })
 	public async after(
 		@SlashOption({
 			description: "The messageId to match",
@@ -488,9 +490,9 @@ export abstract class Purge {
 		}
 
 		return this.handler(interaction, {
-			channel,
 			count,
 			reason,
+			channel,
 			inverse,
 			messageFilter: (msg) => msg.createdTimestamp > message.createdTimestamp
 		});
@@ -546,7 +548,7 @@ export abstract class Purge {
 				? "No messages were deleted"
 				: `Successfully deleted ${deletedSuccessCount} / ${count} messages`;
 
-		messageContent += purgeChannel.id !== channel?.id ? ` in ${channelMention(purgeChannel.id)}.` : ".";
+		messageContent += purgeChannel.id !== interaction.channelId ? ` in ${channelMention(purgeChannel.id)}.` : ".";
 
 		if (deletedSuccessCount) {
 			return await ActionModerationManager.logCase({
