@@ -2,15 +2,16 @@ import "@total-typescript/ts-reset";
 import assert from "assert";
 import "reflect-metadata";
 
-import { BOT_ID, GUILD_IDS } from "@constants";
 import { dirname, importx } from "@discordx/importer";
 import { NotBot } from "@discordx/utilities";
-import { Beans } from "@framework/DI/Beans.js";
-import { DBConnectionManager } from "@managers/DBConnectionManager.js";
 import { ActivityType, IntentsBitField, Partials } from "discord.js";
 import { type ArgsOf, Client, DIService, Discord, On, tsyringeDependencyRegistryEngine } from "discordx";
 import dotenv from "dotenv";
 import { container } from "tsyringe";
+
+import { BOT_ID, GUILD_IDS } from "~/constants";
+import { Beans } from "~/framework/DI/Beans.js";
+import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 
 dotenv.config();
 

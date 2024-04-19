@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-import type { Typings } from "@ts/Typings.js";
+import type { Typings } from "~/ts/Typings.js";
 
 export abstract class StringUtils {
 	public static isValidString(str: any): str is string {

@@ -1,5 +1,6 @@
-import { FIELD_NAME_SEPARATOR, LINE_BREAK, TAB_CHARACTER } from "@constants";
 import { type APIEmbedField, type EmbedBuilder, bold } from "discord.js";
+
+import { FIELD_NAME_SEPARATOR, LINE_BREAK, TAB_CHARACTER } from "~/constants";
 
 interface BaseField extends Omit<APIEmbedField, "inline"> {}
 

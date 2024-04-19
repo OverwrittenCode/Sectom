@@ -1,10 +1,12 @@
-import { Beans } from "@framework/DI/Beans.js";
-import { GuildManager } from "@managers/GuildManager.js";
-import type { PrismaClient } from "@prisma/client";
 import { EntityType, Prisma } from "@prisma/client";
 import canvacord from "canvacord";
 import { AttachmentBuilder, Colors, type Message } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
+
+import { Beans } from "~/framework/DI/Beans.js";
+import { GuildManager } from "~/managers/GuildManager.js";
+
+import type { PrismaClient } from "@prisma/client";
 
 @singleton()
 export class LevelingInstanceMethods {

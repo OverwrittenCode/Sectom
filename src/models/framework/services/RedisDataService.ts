@@ -1,7 +1,9 @@
-import type { Prisma } from "@prisma/client";
-import type { Typings } from "@ts/Typings.js";
-import { ObjectUtils } from "@utils/object.js";
 import pkg from "lodash";
+
+import type { Typings } from "~/ts/Typings.js";
+import { ObjectUtils } from "~/utils/object.js";
+
+import type { Prisma } from "@prisma/client";
 import type { Entries } from "type-fest";
 
 const { isEmpty } = pkg;

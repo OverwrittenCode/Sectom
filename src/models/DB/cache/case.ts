@@ -1,7 +1,9 @@
-import { RedisCacheManager } from "@managers/RedisCacheManager.js";
-import type { Typings } from "@ts/Typings.js";
-import type { ChatInputCommandInteraction } from "discord.js";
 import { singleton } from "tsyringe";
+
+import { RedisCacheManager } from "~/managers/RedisCacheManager.js";
+import type { Typings } from "~/ts/Typings.js";
+
+import type { ChatInputCommandInteraction } from "discord.js";
 
 interface PermissionResponse {
 	cacheHit: boolean;

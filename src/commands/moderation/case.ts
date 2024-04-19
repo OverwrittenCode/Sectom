@@ -1,15 +1,6 @@
-import { LIGHT_GOLD, LINE_BREAK } from "@constants";
 import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "@discordjs/builders";
-import type { PaginationItem } from "@discordx/pagination";
 import { Pagination, PaginationType } from "@discordx/pagination";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { DBConnectionManager } from "@managers/DBConnectionManager.js";
-import { RedisCache } from "@models/DB/cache/index.js";
-import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
-import type { Typings } from "@ts/Typings.js";
-import { InteractionUtils } from "@utils/interaction.js";
-import { ObjectUtils } from "@utils/object.js";
-import type { ChatInputCommandInteraction } from "discord.js";
 import {
 	ApplicationCommandOptionType,
 	ComponentType,
@@ -21,6 +12,17 @@ import {
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";
+
+import { LIGHT_GOLD, LINE_BREAK } from "~/constants";
+import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
+import { RedisCache } from "~/models/DB/cache/index.js";
+import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
+import type { Typings } from "~/ts/Typings.js";
+import { InteractionUtils } from "~/utils/interaction.js";
+import { ObjectUtils } from "~/utils/object.js";
+
+import type { PaginationItem } from "@discordx/pagination";
+import type { ChatInputCommandInteraction } from "discord.js";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 

@@ -1,5 +1,6 @@
-import type { FactoryFunction, InjectionToken } from "tsyringe";
 import { instanceCachingFactory } from "tsyringe";
+
+import type { FactoryFunction, InjectionToken } from "tsyringe";
 import type constructor from "tsyringe/dist/typings/types/constructor.js";
 
 export function getInstanceCashingSingletonFactory<T>(clazz: InjectionToken<T>): FactoryFunction<T> {

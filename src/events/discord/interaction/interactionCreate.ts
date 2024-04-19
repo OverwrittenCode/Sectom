@@ -1,21 +1,23 @@
 import assert from "assert";
 
+import { AutocompleteInteraction, Colors, ComponentType, EmbedBuilder } from "discord.js";
+import { Discord, On } from "discordx";
+import { container, injectable } from "tsyringe";
+
 import {
 	BUTTON_SUFFIX_CANCEL_ACTION,
 	BUTTON_SUFFIX_CONFIRMATION_ARRAY,
 	INTERACTION,
 	MAX_DEFER_RESPONSE_WAIT
-} from "@constants";
-import { Beans } from "@framework/DI/Beans.js";
-import { ValidationError } from "@helpers/errors/ValidationError.js";
-import { DBConnectionManager } from "@managers/DBConnectionManager.js";
-import { RedisCache } from "@models/DB/cache/index.js";
-import { InteractionUtils } from "@utils/interaction.js";
+} from "~/constants";
+import { Beans } from "~/framework/DI/Beans.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
+import { RedisCache } from "~/models/DB/cache/index.js";
+import { InteractionUtils } from "~/utils/interaction.js";
+
 import type { APIActionRowComponent, APIButtonComponent } from "discord.js";
-import { AutocompleteInteraction, Colors, ComponentType, EmbedBuilder } from "discord.js";
 import type { ArgsOf, Client } from "discordx";
-import { Discord, On } from "discordx";
-import { container, injectable } from "tsyringe";
 
 const {
 	ID: {

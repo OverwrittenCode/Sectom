@@ -1,8 +1,10 @@
-import { DBConnectionManager } from "@managers/DBConnectionManager.js";
-import { RedisCache } from "@models/DB/cache/index.js";
 import { Prisma } from "@prisma/client";
+
+import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
+import { RedisCache } from "~/models/DB/cache/index.js";
+import type { Typings } from "~/ts/Typings.js";
+
 import type { PulseCreateEvent, PulseDeleteEvent, PulseUpdateEvent } from "@prisma/extension-pulse";
-import type { Typings } from "@ts/Typings.js";
 
 type PrismaDoc<M extends Prisma.ModelName = Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 type BasePulseEvent<M extends Prisma.ModelName = Prisma.ModelName> =

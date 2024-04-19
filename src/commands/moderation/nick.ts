@@ -1,13 +1,5 @@
-import { NO_REASON } from "@constants";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { ReasonSlashOption } from "@helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "@helpers/decorators/slashOptions/target.js";
-import { BotRequiredPermissions } from "@helpers/guards/BotRequiredPermissions.js";
-import { ActionModerationManager } from "@managers/ActionModerationManager.js";
 import { CaseActionType, EntityType } from "@prisma/client";
-import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
-import { InteractionUtils } from "@utils/interaction.js";
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,
@@ -17,6 +9,15 @@ import {
 	userMention
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
+
+import { NO_REASON } from "~/constants";
+import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
+import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
+import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
+import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { InteractionUtils } from "~/utils/interaction.js";
 
 const mutualPermissions = [PermissionFlagsBits.ManageNicknames];
 

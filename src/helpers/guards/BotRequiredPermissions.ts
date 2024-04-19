@@ -1,11 +1,13 @@
 import assert from "assert";
 
-import { COMMAND_OPTION_NAME_CHANNEL_PERMISSION } from "@constants";
 import { EmbedBuilder } from "@discordjs/builders";
-import { InteractionUtils } from "@utils/interaction.js";
-import type { CommandInteraction, PermissionFlags } from "discord.js";
 import { Colors, bold, unorderedList } from "discord.js";
 import { type GuardFunction } from "discordx";
+
+import { COMMAND_OPTION_NAME_CHANNEL_PERMISSION } from "~/constants";
+import { InteractionUtils } from "~/utils/interaction.js";
+
+import type { CommandInteraction, PermissionFlags } from "discord.js";
 
 type BotPermissions = PermissionFlags[keyof PermissionFlags];
 

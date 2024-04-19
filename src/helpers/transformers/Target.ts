@@ -1,10 +1,12 @@
 import assert from "assert";
 
-import { ValidationError } from "@helpers/errors/ValidationError.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
-import type { Typings } from "@ts/Typings.js";
-import type { ChatInputCommandInteraction } from "discord.js";
 import { GuildMember, Role, User } from "discord.js";
+
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import type { Typings } from "~/ts/Typings.js";
+
+import type { ChatInputCommandInteraction } from "discord.js";
 
 type ParsedTargetEntityType = Typings.EntityObjectType | string;
 

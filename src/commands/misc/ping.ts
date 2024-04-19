@@ -1,7 +1,9 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
-import type { ChatInputCommandInteraction } from "discord.js";
 import { Discord, Guard, Slash } from "discordx";
+
+import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
+
+import type { ChatInputCommandInteraction } from "discord.js";
 
 @Discord()
 @Category(COMMAND_CATEGORY.MISC)

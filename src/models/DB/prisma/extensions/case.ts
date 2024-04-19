@@ -1,10 +1,12 @@
-import { LINE_BREAK, TAB_CHARACTER } from "@constants";
-import type { Prisma } from "@prisma/client";
 import { EntityType } from "@prisma/client";
 import { TimestampStyles, time } from "discord.js";
 import { container, singleton } from "tsyringe";
 
+import { TAB_CHARACTER } from "~/constants";
+
 import { EntityInstanceMethods } from "./entity.js";
+
+import type { Prisma } from "@prisma/client";
 
 interface RelationFieldOptions {
 	guildId: string;

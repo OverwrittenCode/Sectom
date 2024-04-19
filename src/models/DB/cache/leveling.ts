@@ -1,12 +1,13 @@
 import assert from "assert";
 
-import { GuildManager } from "@managers/GuildManager.js";
-import { RedisCacheManager } from "@managers/RedisCacheManager.js";
 import { EntityType } from "@prisma/client";
-import type { Typings } from "@ts/Typings.js";
 import canvacord from "canvacord";
 import { AttachmentBuilder, Colors, type Message } from "discord.js";
 import { container, singleton } from "tsyringe";
+
+import { GuildManager } from "~/managers/GuildManager.js";
+import { RedisCacheManager } from "~/managers/RedisCacheManager.js";
+import type { Typings } from "~/ts/Typings.js";
 
 import { EntityRedisCache } from "./entity.js";
 

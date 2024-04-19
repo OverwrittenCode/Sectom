@@ -1,8 +1,9 @@
 import assert from "assert";
 
-import { NO_DATA_MESSAGE } from "@constants";
-import type { Typings } from "@ts/Typings.js";
 import { DiscordAPIError, DiscordjsError, DiscordjsErrorCodes, type InteractionReplyOptions } from "discord.js";
+
+import { NO_DATA_MESSAGE } from "~/constants";
+import type { Typings } from "~/ts/Typings.js";
 
 type ReplyOptions = InteractionReplyOptions & { ephemeral?: boolean };
 

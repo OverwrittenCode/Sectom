@@ -2,25 +2,25 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
-			"@managers/*": [
+			"~/managers/*": [
 				"src/models/framework/manager/*"
 			],
-			"@framework/*": [
+			"~/framework/*": [
 				"src/models/framework/*"
 			],
-			"@models/*": [
+			"~/models/*": [
 				"src/models/*"
 			],
-			"@ts/*": [
+			"~/ts/*": [
 				"src/ts/*"
 			],
-			"@utils/*": [
+			"~/utils/*": [
 				"src/utils/*"
 			],
-			"@constants": [
+			"~/constants": [
 				"src/constants.js"
 			],
-			"@helpers/*": [
+			"~/helpers/*": [
 				"src/helpers/*"
 			]
 		},

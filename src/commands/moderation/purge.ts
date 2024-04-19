@@ -1,3 +1,15 @@
+import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { CaseActionType } from "@prisma/client";
+import {
+	ApplicationCommandOptionType,
+	FormattingPatterns,
+	MessageMentions,
+	PermissionFlagsBits,
+	channelMention
+} from "discord.js";
+import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
+import ms from "ms";
+
 import {
 	BOT_INVITE_REGEX,
 	COMMAND_ENTITY_TYPE,
@@ -10,17 +22,16 @@ import {
 	NO_REASON,
 	SNOWFLAKE_REGEX,
 	UNICODE_EMOJI_REGEX
-} from "@constants";
-import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { ReasonSlashOption } from "@helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "@helpers/decorators/slashOptions/target.js";
-import { BotRequiredPermissions } from "@helpers/guards/BotRequiredPermissions.js";
-import { ActionModerationManager } from "@managers/ActionModerationManager.js";
-import { CaseActionType } from "@prisma/client";
-import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
-import { InteractionUtils } from "@utils/interaction.js";
-import { NumberUtils } from "@utils/number.js";
+} from "~/constants";
+import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
+import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
+import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
+import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { InteractionUtils } from "~/utils/interaction.js";
+import { NumberUtils } from "~/utils/number.js";
+
 import type {
 	Channel,
 	ChatInputCommandInteraction,
@@ -30,15 +41,6 @@ import type {
 	Role,
 	User
 } from "discord.js";
-import {
-	ApplicationCommandOptionType,
-	FormattingPatterns,
-	MessageMentions,
-	PermissionFlagsBits,
-	channelMention
-} from "discord.js";
-import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
-import ms from "ms";
 
 interface PurgeHandlerOptions {
 	count: number;

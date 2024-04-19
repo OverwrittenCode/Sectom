@@ -1,10 +1,12 @@
-import type { COMMAND_ENTITY_TYPE } from "@constants";
-import { TargetTransformer } from "@helpers/transformers/Target.js";
-import type { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "@ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
-import { StringUtils } from "@utils/string.js";
 import { ApplicationCommandOptionType, ChannelType } from "discord.js";
-import type { SlashOptionOptions } from "discordx";
 import { SlashOption } from "discordx";
+
+import type { COMMAND_ENTITY_TYPE } from "~/constants";
+import { TargetTransformer } from "~/helpers/transformers/Target.js";
+import type { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { StringUtils } from "~/utils/string.js";
+
+import type { SlashOptionOptions } from "discordx";
 
 interface TargetSlashOptionArguments {
 	entityType: keyof typeof COMMAND_ENTITY_TYPE;

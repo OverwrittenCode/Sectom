@@ -1,4 +1,3 @@
-import type { Typings } from "@ts/Typings.js";
 import Discord, {
 	type GuildBasedChannel,
 	type GuildMember,
@@ -7,6 +6,8 @@ import Discord, {
 	channelLink,
 	hyperlink
 } from "discord.js";
+
+import type { Typings } from "~/ts/Typings.js";
 
 type GuildEntityType = "member" | "user" | "role" | "channel";
 type EntityType = Exclude<GuildEntityType, "member">;

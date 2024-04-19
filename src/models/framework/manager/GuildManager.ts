@@ -1,8 +1,10 @@
 import assert from "assert";
 
-import type { Typings } from "@ts/Typings.js";
-import type { Message, User } from "discord.js";
 import { ChannelType, type Guild, type GuildBasedChannel, GuildMember, type Role, type TextChannel } from "discord.js";
+
+import type { Typings } from "~/ts/Typings.js";
+
+import type { Message } from "discord.js";
 
 type GuildEntityType = "user" | "role" | "channel";
 type EntityObjectType<T extends GuildEntityType> = T extends "user"

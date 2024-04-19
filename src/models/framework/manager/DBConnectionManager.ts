@@ -1,10 +1,11 @@
 import assert from "assert";
 
-import { PrismaExtensions } from "@models/DB/prisma/extensions/index.js";
 import { PrismaClient } from "@prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { withPulse } from "@prisma/extension-pulse";
 import { Redis as RedisClient } from "@upstash/redis";
+
+import { PrismaExtensions } from "~/models/DB/prisma/extensions/index.js";
 
 export abstract class DBConnectionManager {
 	public static Redis: RedisClient;

@@ -1,4 +1,5 @@
 import { type Prisma as _Prisma } from "@prisma/client";
+
 import type { Index, Query } from "@upstash/query";
 import type {
 	ButtonInteraction,

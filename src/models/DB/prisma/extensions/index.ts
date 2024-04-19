@@ -1,12 +1,14 @@
-import { Beans } from "@framework/DI/Beans.js";
-import type { PrismaClient } from "@prisma/client";
 import { Prisma } from "@prisma/client";
-import type { Typings } from "@ts/Typings.js";
 import { container } from "tsyringe";
+
+import { Beans } from "~/framework/DI/Beans.js";
+import type { Typings } from "~/ts/Typings.js";
 
 import { CaseInstanceMethods } from "./case.js";
 import { EntityInstanceMethods } from "./entity.js";
 import { LevelingInstanceMethods } from "./leveling.js";
+
+import type { PrismaClient } from "@prisma/client";
 
 interface $NameCTX<M extends Prisma.ModelName = Prisma.ModelName> {
 	$name: M;
