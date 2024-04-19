@@ -12,6 +12,8 @@ import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
 
+import { DurationTransformer } from "../../helpers/transformers/Duration.js";
+
 const mutualPermissions = [PermissionFlagsBits.ModerateMembers];
 @Discord()
 @Category(COMMAND_CATEGORY.MODERATION)
@@ -30,23 +32,14 @@ export abstract class Timeout {
 			description: "The duration of the timeout. Ex: (30m, 1h, 1 day)",
 			name: "duration",
 			type: ApplicationCommandOptionType.String,
-			required: true
+			required: true,
+			transformer: DurationTransformer({ min: "5s", max: "28d" })
 		})
-		duration: string,
+		msDuration: number,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const msDuration = await ActionModerationManager.validateMsDuration(interaction, {
-			duration,
-			min: "5s",
-			max: "28d"
-		});
-
-		if (msDuration === null) {
-			return;
-		}
-
 		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
 
 		const actionType = target.isCommunicationDisabled()
@@ -63,7 +56,7 @@ export abstract class Timeout {
 			actionType,
 			actionOptions: {
 				pastTense: "timed out",
-				msDuration: msDuration,
+				msDuration,
 				checkPossible: this.checkPossible,
 				pendingExecution: () => target.timeout(msDuration, auditReason)
 			}

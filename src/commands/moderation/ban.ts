@@ -11,6 +11,8 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
 
+import { DurationTransformer } from "../../helpers/transformers/Duration.js";
+
 const mutualPermissions = [PermissionFlagsBits.BanMembers];
 
 @Discord()
@@ -24,24 +26,14 @@ export abstract class Ban {
 		@SlashOption({
 			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
 			name: "prune_messages_duration",
-			type: ApplicationCommandOptionType.String
+			type: ApplicationCommandOptionType.String,
+			transformer: DurationTransformer({ max: "7d" })
 		})
-		prune_messages_duration: string | undefined,
+		msDuration: number | undefined,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const msDuration = prune_messages_duration
-			? await ActionModerationManager.validateMsDuration(interaction, {
-					duration: prune_messages_duration,
-					max: "7d"
-				})
-			: undefined;
-
-		if (msDuration === null) {
-			return;
-		}
-
 		const isTargetBanned = await this.isTargetBanned(interaction, target);
 		if (isTargetBanned) {
 			return await InteractionUtils.replyOrFollowUp(interaction, {
@@ -83,22 +75,14 @@ export abstract class Ban {
 			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
 			name: "prune_messages_duration",
 			type: ApplicationCommandOptionType.String,
-			required: true
+			required: true,
+			transformer: DurationTransformer({ max: "7d" })
 		})
-		prune_messages_duration: string,
+		msDuration: number,
 		@ReasonSlashOption()
 		reason: string = NO_REASON,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const msDuration = await ActionModerationManager.validateMsDuration(interaction, {
-			duration: prune_messages_duration,
-			max: "7d"
-		});
-
-		if (msDuration === null) {
-			return;
-		}
-
 		const isTargetBanned = await this.isTargetBanned(interaction, target);
 		if (isTargetBanned) {
 			return await InteractionUtils.replyOrFollowUp(interaction, {
