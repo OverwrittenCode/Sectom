@@ -2,26 +2,17 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
+			"~/*": [
+				"src/*"
+			],
 			"~/managers/*": [
 				"src/models/framework/manager/*"
 			],
 			"~/framework/*": [
 				"src/models/framework/*"
 			],
-			"~/models/*": [
-				"src/models/*"
-			],
-			"~/ts/*": [
-				"src/ts/*"
-			],
-			"~/utils/*": [
-				"src/utils/*"
-			],
 			"~/constants": [
-				"src/constants.js"
-			],
-			"~/helpers/*": [
-				"src/helpers/*"
+				"src/constants"
 			]
 		},
 		"target": "ESNext",
