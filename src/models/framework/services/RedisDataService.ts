@@ -8,7 +8,6 @@ import type { Entries } from "type-fest";
 
 const { isEmpty } = pkg;
 
-// type PrismaDoc<M extends Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 interface RedisRecord<M extends Prisma.ModelName = Prisma.ModelName> {
 	id: string;
 	data: Typings.Database.Redis.RetrieveModelDocument<M>;

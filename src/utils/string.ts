@@ -21,14 +21,6 @@ export abstract class StringUtils {
 		}
 		return result as Typings.Concatenate<T>;
 	}
-	public static findNextWord<const T extends string, const U extends string, const S extends string = " ">(
-		str: T,
-		searchWord: U,
-		splitBy?: S
-	) {
-		const words = str.split(splitBy || " ");
-		return words[words.findIndex((word) => word === searchWord) + 1];
-	}
 
 	public static GenerateID(len: number | Buffer = 16, buf?: Buffer): string {
 		if (Buffer.isBuffer(len)) {
@@ -42,10 +34,5 @@ export abstract class StringUtils {
 		}
 
 		return buf.toString("hex").slice(0, len);
-	}
-
-	public static intToHex(value: number): string {
-		const hexValue = "#" + value.toString(16);
-		return hexValue;
 	}
 }
