@@ -3,6 +3,7 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ReasonSlashOption } from "@helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "@helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "@helpers/guards/BotRequiredPermissions.js";
+import { DurationTransformer } from "@helpers/transformers/Duration.js";
 import { ActionModerationManager } from "@managers/ActionModerationManager.js";
 import { CaseActionType, EntityType } from "@prisma/client";
 import { COMMAND_CATEGORY } from "@ts/enums/COMMAND_CATEGORY.js";
@@ -10,8 +11,6 @@ import { InteractionUtils } from "@utils/interaction.js";
 import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
-
-import { DurationTransformer } from "../../helpers/transformers/Duration.js";
 
 const mutualPermissions = [PermissionFlagsBits.BanMembers];
 

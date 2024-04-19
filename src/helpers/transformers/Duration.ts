@@ -1,11 +1,10 @@
 import assert from "assert";
 
+import { NUMBER_REGEX } from "@constants";
+import { ValidationError } from "@helpers/errors/ValidationError.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 import ms from "ms";
 import prettyMilliseconds from "pretty-ms";
-
-import { NUMBER_REGEX } from "../../constants.js";
-import { ValidationError } from "../errors/ValidationError.js";
 
 interface MSValidateOptions {
 	min?: string;
