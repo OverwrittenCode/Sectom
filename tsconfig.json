@@ -6,7 +6,7 @@
 				"src/*"
 			],
 			"~/managers/*": [
-				"src/models/framework/manager/*"
+				"src/models/framework/managers/*"
 			],
 			"~/framework/*": [
 				"src/models/framework/*"
