@@ -1,24 +1,27 @@
 import assert from "assert";
 
-import { AutocompleteInteraction, Colors, ComponentType, EmbedBuilder } from "discord.js";
+import { AutocompleteInteraction } from "discord.js";
 import { Discord, On } from "discordx";
-import { container, injectable } from "tsyringe";
+import { container } from "tsyringe";
 
+import { MAX_DEFER_RESPONSE_WAIT } from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
+import { Enums } from "~/ts/Enums.js";
+import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { StringUtils } from "~/utils/string.js";
 
 import type { ArgsOf, Client } from "discordx";
 
 @Discord()
-@injectable()
-export class InteractionCreate {
+export abstract class InteractionCreate {
 	@On({ event: "interactionCreate" })
 	async interactionCreate([interaction]: ArgsOf<"interactionCreate">) {
 		const start = Date.now();
+
 		assert(interaction.inCachedGuild());
 
 		const isCacheHit = await RedisCache.guild.collection.get(interaction.guildId).then(Boolean);
@@ -33,7 +36,8 @@ export class InteractionCreate {
 			if (!guildRecord) {
 				await DBConnectionManager.Prisma.guild.create({
 					data: {
-						id: interaction.guildId
+						id: interaction.guildId,
+						configuration: DBConnectionManager.Defaults.Configuration
 					},
 					select: {
 						id: true
@@ -55,7 +59,6 @@ export class InteractionCreate {
 				return;
 			}
 
-			await interaction.deferUpdate();
 			const disableOnClickButtonArray = [
 				messageComponentIds.CancelAction,
 				messageComponentIds.ConfirmAction,
@@ -91,32 +94,15 @@ export class InteractionCreate {
 
 		const bot = container.resolve<Client>(Beans.ISectomToken);
 
-		const end = Date.now();
-
-		const timeElapsed = end - start;
-		const setTimeoutDelay = MAX_DEFER_RESPONSE_WAIT - timeElapsed;
-
-		const autoDeferInteractionPromise = new Promise<"OK">((resolve) => {
-			if (interaction.isChatInputCommand()) {
-				this.sleep(setTimeoutDelay).then(() => {
-					if (!interaction.replied && !interaction.deferred) {
-						interaction
-							.deferReply()
-							.catch(() => {})
-							.then(() => {
-								resolve("OK");
-							});
-					}
-				});
-			}
-		});
-
 		try {
-			await Promise.all([bot.executeInteraction(interaction), autoDeferInteractionPromise]);
+			await Promise.all([
+				this.autoDeferInteraction(interaction, Date.now() - start),
+				bot.executeInteraction(interaction)
+			]);
 		} catch (err) {
 			if (err instanceof ValidationError && !(interaction instanceof AutocompleteInteraction)) {
 				return await InteractionUtils.replyOrFollowUp(interaction, {
-					content: `Validation Error: ${err.message}`,
+					content: err.message,
 					ephemeral: true
 				});
 			}
@@ -125,7 +111,23 @@ export class InteractionCreate {
 		}
 	}
 
-	private sleep(ms: number) {
-		return new Promise((resolve) => setTimeout(resolve, ms));
+	private async autoDeferInteraction(interaction: Typings.CachedGuildInteraction, timeElapsed: number) {
+		if (interaction.isModalSubmit()) {
+			return await interaction.deferReply({ ephemeral: true }).catch(() => {});
+		}
+
+		const isDeferrableInteraction =
+			interaction.isChatInputCommand() ||
+			(interaction.isMessageComponent() && !interaction.customId.includes(Enums.MessageComponentType.Modal));
+
+		if (!isDeferrableInteraction) {
+			return null;
+		}
+
+		const setTimeoutDelay = MAX_DEFER_RESPONSE_WAIT - timeElapsed;
+
+		await new Promise((resolve) => setTimeout(resolve, setTimeoutDelay));
+
+		return await InteractionUtils.deferInteraction(interaction);
 	}
 }

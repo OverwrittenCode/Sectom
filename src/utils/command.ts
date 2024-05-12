@@ -11,6 +11,11 @@ export abstract class CommandUtils {
 		DisableChoice: "disable"
 	} as const;
 
+	public static DurationLimits = {
+		Timeout: { min: "5s", max: "28d" },
+		Warn: { min: "1m", max: "90d" },
+		Ban: { max: "7d" }
+	} as const;
 
 	public static retrieveCommandInteractionOptions(interaction: CommandInteraction): CommandInteractionOption[] {
 		return interaction.options.data.flatMap((data) =>

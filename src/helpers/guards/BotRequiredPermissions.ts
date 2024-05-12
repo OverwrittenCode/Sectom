@@ -8,34 +8,35 @@ import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ButtonInteraction, CommandInteraction, PermissionResolvable } from "discord.js";
 
-type BotPermissions = PermissionFlags[keyof PermissionFlags];
-
-export function BotRequiredPermissions(permissions: BotPermissions[]): GuardFunction<CommandInteraction> {
+export function BotRequiredPermissions<T = CommandInteraction>(permissions: PermissionResolvable[]): GuardFunction<T> {
 	const description = "I cannot perform this action: insufficient permissions.";
 
 	const missingPermissionEmbed = new EmbedBuilder().setColor(Colors.Red).setDescription(description);
 
-	const guard: GuardFunction<CommandInteraction> = async (interaction, client, next) => {
+	const guard: GuardFunction<CommandInteraction | ButtonInteraction> = async (interaction, client, next) => {
 		assert(
-			interaction.isChatInputCommand() &&
-				interaction.command &&
+			interaction.inCachedGuild() &&
 				interaction.channel &&
-				interaction.inCachedGuild()
+				(!interaction.isChatInputCommand() || interaction.command)
 		);
 
-		const permissionChannelId =
-			interaction.options.data
-				.flatMap((data) =>
-					data.options
-						? data.options.some((o) => !!o.options)
-							? data.options.flatMap((o) => o.options ?? [o])
-							: data.options
-						: [data]
-				)
-				.find((data) => data.name === COMMAND_OPTION_NAME_CHANNEL_PERMISSION)
-				?.value?.toString() ?? interaction.channelId;
+		let permissionChannelId = interaction.channelId;
 
-		const me = interaction.guild.members.me ?? (await interaction.guild.members.fetchMe());
+		if (interaction.isChatInputCommand()) {
+			permissionChannelId =
+				interaction.options.data
+					.flatMap((data) =>
+						data.options
+							? data.options.some((o) => !!o.options)
+								? data.options.flatMap((o) => o.options ?? [o])
+								: data.options
+							: [data]
+					)
+					.find((data) => data.name === CommandUtils.SlashOptions.ChannelPermissionName)
+					?.value?.toString() ?? interaction.channelId;
+		}
+
+		const me = await interaction.guild.members.fetchMe();
 
 		const myCurrentPermissions = me.permissionsIn(permissionChannelId);
 		const missingPermissions = unorderedList(myCurrentPermissions.missing(permissions).map((str) => bold(str)));
@@ -47,12 +48,13 @@ export function BotRequiredPermissions(permissions: BotPermissions[]): GuardFunc
 			});
 
 			return await InteractionUtils.replyOrFollowUp(interaction, {
-				embeds: [missingPermissionEmbed]
+				embeds: [missingPermissionEmbed],
+				ephemeral: !interaction.isChatInputCommand()
 			});
 		}
 
 		await next();
 	};
 
-	return guard;
+	return guard as GuardFunction<T>;
 }

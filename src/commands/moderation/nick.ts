@@ -2,13 +2,11 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
 	ApplicationCommandOptionType,
-	type ChatInputCommandInteraction,
-	type GuildMember,
 	PermissionFlagsBits,
 	inlineCode,
-	userMention
 	userMention,
 	type ChatInputCommandInteraction,
+	type GuildMember
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
@@ -49,17 +47,15 @@ export abstract class Nick {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
-		return ActionModerationManager.logCase({
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType: CaseActionType.NICK_USER_SET,
-			messageContent: `Successfully nicknamed ${userMention(target.id)} as ${inlineCode(nickname)}.`,
 			actionType: ActionType.NICK_USER_SET,
 			successContent: `nicknamed ${userMention(target.id)} as ${inlineCode(nickname)}`,
 			actionOptions: {
@@ -86,15 +82,16 @@ export abstract class Nick {
 			});
 		}
 
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType: CaseActionType.NICK_USER_RESET,
+			actionType: ActionType.NICK_USER_RESET,
 			actionOptions: {
 				pastTense: "reset the nickname of",
 				pendingExecution: () => target.setNickname(null, auditReason)

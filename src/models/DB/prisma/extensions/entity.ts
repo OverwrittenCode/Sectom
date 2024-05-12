@@ -1,16 +1,16 @@
 import assert from "assert";
 
-import pkg from "lodash";
+import { ActionType } from "@prisma/client";
+import { TextChannel } from "discord.js";
 import { inject, singleton } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
-import { GuildManager } from "~/managers/GuildManager.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
+import type { Typings } from "~/ts/Typings.js";
 
-import type { EntityType, LogChannelGuildType, Prisma, PrismaClient } from "@prisma/client";
-import type { ButtonInteraction, CommandInteraction, TextChannel } from "discord.js";
+import type { EntityType, Prisma, PrismaClient } from "@prisma/client";
 
-const { first } = pkg;
 interface CreateOptions extends Pick<Prisma.CaseCreateInput, "guild"> {
 	id: string;
 	type: EntityType;
@@ -32,6 +32,10 @@ interface ConnectOrCreate {
 @singleton()
 export class EntityInstanceMethods {
 	private client: PrismaClient;
+	private retrieveAllGuildLogChannelSelect = {
+		id: true,
+		logChannelType: true
+	} as const satisfies Prisma.EntitySelectScalar;
 	constructor(
 		@inject(Beans.IExtensionInstanceMethods)
 		_client: PrismaClient
@@ -56,32 +60,58 @@ export class EntityInstanceMethods {
 		};
 	}
 
-	public async retrieveGuildLogChannel(
-		interaction: CommandInteraction<"cached"> | ButtonInteraction<"cached">,
-		logChannelGuildType: LogChannelGuildType
-	): Promise<TextChannel> {
+	public async retrieveGivenGuildLogChannel(
+		interaction: Typings.CachedGuildInteraction,
+		givenGuildLogChannelType: ActionType | null = null
+	): Promise<TextChannel | null> {
 		const { guildId, channel } = interaction;
 		assert(channel);
 
+		const omittedAccessModifier = givenGuildLogChannelType?.substring(0, givenGuildLogChannelType.lastIndexOf("_"));
+
 		const moderativeLogWhereFilter = {
-			guildId,
-			logChannelGuildType
+			logChannelGuildId: guildId
 		} satisfies Prisma.EntityWhereInput;
 
-		const moderativeLogChannelQuery =
-			(await RedisCache.entity.indexes.byGuildIdAndLogChannelGuildType
-				.match(moderativeLogWhereFilter)
-				.then(first)) ??
-			(await this.client.entity.findFirst({
-				where: moderativeLogWhereFilter,
+		let moderativeLogChannelId: string | undefined | null = null;
+		const cacheRecords = await RedisCache.entity.retrieveDocuments(moderativeLogWhereFilter);
+
+		if (cacheRecords.length) {
+			moderativeLogChannelId = cacheRecords.find(
+				({ logChannelType }) =>
+					(givenGuildLogChannelType
+						? logChannelType?.startsWith(omittedAccessModifier!)
+						: givenGuildLogChannelType === logChannelType) || logChannelType === null
+			)?.id;
+		} else {
+			let logChannelTypeArraySearch: Prisma.EntityWhereInput["logChannelType"] = null;
+
+			if (givenGuildLogChannelType) {
+				logChannelTypeArraySearch = {
+					in: Object.values(ActionType).filter((caseActionType) =>
+						caseActionType.startsWith(omittedAccessModifier!)
+					)
+				};
+			}
+
+			const prismaDoc = await this.client.entity.findFirst({
+				where: {
+					...moderativeLogWhereFilter,
+					OR: [{ logChannelType: logChannelTypeArraySearch }, { logChannelType: null }]
+				},
 				select: { id: true }
-			}));
+			});
 
-		const moderativeLogChannel = moderativeLogChannelQuery
-			? await GuildManager.getGuildEntity(interaction.guild, moderativeLogChannelQuery.id, "channel", true)
-			: channel;
+			moderativeLogChannelId = prismaDoc?.id;
+		}
 
-		assert(GuildManager.isChannelAuditable(moderativeLogChannel));
+		const moderativeLogChannel = moderativeLogChannelId
+			? await interaction.guild.channels.fetch(moderativeLogChannelId)
+			: null;
+
+		if (moderativeLogChannel && !(moderativeLogChannel instanceof TextChannel)) {
+			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall("log channel"));
+		}
 
 		return moderativeLogChannel;
 	}

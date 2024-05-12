@@ -1,29 +1,31 @@
-import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "@discordjs/builders";
-import { Pagination, PaginationType } from "@discordx/pagination";
+import assert from "assert";
+
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
+	ActionRowBuilder,
 	ApplicationCommandOptionType,
-	ComponentType,
-	EmbedBuilder,
-	TimestampStyles,
-	bold,
+	ButtonBuilder,
+	ButtonStyle,
+	PermissionFlagsBits,
+	TextChannel,
 	inlineCode,
-	time
+	messageLink
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
-import ms from "ms";
 
-import { LIGHT_GOLD, LINE_BREAK } from "~/constants";
+import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
+import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
+import { StringUtils } from "~/utils/string.js";
 
-import type { PaginationItem } from "@discordx/pagination";
-import type { ChatInputCommandInteraction } from "discord.js";
+import type { ChatInputCommandInteraction, GuildBasedChannel } from "discord.js";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 
@@ -33,116 +35,185 @@ type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 @SlashGroup({ description: "container of all cases in the server", name: "case" })
 @SlashGroup("case")
 export abstract class Case {
-	@Slash({ description: "Lists all cases on the server" })
-	public async list(interaction: ChatInputCommandInteraction<"cached">) {
-		const { guild, guildId } = interaction;
-
-		const where = { guildId };
-
-		const cacheRecord = await RedisCache.case.indexes.byGuildId.match(where);
-
-		let rawDocuments: Doc[] = cacheRecord.map((record) => record.data);
-
-		if (!rawDocuments.length) {
-			const prismaDoc = await DBConnectionManager.Prisma.case.findMany({
-				where,
-				select: {
-					id: true,
-					action: true,
-					createdAt: true,
-					embeds: true
-				}
-			});
-
-			if (!prismaDoc.length) {
-				return await InteractionUtils.replyNoData(interaction);
-			}
-
-			rawDocuments = prismaDoc as Doc[];
-		}
-
-		const paginationPages: PaginationItem[] = [];
-		const embedTitle = `${guild.name} Cases (${rawDocuments.length})`;
-
-		const caseDescriptionStringArray = rawDocuments
-			.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-			.map(
-				(doc) =>
-					`${inlineCode(doc.id)} ${bold(`[${doc.action}]`)} ${time(doc.createdAt, TimestampStyles.RelativeTime)}`
-			);
-
-		const caseDescriptionChunks = ObjectUtils.splitArrayChunks(caseDescriptionStringArray, 10);
-
-		caseDescriptionChunks.forEach((chunk, index, arr) => {
-			const embedDescription = chunk.join(LINE_BREAK);
-			const embed = new EmbedBuilder()
-				.setTitle(embedTitle)
-				.setColor(LIGHT_GOLD)
-				.setDescription(embedDescription)
-				.setFooter({ text: `Page ${index + 1} / ${arr.length}` });
-
-			const selectMenu = new StringSelectMenuBuilder()
-				.setCustomId(`string_select_menu_pagination_${index}`)
-				.setPlaceholder("View a case");
-
-			const caseIDArray = chunk.map((str) => str.split(" ")[0].slice(1, -1));
-
-			const selectMenuOptions = caseIDArray.map((caseID) =>
-				new StringSelectMenuOptionBuilder().setLabel(caseID).setValue(caseID)
-			);
-
-			selectMenu.addOptions(selectMenuOptions);
-
-			const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
-
-			paginationPages.push({ embeds: [embed], components: [actionRow] });
-		});
-
-		const paginationTime = ms("10m");
-		const pagination = new Pagination(interaction, paginationPages, {
-			filter: (v) => v.user.id === interaction.user.id,
-			enableExit: true,
-			time: paginationTime,
-			type: PaginationType.Button
-		});
-
-		const { message } = await pagination.send();
-
-		const collector = message.createMessageComponentCollector({
-			componentType: ComponentType.StringSelect,
-			time: paginationTime,
-			filter: (v) => v.user.id === interaction.user.id
-		});
-
-		collector.on("collect", async (i) => {
-			const caseID = i.values[0];
-
-			const { embeds } = rawDocuments.find((doc) => doc.id === caseID)!;
-			if (!embeds.length) {
-				await InteractionUtils.replyNoData(i);
-				return;
-			}
-
-			await InteractionUtils.replyOrFollowUp(i, {
-				embeds,
-				ephemeral: true
-			});
-
-			return;
-		});
-	}
-
-	@Slash({ description: "View a case on the server" })
-	public async view(
+	@Slash({ description: "Edit a case reason" })
+	public async edit(
 		@SlashOption({
-			description: "The case ID",
+			description: "The case id.",
 			name: "case_id",
 			type: ApplicationCommandOptionType.String,
 			required: true
 		})
-		id: string,
+		caseID: string,
+		@ReasonSlashOption({ isAmmendedReason: true, required: true })
+		newReason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
+		const { guildId } = interaction;
+
+		const caseData = await DBConnectionManager.Prisma.case.instanceMethods.retrieveCase({
+			interaction,
+			caseID
+		});
+
+		const actionTypeStem = caseData.action.replace(StringUtils.Regexes.AllActionModifiers, "");
+
+		const actionTypes = Object.values(ActionType);
+
+		const actionTypeEdit = actionTypes.find((actionType) => actionType === `${actionTypeStem}_EDIT`);
+
+		if (!actionTypeEdit) {
+			throw new ValidationError("You may not edit cases under this group");
+		}
+
+		const isInsufficientPermission =
+			caseData.perpetratorId !== interaction.user.id &&
+			!interaction.memberPermissions.has(PermissionFlagsBits.Administrator);
+
+		if (isInsufficientPermission) {
+			throw new ValidationError("Administrator permission required to edit cases not initiated by you");
+		}
+
+		const updatedEmbeds: PrismaJson.APIEmbed[] = [];
+
+		const apiEmbed: PrismaJson.APIEmbed | undefined = caseData.apiEmbeds[0];
+
+		const buttonActionRows: ActionRowBuilder<ButtonBuilder>[] = [];
+
+		let timestampFieldIndex: number | null = null;
+		let caseRecordChannel: GuildBasedChannel | null = null;
+		let retrievedMessageId: string | null = null;
+		let messageURL: string | null = null;
+
+		if (caseData.messageURL) {
+			const [, channelId, messageId] = caseData.messageURL.split("channels/")[1].split("/");
+			retrievedMessageId = messageId;
+			caseRecordChannel = interaction.guild.channels.resolve(channelId);
+
+			if (caseRecordChannel) {
+				messageURL = messageLink(caseRecordChannel.id, retrievedMessageId, guildId);
+			}
+		}
+
+		assert(apiEmbed.fields);
+
+		const fields = apiEmbed.fields;
+
+		const [retrievedTimestampFieldIndex, targetInformationFieldIndex, reasonFieldIndex, newReasonFieldIndex] = [
+			"timestamps",
+			"target information",
+			"reason",
+			"new reason"
+		]
+			.map((str) => fields.findIndex((field) => field.name.toLowerCase().includes(str)))
+			.filter((index) => index !== -1) as Array<number | undefined>;
+
+		const updatedEmbed = ObjectUtils.cloneObject(apiEmbed);
+
+		assert(updatedEmbed.fields && targetInformationFieldIndex);
+
+		const [titleCaseEntityType, , hyperlinkedTargetId] = fields[targetInformationFieldIndex].value
+			.replaceAll(StringUtils.TabCharacter, "")
+			.split(StringUtils.LineBreak)
+			.find((str) => str.includes("ID"))!
+			.replaceAll("*", "")
+			.split(" ");
+
+		const entityType = EntityType[titleCaseEntityType.toUpperCase() as EntityType];
+		const targetId = hyperlinkedTargetId.split("(")[0].slice(1, -1);
+
+		if (retrievedTimestampFieldIndex) {
+			timestampFieldIndex = retrievedTimestampFieldIndex;
+		}
+
+		if (newReasonFieldIndex) {
+			updatedEmbed.fields[newReasonFieldIndex].value = newReason;
+		} else if (reasonFieldIndex) {
+			updatedEmbed.fields[reasonFieldIndex].name = "Original Reason";
+			updatedEmbed.fields.splice(reasonFieldIndex + 1, 0, {
+				name: "New Reason",
+				value: newReason
+			});
+		} else {
+			updatedEmbed.fields.push({ name: "Reason", value: newReason });
+		}
+
+		updatedEmbeds.push(updatedEmbed);
+
+		if (timestampFieldIndex) {
+			updatedEmbeds[0].fields![timestampFieldIndex] = ActionManager.generateTimestampField({
+				createdAt: caseData.createdAt,
+				updatedAt: new Date()
+			});
+		}
+
+		if (caseRecordChannel instanceof TextChannel) {
+			const caseRecordLogMessage = await caseRecordChannel.messages
+				.fetch(retrievedMessageId ?? "")
+				.catch(() => {});
+
+			if (caseRecordLogMessage?.editable) {
+				await caseRecordLogMessage
+					.edit({
+						embeds: updatedEmbeds
+					})
+					.catch(() => {});
+			} else {
+				const message = await caseRecordChannel.send({ embeds: updatedEmbeds });
+				messageURL = messageLink(caseRecordChannel.id, message.id, guildId);
+			}
+
+			assert(messageURL);
+
+			const messageURLButton = new ButtonBuilder()
+				.setLabel(`CASE ${caseData.id}`)
+				.setStyle(ButtonStyle.Link)
+				.setURL(messageURL);
+
+			const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
+			buttonActionRows.push(buttonActionRow);
+		}
+
+		await DBConnectionManager.Prisma.case.update({
+			where: { id: caseData.id },
+			data: {
+				messageURL,
+				apiEmbeds: updatedEmbeds,
+				reason: newReason
+			},
+			select: {
+				id: true
+			}
+		});
+
+		return await ActionManager.logCase({
+			interaction,
+			target: {
+				id: targetId,
+				type: entityType
+			},
+			actionType: actionTypeEdit,
+			actionOptions: {
+				notifyIfUser: false
+			},
+			successContent: `${reasonFieldIndex === -1 ? "set" : "edited"} the reason for case ${inlineCode(caseData.id)}`,
+			buttonActionRows
+		});
+	}
+
+	@Slash({ description: "View a specific, or all cases, on the server" })
+	public async view(
+		@SlashOption({
+			description: "The case ID",
+			name: "case_id",
+			type: ApplicationCommandOptionType.String
+		})
+		id: string | undefined,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		if (!id) {
+			return ActionManager.listCases(interaction);
+		}
+
 		const { guildId } = interaction;
 		const where = { guildId, id };
 

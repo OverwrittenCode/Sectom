@@ -5,7 +5,6 @@ import canvacord from "canvacord";
 import { AttachmentBuilder, Colors, type Message } from "discord.js";
 import { container, singleton } from "tsyringe";
 
-import { GuildManager } from "~/managers/GuildManager.js";
 import { RedisCacheManager } from "~/managers/RedisCacheManager.js";
 import type { Typings } from "~/ts/Typings.js";
 
@@ -76,7 +75,7 @@ export class LevelingRedisCache extends RedisCacheManager<"Leveling", typeof ind
 	}
 
 	public async sendLevelUp(message: Message<true>, levelAfter: number): Promise<Message<true>> {
-		const guildMember = await GuildManager.getGuildMemberByMessage(message, true);
+		const guildMember = message.guild.members.resolve(message.author.id)!;
 
 		await message.channel.sendTyping();
 		const attachment = await this.buildRankCard(levelAfter, message);
@@ -89,7 +88,7 @@ export class LevelingRedisCache extends RedisCacheManager<"Leveling", typeof ind
 
 	public async buildRankCard(levelAfter: number, message: Message<true>) {
 		const { guildId } = message;
-		const guildMember = await GuildManager.getGuildMemberByMessage(message, true);
+		const guildMember = message.guild.members.resolve(message.author.id)!;
 
 		const currentXP = LevelingRedisCache.getRequiredXP(levelAfter - 1);
 		const currentLevel = LevelingRedisCache.getCurrentLevel(currentXP);
@@ -153,7 +152,7 @@ export class LevelingRedisCache extends RedisCacheManager<"Leveling", typeof ind
 	// where: Prisma.<>WhereInput
 
 	public async getTotalMultiplier(message: Message<true>): Promise<number> {
-		const guildMember = await GuildManager.getGuildMemberByMessage(message, true);
+		const guildMember = message.guild.members.resolve(message.author.id)!;
 
 		const userRoleIDs = Array.from(guildMember.roles.cache.values()).map((r) => r.id);
 
@@ -173,7 +172,7 @@ export class LevelingRedisCache extends RedisCacheManager<"Leveling", typeof ind
 	}
 
 	public static async getDocumentID(message: Message<true>): Promise<string> {
-		const guildMember = await GuildManager.getGuildMemberByMessage(message, true);
+		const guildMember = message.guild.members.resolve(message.author.id)!;
 		const guildId_entityId = message.guildId + "_" + guildMember.id;
 		return guildId_entityId;
 	}

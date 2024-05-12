@@ -13,7 +13,7 @@ import type { Entries } from "type-fest";
 type RedisDoc<M extends Prisma.ModelName> = Typings.Database.Redis.RetrieveModelDocument<M>;
 type PrismaDoc<M extends Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 type TDoc<M extends Prisma.ModelName> = Typings.Database.DocumentInput<M>;
-type ModelDataFilterArray<M extends Prisma.ModelName, T extends Partial<RedisDoc<M>>> = Typings.DisplaceObjects<
+type ModelDataFilterArray<M extends Prisma.ModelName, T extends Partial<PrismaDoc<M>>> = Typings.DisplaceObjects<
 	PrismaDoc<M>,
 	T
 >[];
@@ -78,19 +78,17 @@ export abstract class RedisCacheManager<
 		return await this.collection.update(doc.id, doc as PrismaDoc<M>);
 	}
 
-	public async retrieveDocuments<const T extends Partial<RedisDoc<M>> = {}>(
-		filter?: T
-	): Promise<ModelDataFilterArray<M, T>> {
+	public async retrieveDocuments(filter?: Partial<PrismaDoc<M>>): Promise<PrismaDoc<M>[]> {
 		const allDocuments = await this.collection.list();
 
-		let expectedCases = allDocuments.map((doc) => doc.data) as unknown as ModelDataFilterArray<M, T>;
+		let expectedCases = allDocuments.map((doc) => doc.data);
 
 		if (!filter) {
 			return expectedCases;
 		}
 
 		const filterEntries = Object.entries(filter).filter(([, v]) => typeof v !== "undefined") as Entries<
-			RedisDoc<M>
+			PrismaDoc<M>
 		>;
 
 		for (const [key, value] of filterEntries) {

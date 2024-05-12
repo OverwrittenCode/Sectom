@@ -25,6 +25,7 @@ export abstract class Avatar {
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
+			required: false
 		})
 		target: GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
@@ -50,6 +51,7 @@ export abstract class Avatar {
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
+			required: false
 		})
 		target: User | GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
@@ -58,7 +60,9 @@ export abstract class Avatar {
 
 		const colour = target instanceof GuildMember ? target.displayHexColor : target.hexAccentColor ?? LIGHT_GOLD;
 
-		target = interaction.client.users.resolve(target)!;
+		if (!(target instanceof User)) {
+			target = target.user;
+		}
 
 		const { displayName: name } = target;
 

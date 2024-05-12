@@ -5,12 +5,6 @@ import { ObjectUtils } from "~/utils/object.js";
 
 import type { Prisma } from "@prisma/client";
 import type { Entries } from "type-fest";
-interface RedisRecord<M extends Prisma.ModelName = Prisma.ModelName> {
-	id: string;
-	data: Typings.Database.Redis.RetrieveModelDocument<M>;
-	ts: number;
-}
-
 export class RedisDataService<const M extends Prisma.ModelName> {
 	public modelName: M;
 
@@ -30,7 +24,7 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 	}
 
 	public decode<T = unknown>(str: string): T {
-		const redisRecord = JSON.parse(str) as RedisRecord<M>;
+		const redisRecord = JSON.parse(str) as Typings.Database.Redis.RetrieveRecord<M>;
 		const { data } = redisRecord;
 
 		const dateFields = Object.entries(data).filter(([, value]) => ObjectUtils.isDateString(value)) as Entries<
@@ -62,19 +56,11 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 
 		const dataCopy = ObjectUtils.cloneObject(data);
 
-		if (this.forceIsModelType(dataCopy, "Leveling", isLevelingDoc)) {
+		if (!("id" in dataCopy)) {
 			const compoundIDValue = `${dataCopy.guildId}_${dataCopy.entityId}`;
 			Object.assign(dataCopy, { id: compoundIDValue });
 		}
 
 		return dataCopy as TDoc & { id: string };
-	}
-
-	private forceIsModelType<N extends Prisma.ModelName>(
-		v: Typings.Database.DocumentInput<M | N>,
-		modelType: N,
-		expression: boolean
-	): v is Typings.Database.DocumentInput<N> {
-		return ObjectUtils.isValidObject(v) && modelType && expression;
 	}
 }

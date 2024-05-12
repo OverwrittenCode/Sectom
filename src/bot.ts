@@ -12,7 +12,6 @@ import { container } from "tsyringe";
 import { BOT_ID, GUILD_IDS } from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
-
 dotenv.config();
 
 const { BOT_TOKEN } = process.env;

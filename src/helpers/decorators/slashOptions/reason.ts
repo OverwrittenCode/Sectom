@@ -1,12 +1,27 @@
 import { ApplicationCommandOptionType } from "discord.js";
 import { SlashOption } from "discordx";
 
-export function ReasonSlashOption() {
+import { MAX_REASON_STRING_LENGTH } from "~/constants.js";
+
+interface ReasonOptions {
+	isAmmendedReason?: boolean;
+	required?: boolean;
+}
+
+export function ReasonSlashOption(options: ReasonOptions = {}) {
+	const { isAmmendedReason } = options;
+
+	const required = "required" in options ? options.required : false;
+	const description = isAmmendedReason ? "The updated case reason" : "The reason for using this command";
+
+	const name = isAmmendedReason ? "new_reason" : "reason";
 	return function (target: Record<string, any>, propertyKey: string, parameterIndex: number) {
 		SlashOption({
-			description: "The reason",
-			name: "reason",
-			type: ApplicationCommandOptionType.String
+			description,
+			name,
+			type: ApplicationCommandOptionType.String,
+			maxLength: MAX_REASON_STRING_LENGTH,
+			required
 		})(target, propertyKey, parameterIndex);
 	};
 }

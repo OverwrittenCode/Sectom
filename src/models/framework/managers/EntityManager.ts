@@ -12,8 +12,8 @@ import type { Typings } from "~/ts/Typings.js";
 type GuildEntityType = "member" | "user" | "role" | "channel";
 type EntityType = Exclude<GuildEntityType, "member">;
 type GuildEntityTypeMap = {
-	member: User;
-	user: GuildMember;
+	member: GuildMember;
+	user: User;
 	role: Role;
 	channel: GuildBasedChannel;
 };

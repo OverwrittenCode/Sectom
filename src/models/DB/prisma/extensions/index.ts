@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { container } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
+import { GuildInstanceMethods } from "~/models/DB/prisma/extensions/guild.js";
 import type { Typings } from "~/ts/Typings.js";
 
 import { CaseInstanceMethods } from "./case.js";
@@ -69,6 +70,11 @@ export abstract class PrismaExtensions {
 				case: {
 					get instanceMethods() {
 						return container.resolve(CaseInstanceMethods);
+					}
+				},
+				guild: {
+					get instanceMethods() {
+						return container.resolve(GuildInstanceMethods);
 					}
 				}
 			}

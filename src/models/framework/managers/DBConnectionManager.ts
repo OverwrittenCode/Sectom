@@ -8,6 +8,24 @@ import { Redis as RedisClient } from "@upstash/redis";
 import { PrismaExtensions } from "~/models/DB/prisma/extensions/index.js";
 
 export abstract class DBConnectionManager {
+	private static readonly defaultContentClusterManagerComponents = {
+		panels: [],
+		subjects: []
+	};
+
+	public static Defaults = {
+		Configuration: {
+			suggestion: this.defaultContentClusterManagerComponents,
+			ticket: {
+				...this.defaultContentClusterManagerComponents,
+				prompt: true
+			},
+			warning: {
+				durationMultiplier: 1,
+				thresholds: []
+			}
+		} as PrismaJson.Configuration
+	} as const;
 	public static Redis: RedisClient;
 	public static Prisma: ReturnType<typeof DBConnectionManager.createPrismaClient>;
 	public static connectionDates: {

@@ -10,6 +10,22 @@ export namespace Enums {
 		Passive = "passive"
 	}
 
+	export enum ContentClusterPropertyType {
+		Subject = "subject",
+		Panel = "panel"
+	}
+
+	export enum ContentClusterComponentType {
+		Suggestion = "suggestion",
+		Ticket = "ticket"
+	}
+
+	export enum ModifierType {
+		Add = "add",
+		Update = "update",
+		Remove = "remove"
+	}
+
 	export enum MessageComponentType {
 		Button = "button",
 		Modal = "modal",

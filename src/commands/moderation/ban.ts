@@ -1,12 +1,12 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
-import { Discord, Guard, Slash, SlashOption } from "discordx";
 import { ActionType, EntityType } from "@prisma/client";
+import { PermissionFlagsBits } from "discord.js";
+import { Discord, Guard, Slash } from "discordx";
 
+import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
-import { DurationTransformer } from "~/helpers/transformers/Duration.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
@@ -24,11 +24,11 @@ export abstract class Ban {
 	public async ban(
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
-		@SlashOption({
-			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
+		@DurationSlashOption({
+			transformerOptions: CommandUtils.DurationLimits.Ban,
 			name: "prune_messages_duration",
-			type: ApplicationCommandOptionType.String,
-			transformer: DurationTransformer({ max: "7d" })
+			descriptionPrefix: "The duration the prune messages",
+			required: false
 		})
 		msDuration: number | undefined,
 		@ReasonSlashOption()
@@ -43,8 +43,7 @@ export abstract class Ban {
 			});
 		}
 
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
-		const actionType = CaseActionType.BANNED_USER_ADDED;
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 		const deleteMessageSeconds = msDuration ? msDuration / 1000 : undefined;
 
 		return ActionManager.logCase({
@@ -72,12 +71,12 @@ export abstract class Ban {
 	public async softban(
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
-		@SlashOption({
-			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
+		@DurationSlashOption({
+			transformerOptions: {
+				max: "7d"
+			},
 			name: "prune_messages_duration",
-			type: ApplicationCommandOptionType.String,
-			required: true,
-			transformer: DurationTransformer({ max: "7d" })
+			descriptionPrefix: "The duration to prune messages"
 		})
 		msDuration: number,
 		@ReasonSlashOption()

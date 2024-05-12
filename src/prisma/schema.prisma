@@ -17,47 +17,50 @@ datasource db {
 }
 
 model Entity {
-    id                  String               @id @unique
-    type                EntityType
-    name                String?              @db.Text
-    avatarUrl           String?              @db.Text
-    perpetratorCases    Case[]               @relation(name: "Perpetrator")
-    targetedCases       Case[]               @relation(name: "Target")
-    channelCases        Case[]               @relation(name: "Channel")
-    levelingData        Leveling?
-    guild               Guild                @relation(name: "Guild-Entity", fields: [guildId], references: [id])
-    guildId             String
-    logChannelGuild     Guild?               @relation(name: "LogChannel", fields: [logChannelGuildId], references: [id])
-    logChannelGuildType LogChannelGuildType?
-    logChannelGuildId   String?
-
-    @@index(fields: [guildId, logChannelGuildType])
+    id                String       @id @unique
     createdAt         DateTime     @default(now()) @db.Timestamptz()
     updatedAt         DateTime     @updatedAt @db.Timestamptz()
+    type              EntityType
+    perpetratorCases  Case[]       @relation(name: "Perpetrator")
+    targetedCases     Case[]       @relation(name: "Target")
+    channelCases      Case[]       @relation(name: "Channel")
+    channelTickets    Ticket[]     @relation(name: "Ticket-Channel")
+    parentTickets     Ticket[]     @relation(name: "Ticket-Parent")
+    authorTickets     Ticket[]     @relation(name: "Ticket-Author")
+    suggestions       Suggestion[] @relation(name: "Suggestion")
+    levelingData      Leveling?
+    guild             Guild        @relation(name: "Guild-Entity", fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    guildId           String
+    logChannelGuild   Guild?       @relation(name: "LogChannel", fields: [logChannelGuildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    logChannelGuildId String?
+    logChannelType    ActionType?
+
     @@index([guildId])
     @@index([logChannelGuildId])
 }
 
 model Case {
-    id            String         @id @unique
-    type          CaseType       @default(AUTO)
-    action        CaseActionType
-    reason        String         @default("No reason provided.") @db.Citext
+    id            String     @id @unique @db.Char(6)
     createdAt     DateTime   @default(now()) @db.Timestamptz()
     updatedAt     DateTime   @updatedAt @db.Timestamptz()
+    type          CaseType   @default(AUTO)
+    action        ActionType
+    reason        String     @default("No reason provided.") @db.Citext
     expiryDate    DateTime?
-    perpetrator   Entity         @relation(name: "Perpetrator", fields: [perpetratorId], references: [id], onUpdate: Restrict)
     /// [APIEmbed]
     apiEmbeds     Json[]
+    messageURL    String?
+    perpetrator   Entity     @relation(name: "Perpetrator", fields: [perpetratorId], references: [id], onUpdate: Restrict)
     perpetratorId String
-    target        Entity         @relation(name: "Target", fields: [targetId], references: [id], onUpdate: Restrict)
+    target        Entity     @relation(name: "Target", fields: [targetId], references: [id], onUpdate: Restrict)
     targetId      String
-    channel       Entity         @relation(name: "Channel", fields: [channelId], references: [id], onUpdate: Restrict)
+    channel       Entity     @relation(name: "Channel", fields: [channelId], references: [id], onUpdate: Restrict)
     channelId     String
-    guild         Guild          @relation(fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+    guild         Guild      @relation(fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Restrict)
     guildId       String
 
     @@index(fields: [guildId, id])
+    @@index(fields: [guildId, action])
     @@index([perpetratorId])
     @@index([guildId])
     @@index([targetId])
@@ -82,15 +85,57 @@ model Leveling {
 }
 
 model Guild {
-    id                         String     @id @unique
+    id                         String       @id @unique
     createdAt                  DateTime     @default(now()) @db.Timestamptz()
     updatedAt                  DateTime     @updatedAt @db.Timestamptz()
     levelingData               Leveling[]
-    levelingGlobalXPCooldown   Int        @default(3)
-    levelingGlobalXPMultiplier Int        @default(1)
+    levelingGlobalXPCooldown   Int          @default(3)
+    levelingGlobalXPMultiplier Int          @default(1)
+    /// [Configuration]
+    configuration              Json
     cases                      Case[]
-    entities                   Entity[]   @relation(name: "Guild-Entity")
-    logChannels                Entity[]   @relation(name: "LogChannel")
+    entities                   Entity[]     @relation(name: "Guild-Entity")
+    logChannels                Entity[]     @relation(name: "LogChannel")
+    suggestions                Suggestion[]
+    tickets                    Ticket[]
+}
+
+model Suggestion {
+    id               String           @id @unique
+    createdAt        DateTime         @default(now()) @db.Timestamptz()
+    updatedAt        DateTime         @updatedAt @db.Timestamptz()
+    status           SuggestionStatus @default(PENDING)
+    /// Redis does not support relations
+    upvotedUserIDs   String[]
+    /// Redis does not support relations
+    downvotedUserIDs String[]
+    author           Entity           @relation(name: "Suggestion", fields: [authorId], references: [id], onUpdate: Restrict)
+    authorId         String
+    guild            Guild            @relation(fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+    guildId          String
+
+    @@index([authorId])
+    @@index([guildId])
+}
+
+model Ticket {
+    id        String       @id @unique
+    createdAt DateTime     @default(now()) @db.Timestamptz()
+    updatedAt DateTime     @updatedAt @db.Timestamptz()
+    priority  PriorityType @default(NORMAL)
+    guild     Guild        @relation(fields: [guildId], references: [id])
+    guildId   String
+    channel   Entity       @relation(name: "Ticket-Channel", fields: [channelId], references: [id], onUpdate: Restrict)
+    channelId String
+    parent    Entity       @relation(name: "Ticket-Parent", fields: [parentId], references: [id], onUpdate: Restrict)
+    parentId  String
+    author    Entity       @relation(name: "Ticket-Author", fields: [authorId], references: [id], onUpdate: Restrict)
+    authorId  String
+
+    @@index([guildId])
+    @@index([channelId])
+    @@index([parentId])
+    @@index([authorId])
 }
 
 enum EntityType {
@@ -104,14 +149,24 @@ enum CaseType {
     MANUAL
 }
 
+enum SuggestionStatus {
+    PENDING
+    APPROVED
+    REJECTED
 }
 
-enum LogChannelGuildType {
-    MODERATIVE
-    PASSIVE
+enum PriorityType {
+    NORMAL
+    IMPORTANT
+    URGENT
+}
+
 enum ActionType {
     PURGE_MESSAGES_SET
     PURGE_MESSAGES_EDIT
+    WARN_USER_ADD
+    WARN_USER_EDIT
+    WARN_USER_REMOVE
     KICK_USER_SET
     KICK_USER_EDIT
     SOFT_BAN_USER_SET
@@ -132,4 +187,42 @@ enum ActionType {
     SERVER_MUTE_USER_ADD
     SERVER_MUTE_USER_EDIT
     SERVER_MUTE_USER_REMOVE
+    TICKET_INSTANCE_CREATE
+    TICKET_INSTANCE_CLOSE
+    CONFIG_TICKET_SETTINGS_ADD
+    CONFIG_TICKET_SETTINGS_EDIT
+    CONFIG_TICKET_SETTINGS_UPDATE
+    CONFIG_TICKET_SETTINGS_REMOVE
+    CONFIG_TICKET_PANEL_ADD
+    CONFIG_TICKET_PANEL_EDIT
+    CONFIG_TICKET_PANEL_UPDATE
+    CONFIG_TICKET_PANEL_REMOVE
+    CONFIG_TICKET_SUBJECT_ADD
+    CONFIG_TICKET_SUBJECT_EDIT
+    CONFIG_TICKET_SUBJECT_UPDATE
+    CONFIG_TICKET_SUBJECT_REMOVE
+    CONFIG_WARN_THRESHOLD_ADD
+    CONFIG_WARN_THRESHOLD_EDIT
+    CONFIG_WARN_THRESHOLD_UPDATE
+    CONFIG_WARN_THRESHOLD_REMOVE
+    CONFIG_WARN_DURATION_MULTIPLIER_SET
+    CONFIG_WARN_DURATION_MULTIPLIER_EDIT
+    CONFIG_WARN_DURATION_MULTIPLIER_UPDATE
+    CONFIG_WARN_DURATION_MULTIPLIER_RESET
+    CONFIG_LOG_CHANNEL_ADD
+    CONFIG_LOG_CHANNEL_EDIT
+    CONFIG_LOG_CHANNEL_UPDATE
+    CONFIG_LOG_CHANNEL_REMOVE
+    CONFIG_SUGGESTION_CHANNEL_ADD
+    CONFIG_SUGGESTION_CHANNEL_EDIT
+    CONFIG_SUGGESTION_CHANNEL_UPDATE
+    CONFIG_SUGGESTION_CHANNEL_REMOVE
+    CONFIG_SUGGESTION_PANEL_ADD
+    CONFIG_SUGGESTION_PANEL_EDIT
+    CONFIG_SUGGESTION_PANEL_UPDATE
+    CONFIG_SUGGESTION_PANEL_REMOVE
+    CONFIG_SUGGESTION_SUBJECT_ADD
+    CONFIG_SUGGESTION_SUBJECT_EDIT
+    CONFIG_SUGGESTION_SUBJECT_UPDATE
+    CONFIG_SUGGESTION_SUBJECT_REMOVE
 }

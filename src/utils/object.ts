@@ -1,3 +1,5 @@
+import type { Typings } from "~/ts/Typings.js";
+
 import type { NonEmptyObject, WritableDeep } from "type-fest";
 
 export abstract class ObjectUtils {
@@ -13,10 +15,6 @@ export abstract class ObjectUtils {
 		return Array.isArray(array) && array.length > 0;
 	}
 
-	public static isValidObjectArray(array: any): array is Array<NonEmptyObject<Record<string, any>>> {
-		return this.isValidArray(array) && array.every(this.isValidObject);
-	}
-
 	public static isDateString(str: unknown): boolean {
 		if (typeof str !== "string") {
 			return false;
@@ -26,19 +24,17 @@ export abstract class ObjectUtils {
 		return d instanceof Date && !isNaN(d.getTime());
 	}
 
-	public static uniqueArray<T>(array: T[]): T[] {
-		return [...new Set(array)];
 	public static cloneObject<T>(obj: T): WritableDeep<T> {
 		return JSON.parse(JSON.stringify(obj)) as WritableDeep<T>;
 	}
 
-	public static splitArrayChunks<T>(array: T[], chunk: number): T[][] {
-		const result: T[][] = [];
-
-		for (let index = 0; index < array.length; index += chunk) {
-			result.push(array.slice(index, index + chunk));
-		}
-
-		return result;
+	public static pickKeys<T, U extends keyof T>(obj: T, ...properties: U[]): Typings.Prettify<Pick<T, U>> {
+		return properties.reduce(
+			(result, prop) => {
+				result[prop] = obj[prop];
+				return result;
+			},
+			{} as Pick<T, U>
+		);
 	}
 }

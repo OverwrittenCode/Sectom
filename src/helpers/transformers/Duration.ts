@@ -1,48 +1,111 @@
 import assert from "assert";
 
+import { type ApplicationCommandOptionChoiceData, type ChatInputCommandInteraction } from "discord.js";
 import ms from "ms";
 import prettyMilliseconds from "pretty-ms";
 
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { CommandUtils } from "~/utils/command.js";
+import { NumberUtils } from "~/utils/number.js";
 import { StringUtils } from "~/utils/string.js";
 
-import type { ChatInputCommandInteraction } from "discord.js";
+import type { ActionType } from "@prisma/client";
+import type { AutocompleteInteraction } from "discord.js";
 
-interface MSValidateOptions {
+enum IncrementTimeUnits {
+	minutes = "m",
+	hours = "h",
+	days = "d",
+	weeks = "w",
+	months = "mo",
+	years = "y"
+}
+
+const units = Object.values(IncrementTimeUnits);
+const defaultMinDuration = "0s";
+const defaultMaxDuration = "90d";
+
+const unitToIncrementByMap = {
+	[IncrementTimeUnits.minutes]: ms("15s"),
+	[IncrementTimeUnits.hours]: ms("15m"),
+	[IncrementTimeUnits.days]: ms("6h"),
+	[IncrementTimeUnits.weeks]: ms("1d"),
+	[IncrementTimeUnits.months]: ms("7d"),
+	[IncrementTimeUnits.years]: ms("30d")
+} as const;
+
+const unitToQuantityMap = {
+	[IncrementTimeUnits.minutes]: ms("1m"),
+	[IncrementTimeUnits.hours]: ms("1h"),
+	[IncrementTimeUnits.days]: ms("1d"),
+	[IncrementTimeUnits.weeks]: ms("7d"),
+	[IncrementTimeUnits.months]: ms("30d"),
+	[IncrementTimeUnits.years]: ms("1y")
+} as const;
+
+const disabledAutoCompleteOption = {
+	name: CommandUtils.SlashOptions.DisableChoice,
+	value: CommandUtils.SlashOptions.DisableChoice
+};
+
+interface DurationRangeOptions {
 	min?: string;
 	max?: string;
 }
 
-export function DurationTransformer(options?: MSValidateOptions) {
-	return function (duration: string | undefined, interaction: ChatInputCommandInteraction): number | undefined {
+interface DurationRangeValue {
+	min: number;
+	max: number;
+}
+
+type DurationRangeMSActionTypeData = {
+	[K in ActionType]?: DurationRangeOptions & ({ allowDisableOption?: boolean } | { forceDisableOption?: boolean });
+};
+
+interface ConstantMSValidateOptions extends DurationRangeOptions {
+	allowDisableOption?: string | boolean;
+}
+
+interface ConditionalMSValidateOptions {
+	actionTypeData: DurationRangeMSActionTypeData;
+	allowDisableOption: string;
+}
+
+export type DurationMSValidateOptions = ConstantMSValidateOptions | ConditionalMSValidateOptions;
+
+export function DurationTransformer(options: DurationMSValidateOptions) {
+	return function (msDurationStr: string | undefined, interaction: ChatInputCommandInteraction): number | undefined {
 		assert(interaction.inCachedGuild());
 
-		if (!duration) {
+		const rangeValue = DurationGetRangeValue(interaction, options);
+
+		const isDisabled =
+			typeof msDurationStr === "undefined" ||
+			(options.allowDisableOption && msDurationStr === CommandUtils.SlashOptions.DisableChoice);
+
+		if (!rangeValue || isDisabled) {
 			return;
 		}
 
-		const isOnlyDigits = NUMBER_REGEX.test(duration);
-		const msDuration = ms(isOnlyDigits ? `${duration}s` : duration);
+		const msDuration = ms(msDurationStr);
 
 		const isInvalidDuration = isNaN(msDuration);
 
 		if (isInvalidDuration) {
-			throw new ValidationError("invalid timeout duration provided, please check your input");
+			throw new ValidationError("invalid duration provided, please check your input");
 		}
 
-		const minDurationMs = ms(options?.min ?? "0s");
-		const maxDurationMs = options?.max ? ms(options.max) : undefined;
+		const { min, max } = rangeValue;
 
-		let isInvalidRange = msDuration < minDurationMs;
+		let isInvalidRange = msDuration < min;
 
-		if (maxDurationMs) {
-			isInvalidRange ||= msDuration > maxDurationMs;
+		if (max) {
+			isInvalidRange ||= msDuration > max;
 		}
 
 		if (isInvalidRange) {
-			const minVerbose = minDurationMs === 0 ? "0 seconds" : prettyMilliseconds(minDurationMs, { verbose: true });
-			const maxVerbose = maxDurationMs ? prettyMilliseconds(maxDurationMs, { verbose: true }) : undefined;
+			const minVerbose = min === 0 ? "0 seconds" : prettyMilliseconds(min, { verbose: true });
+			const maxVerbose = max ? prettyMilliseconds(max, { verbose: true }) : undefined;
 
 			const disallowedRange = `less than ${minVerbose}${maxVerbose ? ` or more than ${maxVerbose}` : ""}`;
 
@@ -51,4 +114,102 @@ export function DurationTransformer(options?: MSValidateOptions) {
 
 		return msDuration;
 	};
+}
+
+export function DurationGenerateAutoComplete(
+	interaction: ChatInputCommandInteraction | AutocompleteInteraction,
+	options: DurationMSValidateOptions
+): ApplicationCommandOptionChoiceData[] {
+	const rangeValue = DurationGetRangeValue(interaction, options);
+	if (!rangeValue) {
+		return [disabledAutoCompleteOption];
+	}
+
+	const { min, max } = rangeValue;
+
+	let autoCompleteDataArray: ApplicationCommandOptionChoiceData<string>[] = [];
+
+	if (max < unitToIncrementByMap[IncrementTimeUnits.minutes]) {
+		autoCompleteDataArray = Array.from({ length: max / 1000 }, (_, index) => {
+			const v = ms(`${index}s`);
+			return {
+				name: prettyMilliseconds(v, { verbose: true }),
+				value: v.toString()
+			};
+		});
+	} else {
+		autoCompleteDataArray = units.flatMap((unit) =>
+			NumberUtils.chunkByModulus(unitToQuantityMap[unit], unitToIncrementByMap[unit], false).map((msNum, i) => {
+				const v = msNum * (i + 1);
+				return {
+					name: prettyMilliseconds(v, { verbose: true }),
+					value: v.toString()
+				};
+			})
+		);
+	}
+
+	if (min === 0) {
+		autoCompleteDataArray.unshift({ name: "0 seconds", value: "0" });
+	}
+
+	if (!autoCompleteDataArray.find(({ value }) => value === min.toString())) {
+		autoCompleteDataArray.unshift({ name: `${min / 1000} seconds`, value: min.toString() });
+	}
+
+	if (!autoCompleteDataArray.find(({ value }) => value === max.toString())) {
+		autoCompleteDataArray.push({ name: prettyMilliseconds(max, { verbose: true }), value: max.toString() });
+	}
+
+	if (options.allowDisableOption) {
+		autoCompleteDataArray.unshift(disabledAutoCompleteOption);
+	}
+
+	const seen = new Set();
+	const uniqueAutoCompleteData = autoCompleteDataArray.filter(({ value }) => {
+		const isDuplicate = seen.has(value);
+		seen.add(value);
+
+		const msDuration = parseInt(value);
+
+		const isInRange = isNaN(msDuration) || (min <= msDuration && max >= msDuration);
+
+		return !isDuplicate && isInRange;
+	});
+
+	return uniqueAutoCompleteData;
+}
+
+function DurationGetRangeValue(
+	interaction: ChatInputCommandInteraction | AutocompleteInteraction,
+	options: DurationMSValidateOptions
+): DurationRangeValue | null {
+	const actionType = StringUtils.isValidString(options.allowDisableOption)
+		? interaction.options.getString(options.allowDisableOption, false)
+		: null;
+
+	let rangeOptions: DurationRangeOptions;
+
+	if ("actionTypeData" in options) {
+		const data =
+			actionType && actionType in options.actionTypeData
+				? options.actionTypeData[actionType as ActionType]
+				: null;
+
+		if (!data || ("forceDisableOption" in data && data.forceDisableOption)) {
+			return null;
+		}
+
+		const { min, max } = data;
+
+		rangeOptions = { min, max };
+	} else {
+		const { min, max } = options;
+		rangeOptions = { min, max };
+	}
+
+	const min = ms(rangeOptions.min ?? defaultMinDuration);
+	const max = ms(rangeOptions.max ?? defaultMaxDuration);
+
+	return { min, max };
 }

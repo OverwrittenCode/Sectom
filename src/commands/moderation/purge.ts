@@ -510,6 +510,8 @@ export abstract class Purge {
 	}
 
 	private async handler(interaction: ChatInputCommandInteraction<"cached">, options: PurgeHandlerOptions) {
+		await InteractionUtils.deferInteraction(interaction, true);
+
 		const { channel, count, reason, inverse, messageFilter } = options;
 
 		const purgeChannel = channel ?? interaction.channel!;
@@ -529,12 +531,11 @@ export abstract class Purge {
 				const bulkDeleteMessages = msgCollection.filter((msg) => {
 					const isDeletable = msg.bulkDeletable;
 					const isGreaterThanTwoWeeksAgo = msg.createdTimestamp > twoWeeksAgo;
-					const isNotMyDeferredInteraction = msg.interaction?.id !== interaction.id;
 
-					let bool = isDeletable && isGreaterThanTwoWeeksAgo && isNotMyDeferredInteraction;
+					let bool = isDeletable && isGreaterThanTwoWeeksAgo;
 
 					if (messageFilter) {
-						const isMatchingMessageFilter = inverse ? !messageFilter : messageFilter(msg);
+						const isMatchingMessageFilter = inverse ? !messageFilter(msg) : messageFilter(msg);
 						bool &&= isMatchingMessageFilter;
 					}
 
@@ -559,7 +560,9 @@ export abstract class Purge {
 				? "No messages were deleted"
 				: `Successfully deleted ${deletedSuccessCount} / ${count} messages`;
 
-		messageContent += purgeChannel.id !== interaction.channelId ? ` in ${channelMention(purgeChannel.id)}.` : ".";
+		if (purgeChannel.id !== interaction.channelId) {
+			messageContent += ` in ${channelMention(purgeChannel.id)}`;
+		}
 
 		if (deletedSuccessCount) {
 			return await ActionManager.logCase({
@@ -570,7 +573,7 @@ export abstract class Purge {
 					id: purgeChannel.id,
 					type: CommandUtils.EntityType.CHANNEL
 				},
-				messageContent
+				successContent: messageContent
 			});
 		}
 

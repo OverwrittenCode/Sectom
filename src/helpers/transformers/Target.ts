@@ -12,12 +12,16 @@ type ParsedTargetEntityType = Typings.EntityObjectType | string;
 
 export function TargetTransformer(flags: Enums.CommandSlashOptionTargetFlags[] = []) {
 	return function (
-		target: ParsedTargetEntityType,
+		target: ParsedTargetEntityType | undefined,
 		interaction: ChatInputCommandInteraction
-	): Typings.EntityObjectType {
+	): Typings.EntityObjectType | undefined {
 		assert(interaction.inCachedGuild());
 
 		const { guild, client, member } = interaction;
+
+		if (typeof target === "undefined") {
+			return target;
+		}
 
 		if (typeof target === "string") {
 			throw new ValidationError("invalid snowflake provided, please check your input");

@@ -49,6 +49,12 @@ export namespace Typings {
 				typeof Query.prototype.createCollection<Prisma.RetrieveModelDocument<M>>
 			>;
 
+			export type RetrieveRecord<M extends _Prisma.ModelName> = {
+				id: string;
+				ts: number;
+				data: RetrieveModelDocument<M>;
+			};
+
 			export type TTerms<M extends _Prisma.ModelName> = Parameters<
 				ModelCollection<M>["createIndex"]
 			>["0"]["terms"];
@@ -100,6 +106,28 @@ export namespace Typings {
 		export type DocumentInput<M extends _Prisma.ModelName = _Prisma.ModelName> =
 			| Redis.RetrieveModelDocument<M>
 			| Prisma.RetrieveModelDocument<M>;
+
+		export type SimpleFilter<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
+			? Omit<
+					Partial<
+						Intersection<
+							Required<_Prisma.TypeMap["model"][M]["operations"]["findFirst"]["args"]>["where"],
+							Prisma.RetrieveModelDocument<M>
+						>
+					>,
+					"apiEmbeds"
+				>
+			: never;
+
+		export type SimpleSelect<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
+			? Partial<Record<keyof Prisma.RetrieveModelDocument<M>, true>>
+			: never;
+
+		export type SimpleSelectOutput<M extends _Prisma.ModelName, T extends SimpleSelect<M>> = {} extends T
+			? Prisma.RetrieveModelDocument<M>
+			: keyof T extends keyof Prisma.RetrieveModelDocument<M>
+				? Pick<Prisma.RetrieveModelDocument<M>, keyof T>
+				: never;
 	}
 
 	export type AllowedStringify = string | number | bigint | boolean | null | undefined;
@@ -111,6 +139,13 @@ export namespace Typings {
 		[K in keyof T]: T[K];
 	} & {};
 	export type PickMatching<T, V> = { [K in keyof T as T[K] extends V | (() => V) ? K : never]: T[K] };
+	export type Intersection<T, U> = {
+		[K in keyof T & keyof U]: U[K];
+	};
+	export type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void
+		? I
+		: never;
+
 	export type SentenceCase<T extends string> = T extends `${infer First}${infer Rest}`
 		? `${Uppercase<First>}${Rest}`
 		: T;

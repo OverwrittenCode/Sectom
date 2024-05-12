@@ -4,7 +4,6 @@ import { AttachmentBuilder, Colors, type Message } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
-import { GuildManager } from "~/managers/GuildManager.js";
 
 import type { PrismaClient } from "@prisma/client";
 
@@ -20,7 +19,7 @@ export class LevelingInstanceMethods {
 	public async awardXP<T>(this: T, currentXP: number, message: Message<true>): Promise<void> {
 		const instance = container.resolve(LevelingInstanceMethods);
 
-		const guildMember = await GuildManager.getGuildMemberByMessage(message);
+		const guildMember = message.guild.members.resolve(message.author.id);
 
 		const multiplier = await instance.getTotalMultiplier(message);
 		const xpAmount = Math.floor(Math.random() * multiplier * (45 - 10 + 1) + 10);
@@ -35,7 +34,7 @@ export class LevelingInstanceMethods {
 	public async sendLevelUp<T>(this: T, message: Message<true>, levelAfter: number): Promise<Message<true>> {
 		const instance = container.resolve(LevelingInstanceMethods);
 
-		const guildMember = await GuildManager.getGuildMemberByMessage(message);
+		const guildMember = message.guild.members.resolve(message.author.id);
 
 		await message.channel.sendTyping();
 		const attachment = await instance.buildRankCard(levelAfter, message);
@@ -52,7 +51,7 @@ export class LevelingInstanceMethods {
 		const DEFAULT_COLOUR = "#FFFFFF" as const;
 		const RANK_COLOUR = "#E6C866" as const;
 
-		const guildMember = await GuildManager.getGuildMemberByMessage(message, true);
+		const guildMember = message.guild.members.resolve(message.author.id)!;
 
 		const currentXP = instance.getRequiredXP(levelAfter - 1);
 		const currentLevel = instance.getCurrentLevel(currentXP);
@@ -85,8 +84,7 @@ export class LevelingInstanceMethods {
 			.setLevel(currentLevel)
 			.setRequiredXP(requiredXP)
 			.setStatus(guildMember.presence?.status || "online")
-			.setUsername(guildMember.user.username)
-			.setDisplayName(guildMember.displayName);
+			.setUsername(guildMember.user.username);
 
 		const rankCard = await rank.build();
 
@@ -122,7 +120,7 @@ export class LevelingInstanceMethods {
 	public async getTotalMultiplier<T>(this: T, message: Message<true>): Promise<number> {
 		const instance = container.resolve(LevelingInstanceMethods);
 
-		const guildMember = await GuildManager.getGuildMemberByMessage(message, true);
+		const guildMember = message.guild.members.resolve(message.author.id)!;
 
 		const userRoleIDs = Array.from(guildMember.roles.cache.values()).map((r) => r.id);
 
