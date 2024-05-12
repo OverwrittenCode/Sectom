@@ -1,14 +1,14 @@
 import assert from "assert";
 
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { CaseActionType, EntityType } from "@prisma/client";
-import { type ChatInputCommandInteraction, type GuildMember, PermissionFlagsBits } from "discord.js";
+import { ActionType, EntityType } from "@prisma/client";
+import { PermissionFlagsBits, type ChatInputCommandInteraction, type GuildMember } from "discord.js";
 import { Discord, Guard, Slash } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
-import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
+import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
@@ -44,17 +44,15 @@ export abstract class Mute {
 
 		assert(voice.channel);
 
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
-
-		const actionType = CaseActionType.SERVER_MUTE_USER_ADDED;
-		return ActionModerationManager.logCase({
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType,
+			actionType: ActionType.SERVER_MUTE_USER_ADD,
 			actionOptions: {
 				pastTense: "server muted",
 				pendingExecution: () => target.voice.setMute(true, auditReason)
@@ -93,17 +91,16 @@ export abstract class Mute {
 
 		assert(voice.channel);
 
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
-		const actionType = CaseActionType.SERVER_MUTE_USER_ADDED;
-		return ActionModerationManager.logCase({
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType,
+			actionType: ActionType.SERVER_MUTE_USER_ADD,
 			actionOptions: {
 				pastTense: "server unmuted",
 				pendingExecution: () => target.voice.setMute(false, auditReason)

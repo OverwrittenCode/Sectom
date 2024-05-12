@@ -1,6 +1,7 @@
 import { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from "@discordjs/builders";
 import { Pagination, PaginationType } from "@discordx/pagination";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { ActionType, EntityType } from "@prisma/client";
 import {
 	ApplicationCommandOptionType,
 	ComponentType,
@@ -145,23 +146,23 @@ export abstract class Case {
 		const { guildId } = interaction;
 		const where = { guildId, id };
 
-		let embeds: Doc["embeds"];
+		let embeds: Doc["apiEmbeds"];
 
 		const cacheRecord = await RedisCache.case.indexes.byGuildIdAndId.match(where);
 
 		if (!cacheRecord.length) {
 			const prismaDoc = await DBConnectionManager.Prisma.case.findUnique({
 				where,
-				select: { embeds: true }
+				select: { apiEmbeds: true }
 			});
 
 			if (!prismaDoc) {
 				return await InteractionUtils.replyNoData(interaction);
 			}
 
-			embeds = prismaDoc.embeds;
+			embeds = prismaDoc.apiEmbeds;
 		} else {
-			embeds = cacheRecord[0].data.embeds;
+			embeds = cacheRecord[0].data.apiEmbeds;
 		}
 
 		return await InteractionUtils.replyOrFollowUp(interaction, { embeds });

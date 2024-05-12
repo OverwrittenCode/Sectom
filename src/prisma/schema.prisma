@@ -46,9 +46,9 @@ model Case {
     createdAt     DateTime   @default(now()) @db.Timestamptz()
     updatedAt     DateTime   @updatedAt @db.Timestamptz()
     expiryDate    DateTime?
-    /// [Embed]
-    embeds        Json[]
     perpetrator   Entity         @relation(name: "Perpetrator", fields: [perpetratorId], references: [id], onUpdate: Restrict)
+    /// [APIEmbed]
+    apiEmbeds     Json[]
     perpetratorId String
     target        Entity         @relation(name: "Target", fields: [targetId], references: [id], onUpdate: Restrict)
     targetId      String
@@ -104,24 +104,32 @@ enum CaseType {
     MANUAL
 }
 
-enum CaseActionType {
-    PURGE_MESSAGES
-    KICKED_USER
-	SOFT_BANNED_USER
-    BANNED_USER_ADDED
-    BANNED_USER_REMOVED
-    TIMED_OUT_USER_ADDED
-    TIMED_OUT_USER_UPDATED
-    TIMED_OUT_USER_REMOVED
-	NICK_USER_SET
-	NICK_USER_RESET
-	SERVER_DEAFEN_USER_ADDED
-	SERVER_DEAFEN_USER_REMOVED
-    SERVER_MUTE_USER_ADDED
-    SERVER_MUTE_USER_REMOVED
 }
 
 enum LogChannelGuildType {
     MODERATIVE
     PASSIVE
+enum ActionType {
+    PURGE_MESSAGES_SET
+    PURGE_MESSAGES_EDIT
+    KICK_USER_SET
+    KICK_USER_EDIT
+    SOFT_BAN_USER_SET
+    SOFT_BAN_USER_EDIT
+    BAN_USER_ADD
+    BAN_USER_EDIT
+    BAN_USER_REMOVE
+    TIME_OUT_USER_ADD
+    TIME_OUT_USER_EDIT
+    TIME_OUT_USER_UPDATE
+    TIME_OUT_USER_REMOVE
+    NICK_USER_SET
+    NICK_USER_EDIT
+    NICK_USER_RESET
+    SERVER_DEAFEN_USER_ADD
+    SERVER_DEAFEN_USER_EDIT
+    SERVER_DEAFEN_USER_REMOVE
+    SERVER_MUTE_USER_ADD
+    SERVER_MUTE_USER_EDIT
+    SERVER_MUTE_USER_REMOVE
 }

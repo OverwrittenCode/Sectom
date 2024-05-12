@@ -1,12 +1,9 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { CaseActionType, EntityType } from "@prisma/client";
-import { type ChatInputCommandInteraction, type GuildMember, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
-import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
@@ -26,16 +23,13 @@ export abstract class Kick {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
 
-		return ActionModerationManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType: CaseActionType.KICKED_USER,
 			actionOptions: {
 				pastTense: "kicked",
 				checkPossible: (guildMember) => guildMember.kickable,

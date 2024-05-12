@@ -1,5 +1,5 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { CaseActionType } from "@prisma/client";
+import { ActionType } from "@prisma/client";
 import {
 	ApplicationCommandOptionType,
 	FormattingPatterns,
@@ -14,7 +14,7 @@ import { MAX_MESSAGE_FETCH_LIMIT, MAX_PURGE_COUNT_LIMIT } from "~/constants";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { GivenChannelSlashOption, TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
-import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
+import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -562,13 +562,13 @@ export abstract class Purge {
 		messageContent += purgeChannel.id !== interaction.channelId ? ` in ${channelMention(purgeChannel.id)}.` : ".";
 
 		if (deletedSuccessCount) {
-			return await ActionModerationManager.logCase({
+			return await ActionManager.logCase({
 				interaction,
 				reason,
-				actionType: CaseActionType.PURGE_MESSAGES,
+				actionType: ActionType.PURGE_MESSAGES_SET,
 				target: {
 					id: purgeChannel.id,
-					type: COMMAND_ENTITY_TYPE.CHANNEL
+					type: CommandUtils.EntityType.CHANNEL
 				},
 				messageContent
 			});

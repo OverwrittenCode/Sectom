@@ -1,5 +1,5 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { CaseActionType, EntityType } from "@prisma/client";
+import { ActionType, EntityType } from "@prisma/client";
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,
@@ -7,13 +7,15 @@ import {
 	PermissionFlagsBits,
 	inlineCode,
 	userMention
+	userMention,
+	type ChatInputCommandInteraction,
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
-import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
+import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
@@ -58,6 +60,8 @@ export abstract class Nick {
 			reason,
 			actionType: CaseActionType.NICK_USER_SET,
 			messageContent: `Successfully nicknamed ${userMention(target.id)} as ${inlineCode(nickname)}.`,
+			actionType: ActionType.NICK_USER_SET,
+			successContent: `nicknamed ${userMention(target.id)} as ${inlineCode(nickname)}`,
 			actionOptions: {
 				pendingExecution: () => target.setNickname(nickname, auditReason)
 			}
@@ -84,7 +88,6 @@ export abstract class Nick {
 
 		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
 
-		return ActionModerationManager.logCase({
 			interaction,
 			target: {
 				id: target.id,

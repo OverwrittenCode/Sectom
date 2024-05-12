@@ -1,7 +1,7 @@
-import type { APIEmbed } from "discord.js";
+import type { APIEmbed as _APIEmbed } from "discord.js";
 
 declare global {
 	namespace PrismaJson {
-		interface Embed extends APIEmbed {}
+		interface APIEmbed extends _APIEmbed {}
 	}
 }

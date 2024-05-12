@@ -1,13 +1,13 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { CaseActionType, EntityType } from "@prisma/client";
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
+import { ActionType, EntityType } from "@prisma/client";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { DurationTransformer } from "~/helpers/transformers/Duration.js";
-import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
+import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -47,14 +47,14 @@ export abstract class Ban {
 		const actionType = CaseActionType.BANNED_USER_ADDED;
 		const deleteMessageSeconds = msDuration ? msDuration / 1000 : undefined;
 
-		return ActionModerationManager.logCase({
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType,
+			actionType: ActionType.BAN_USER_ADD,
 			actionOptions: {
 				pastTense: "banned",
 				checkPossible: (guildMember) => guildMember.bannable,
@@ -92,18 +92,17 @@ export abstract class Ban {
 			});
 		}
 
-		const auditReason = `[SOFT BAN] ${ActionModerationManager.generateAuditReason(interaction, reason)}`;
-		const actionType = CaseActionType.SOFT_BANNED_USER;
+		const auditReason = `[SOFT BAN] ${ActionManager.generateAuditReason(interaction, reason)}`;
 		const deleteMessageSeconds = msDuration / 1000;
 
-		return ActionModerationManager.logCase({
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType,
+			actionType: ActionType.SOFT_BAN_USER_SET,
 			actionOptions: {
 				pastTense: "soft banned",
 				checkPossible: (guildMember) => guildMember.bannable,
@@ -136,17 +135,16 @@ export abstract class Ban {
 			});
 		}
 
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
-		const actionType = CaseActionType.BANNED_USER_REMOVED;
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
-		return ActionModerationManager.logCase({
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType,
+			actionType: ActionType.BAN_USER_REMOVE,
 			actionOptions: {
 				pastTense: "unbanned",
 				pendingExecution: () => interaction.guild.members.unban(target.id, auditReason)

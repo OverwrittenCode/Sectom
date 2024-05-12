@@ -1,5 +1,4 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { CaseActionType, EntityType } from "@prisma/client";
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
 
@@ -9,6 +8,7 @@ import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { DurationTransformer } from "~/helpers/transformers/Duration.js";
 import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
+import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -41,13 +41,13 @@ export abstract class Timeout {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
 		const actionType = target.isCommunicationDisabled()
-			? CaseActionType.TIMED_OUT_USER_UPDATED
-			: CaseActionType.TIMED_OUT_USER_ADDED;
+			? ActionType.TIME_OUT_USER_UPDATE
+			: ActionType.TIME_OUT_USER_ADD;
 
-		return ActionModerationManager.logCase({
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
@@ -84,18 +84,16 @@ export abstract class Timeout {
 			});
 		}
 
-		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
-		const actionType = CaseActionType.TIMED_OUT_USER_REMOVED;
-
-		return ActionModerationManager.logCase({
+		return ActionManager.logCase({
 			interaction,
 			target: {
 				id: target.id,
 				type: EntityType.USER
 			},
 			reason,
-			actionType,
+			actionType: ActionType.TIME_OUT_USER_REMOVE,
 			actionOptions: {
 				pastTense: "removed the timed out from",
 				checkPossible: this.checkPossible,
