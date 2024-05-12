@@ -111,8 +111,8 @@ export abstract class Config {
 		for (const [name, data] of guildConfigurationEntries) {
 			data.disabled ??= false;
 
-			const titleCaseName = StringUtils.capitaliseFirstLetter(name);
-			const pageText = `${titleCaseName} Configuration`;
+			const sentenceCaseName = StringUtils.capitaliseFirstLetter(name);
+			const pageText = `${sentenceCaseName} Configuration`;
 
 			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText}`);
 			const actionRows: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[] = [];
@@ -220,7 +220,7 @@ export abstract class Config {
 
 			pageTextArray.push(pageText);
 
-			configurationValues.push(titleCaseName);
+			configurationValues.push(sentenceCaseName);
 
 			embed.setDescription(descriptionArray.join(StringUtils.LineBreak));
 

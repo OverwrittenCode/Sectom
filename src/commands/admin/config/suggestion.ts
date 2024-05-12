@@ -197,7 +197,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 	@ButtonComponent({ id: SuggestionConfig.customIdRecords.suggestion_create.regex })
 	public async buttonCreate(interaction: ButtonInteraction<"cached">) {
-		const componentTypeTitleCase = StringUtils.capitaliseFirstLetter(componentType);
+		const componentTypeSentenceCase = StringUtils.capitaliseFirstLetter(componentType);
 
 		const {
 			configuration: { suggestion }
@@ -206,7 +206,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 		});
 
 		if (suggestion.disabled) {
-			throw new ValidationError(ValidationError.MessageTemplates.SystemIsDisabled(componentTypeTitleCase));
+			throw new ValidationError(ValidationError.MessageTemplates.SystemIsDisabled(componentTypeSentenceCase));
 		}
 
 		const subjectName = interaction.customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;

@@ -331,7 +331,7 @@ export abstract class ContentClusterMessageComponentHandler {
 			modifierType
 		} = ContentClusterManager.retrieveCustomIdFields(customId);
 
-		const propertyTypeTitleCase = StringUtils.capitaliseFirstLetter(propertyType);
+		const propertyTypeSentenceCase = StringUtils.capitaliseFirstLetter(propertyType);
 
 		const propertyTypeConfigKey = `${propertyType}s` as `${Enums.ContentClusterPropertyType}s`;
 
@@ -391,7 +391,7 @@ export abstract class ContentClusterMessageComponentHandler {
 			(modifierType === Enums.ModifierType.Add ? 1 : 2);
 
 		if (isDuplicateProperty) {
-			throw new ValidationError(`duplicate ${propertyTypeTitleCase} name given`);
+			throw new ValidationError(`duplicate ${propertyTypeSentenceCase} name given`);
 		}
 
 		const targetName =
@@ -684,7 +684,7 @@ export abstract class ContentClusterMessageComponentHandler {
 	private async modalPropertySetupHandler(options: ModalPropertyHandlerOptions) {
 		const { interaction, componentType, propertyType: propertyType, modifierType, data } = options;
 
-		const [componentTypeTitleCase, propertyTypeTitleCase, modifierTypeTitleCase] = [
+		const [componentTypeSentenceCase, propertyTypeSentenceCase, modifierTypeSentenceCase] = [
 			componentType,
 			propertyType,
 			modifierType
@@ -722,7 +722,7 @@ export abstract class ContentClusterMessageComponentHandler {
 		const modal = new ModalBuilder()
 			.setCustomId(customIdGenerator())
 			.setTitle(
-				`${modifierTypeTitleCase} ${modifierType === Enums.ModifierType.Add ? "a" : "the"} ${componentTypeTitleCase} ${propertyTypeTitleCase}`
+				`${modifierTypeSentenceCase} ${modifierType === Enums.ModifierType.Add ? "a" : "the"} ${componentTypeSentenceCase} ${propertyTypeSentenceCase}`
 			);
 
 		const textInputs: TextInputBuilder[] = [];

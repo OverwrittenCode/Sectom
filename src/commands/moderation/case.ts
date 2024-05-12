@@ -111,14 +111,14 @@ export abstract class Case {
 
 		assert(updatedEmbed.fields && targetInformationFieldIndex);
 
-		const [titleCaseEntityType, , hyperlinkedTargetId] = fields[targetInformationFieldIndex].value
+		const [sentenceCaseEntityType, , hyperlinkedTargetId] = fields[targetInformationFieldIndex].value
 			.replaceAll(StringUtils.TabCharacter, "")
 			.split(StringUtils.LineBreak)
 			.find((str) => str.includes("ID"))!
 			.replaceAll("*", "")
 			.split(" ");
 
-		const entityType = EntityType[titleCaseEntityType.toUpperCase() as EntityType];
+		const entityType = EntityType[sentenceCaseEntityType.toUpperCase() as EntityType];
 		const targetId = hyperlinkedTargetId.split("(")[0].slice(1, -1);
 
 		if (retrievedTimestampFieldIndex) {

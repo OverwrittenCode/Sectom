@@ -166,7 +166,7 @@ export abstract class ActionManager {
 		const id = StringUtils.GenerateID();
 
 		const targetTypeLowercase = targetType.toLowerCase() as Lowercase<typeof targetType>;
-		const targetTypeTitleCase = StringUtils.capitaliseFirstLetter(targetTypeLowercase);
+		const targetTypeSentenceCase = StringUtils.capitaliseFirstLetter(targetTypeLowercase);
 		const targetMentionFn = discordBuilders[`${targetTypeLowercase}Mention`];
 		const targetMention = targetMentionFn(targetId);
 		const perpetratorMention = userMention(perpetratorId);
@@ -224,7 +224,7 @@ export abstract class ActionManager {
 				name: "Target Information",
 				value: EmbedManager.indentFieldValues([
 					{
-						name: `${targetTypeTitleCase} ID`,
+						name: `${targetTypeSentenceCase} ID`,
 						value:
 							targetType === "USER"
 								? EntityManager.getUserHyperlink(targetId)
@@ -233,7 +233,7 @@ export abstract class ActionManager {
 									: targetId
 					},
 					{
-						name: `${targetTypeTitleCase} Mention`,
+						name: `${targetTypeSentenceCase} Mention`,
 						value: targetMention
 					}
 				])

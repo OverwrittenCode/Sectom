@@ -31,9 +31,9 @@ export function TargetSlashOption(args: TargetSlashOptionArguments) {
 	descriptionNote += "Ex: 1090725120628111864";
 
 	const entityTypeLowercase = entityType.toLowerCase() as Lowercase<typeof entityType>;
-	const entityTypeTitleCase = StringUtils.capitaliseFirstLetter(entityTypeLowercase);
+	const entityTypeSentenceCase = StringUtils.capitaliseFirstLetter(entityTypeLowercase);
 
-	if (entityTypeTitleCase === "Channel") {
+	if (entityTypeSentenceCase === "Channel") {
 		channelTypes ??= [ChannelType.GuildText];
 	}
 
@@ -42,9 +42,9 @@ export function TargetSlashOption(args: TargetSlashOptionArguments) {
 			description: `The ${entityTypeLowercase} mention or ${entityTypeLowercase}Id. ${descriptionNote}`,
 			name: name ?? entityTypeLowercase,
 			type:
-				entityTypeTitleCase === "Snowflake"
+				entityTypeSentenceCase === "Snowflake"
 					? ApplicationCommandOptionType.Mentionable
-					: ApplicationCommandOptionType[entityTypeTitleCase],
+					: ApplicationCommandOptionType[entityTypeSentenceCase],
 			required,
 			channelTypes,
 			transformer: TargetTransformer(flags)

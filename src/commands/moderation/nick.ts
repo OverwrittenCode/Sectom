@@ -2,11 +2,11 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
 	ApplicationCommandOptionType,
+	type ChatInputCommandInteraction,
+	type GuildMember,
 	PermissionFlagsBits,
 	inlineCode,
-	userMention,
-	type ChatInputCommandInteraction,
-	type GuildMember
+	userMention
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
