@@ -36,7 +36,9 @@ export abstract class Main {
 			IntentsBitField.Flags.MessageContent
 		],
 		partials: [Partials.Channel, Partials.GuildMember, Partials.User],
-
+		allowedMentions: {
+			parse: ["users", "roles"]
+		},
 		silent: false,
 		guards: [NotBot],
 		presence: {
