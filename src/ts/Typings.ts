@@ -109,8 +109,7 @@ export namespace Typings {
 		[K in keyof T]: T[K];
 	} & {};
 	export type PickMatching<T, V> = { [K in keyof T as T[K] extends V | (() => V) ? K : never]: T[K] };
-
-	export type TitleCase<T extends string> = T extends `${infer First}${infer Rest}`
+	export type SentenceCase<T extends string> = T extends `${infer First}${infer Rest}`
 		? `${Uppercase<First>}${Rest}`
 		: T;
 	export type Concatenate<T extends any[]> = T extends []

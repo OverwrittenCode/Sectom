@@ -16,8 +16,8 @@ interface $NameCTX<M extends Prisma.ModelName = Prisma.ModelName> {
 
 type ClientCTX<M extends Prisma.ModelName = Prisma.ModelName, Inner extends boolean = false> = {
 	[K in Lowercase<M>]: Typings.DisplaceObjects<
-		PrismaClient[K] & $NameCTX<Typings.TitleCase<K>>,
-		{ fields: {}; $parent: ClientCTX<Typings.TitleCase<K>, true> }
+		PrismaClient[K] & $NameCTX<Typings.SentenceCase<K>>,
+		{ fields: {}; $parent: ClientCTX<Typings.SentenceCase<K>, true> }
 	>;
 } extends infer R
 	? Inner extends false

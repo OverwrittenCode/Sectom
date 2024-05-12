@@ -6,9 +6,10 @@ export abstract class StringUtils {
 	public static isValidString(str: any): str is string {
 		return !!str && typeof str === "string";
 	}
-	public static capitalizeFirstLetter<const T extends string>(str: T): Typings.TitleCase<T> {
+
+	public static capitaliseFirstLetter<const T extends string>(str: T): Typings.SentenceCase<T> {
 		const value = str.charAt(0).toUpperCase() + str.slice(1);
-		return value as Typings.TitleCase<T>;
+		return value as Typings.SentenceCase<T>;
 	}
 
 	public static concatenate<const T extends string[]>(...strs: T): Typings.Concatenate<T> {
