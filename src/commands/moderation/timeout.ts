@@ -3,21 +3,21 @@ import { CaseActionType, EntityType } from "@prisma/client";
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
 
-import { NO_REASON } from "~/constants";
+import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { DurationTransformer } from "~/helpers/transformers/Duration.js";
 import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
-import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { Enums } from "~/ts/Enums.js";
+import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 
 const mutualPermissions = [PermissionFlagsBits.ModerateMembers];
 @Discord()
-@Category(COMMAND_CATEGORY.MODERATION)
+@Category(Enums.CommandCategory.Moderation)
 export abstract class Timeout {
 	private checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
 
@@ -26,7 +26,7 @@ export abstract class Timeout {
 	public async timeout(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
 		})
 		target: GuildMember,
 		@SlashOption({
@@ -38,7 +38,7 @@ export abstract class Timeout {
 		})
 		msDuration: number,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
@@ -69,11 +69,11 @@ export abstract class Timeout {
 	public async untimeout(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const isTimedOut = target.isCommunicationDisabled();

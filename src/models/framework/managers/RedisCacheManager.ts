@@ -42,7 +42,7 @@ export abstract class RedisCacheManager<
 
 		if (indexList?.length) {
 			indexList
-				.map((data) => `by${data.map((v) => StringUtils.capitalizeFirstLetter(v)).join("And")}`)
+				.map((data) => `by${data.map((v) => StringUtils.capitaliseFirstLetter(v)).join("And")}`)
 				.forEach((indexKey, i) => {
 					const indexValue = this.collection.createIndex({
 						name: indexKey,

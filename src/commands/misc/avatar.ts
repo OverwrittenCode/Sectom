@@ -1,17 +1,17 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { EmbedBuilder, GuildMember } from "discord.js";
+import { EmbedBuilder, GuildMember, User } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup } from "discordx";
 
-import { COMMAND_ENTITY_TYPE, LIGHT_GOLD } from "~/constants";
+import { LIGHT_GOLD } from "~/constants";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
-import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { Enums } from "~/ts/Enums.js";
+import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
-import type { ChatInputCommandInteraction, User } from "discord.js";
+import type { ChatInputCommandInteraction } from "discord.js";
 
 @Discord()
-@Category(COMMAND_CATEGORY.MISC)
+@Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 @SlashGroup({
 	description: "Display the avatar of a user",
@@ -23,8 +23,8 @@ export abstract class Avatar {
 	@Slash({ description: "Display the server avatar of a user or global avatar otherwise" })
 	public server(
 		@TargetSlashOption({
-			entityType: COMMAND_ENTITY_TYPE.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD, COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
+			entityType: CommandUtils.EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
 		})
 		target: GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
@@ -40,7 +40,7 @@ export abstract class Avatar {
 			.setColor(target.displayHexColor)
 			.setImage(iconURL + this.sizeURLSuffix);
 
-		InteractionUtils.replyOrFollowUp(interaction, {
+		return InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed]
 		});
 	}
@@ -48,8 +48,8 @@ export abstract class Avatar {
 	@Slash({ description: "Display the global avatar of a user" })
 	public global(
 		@TargetSlashOption({
-			entityType: COMMAND_ENTITY_TYPE.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE]
+			entityType: CommandUtils.EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
 		})
 		target: User | GuildMember | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
@@ -69,7 +69,7 @@ export abstract class Avatar {
 			.setColor(colour)
 			.setImage(iconURL + this.sizeURLSuffix);
 
-		InteractionUtils.replyOrFollowUp(interaction, {
+		return InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed]
 		});
 	}

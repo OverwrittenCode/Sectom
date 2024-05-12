@@ -1,6 +1,6 @@
 import { type APIEmbedField, type EmbedBuilder, bold } from "discord.js";
 
-import { FIELD_NAME_SEPARATOR, LINE_BREAK, TAB_CHARACTER } from "~/constants";
+import { StringUtils } from "~/utils/string.js";
 
 interface BaseField extends Omit<APIEmbedField, "inline"> {}
 
@@ -22,10 +22,10 @@ interface MutualField {
 export abstract class EmbedManager {
 	public static indentFieldValues(fields: Field[], options?: IndentFieldOptions): string {
 		const indentLevel = options?.indentLevel ?? 1;
-		const tab = TAB_CHARACTER.repeat(indentLevel);
+		const tab = StringUtils.TabCharacter.repeat(indentLevel);
 		const isBold = options?.bold ?? true;
 
-		let seperator = options?.seperator ?? FIELD_NAME_SEPARATOR;
+		let seperator = options?.seperator ?? StringUtils.FieldNameSeparator;
 		seperator += " ";
 
 		return fields
@@ -45,10 +45,10 @@ export abstract class EmbedManager {
 					const subFields = field.value as Field[];
 
 					const subFieldString: string = this.indentFieldValues(subFields, newOptions);
-					return tab + formattedFieldName + LINE_BREAK + subFieldString;
+					return tab + formattedFieldName + StringUtils.LineBreak + subFieldString;
 				}
 			})
-			.join(LINE_BREAK);
+			.join(StringUtils.LineBreak);
 	}
 
 	public static addMutualFields(embeds: EmbedBuilder[], mutualFields: MutualField[]): EmbedBuilder[] {
@@ -79,7 +79,7 @@ export abstract class EmbedManager {
 
 			const fields = jsonFields.map(({ name, value, inline }) => {
 				return {
-					name: bold(name + FIELD_NAME_SEPARATOR),
+					name: bold(name + StringUtils.FieldNameSeparator),
 					value,
 					inline
 				};

@@ -16,7 +16,7 @@ import ms from "ms";
 import { LIGHT_GOLD, LINE_BREAK } from "~/constants";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
-import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
+import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
@@ -27,7 +27,7 @@ import type { ChatInputCommandInteraction } from "discord.js";
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 
 @Discord()
-@Category(COMMAND_CATEGORY.MODERATION)
+@Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 @SlashGroup({ description: "container of all cases in the server", name: "case" })
 @SlashGroup("case")

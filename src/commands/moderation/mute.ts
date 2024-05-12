@@ -5,29 +5,27 @@ import { CaseActionType, EntityType } from "@prisma/client";
 import { type ChatInputCommandInteraction, type GuildMember, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash } from "discordx";
 
-import { NO_REASON } from "~/constants";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
-import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 const mutualPermissions = [PermissionFlagsBits.MuteMembers];
 @Discord()
-@Category(COMMAND_CATEGORY.MODERATION)
+@Category(Enums.CommandCategory.Moderation)
 export abstract class Mute {
 	@Slash({ description: "Mute a user in a voice channel on the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async mute(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { voice } = target;
@@ -72,11 +70,11 @@ export abstract class Mute {
 	public async unmute(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { voice } = target;

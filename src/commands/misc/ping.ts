@@ -1,12 +1,12 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { Discord, Guard, Slash } from "discordx";
 
-import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
+import { Enums } from "~/ts/Enums.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
 
 @Discord()
-@Category(COMMAND_CATEGORY.MISC)
+@Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Ping {
 	@Slash({ description: "Get the latency of the bot in milliseconds" })

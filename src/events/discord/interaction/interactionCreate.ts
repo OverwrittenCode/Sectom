@@ -4,27 +4,14 @@ import { AutocompleteInteraction, Colors, ComponentType, EmbedBuilder } from "di
 import { Discord, On } from "discordx";
 import { container, injectable } from "tsyringe";
 
-import {
-	BUTTON_SUFFIX_CANCEL_ACTION,
-	BUTTON_SUFFIX_CONFIRMATION_ARRAY,
-	INTERACTION,
-	MAX_DEFER_RESPONSE_WAIT
-} from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
 import { InteractionUtils } from "~/utils/interaction.js";
+import { StringUtils } from "~/utils/string.js";
 
-import type { APIActionRowComponent, APIButtonComponent } from "discord.js";
 import type { ArgsOf, Client } from "discordx";
-
-const {
-	ID: {
-		CANCEL_ACTION,
-		EXTERNALS: { WILD_CARDS }
-	}
-} = INTERACTION;
 
 @Discord()
 @injectable()
@@ -58,72 +45,45 @@ export class InteractionCreate {
 		}
 
 		if (interaction.isButton() || interaction.isStringSelectMenu()) {
-			const isPaginationButton = WILD_CARDS.some((str) => interaction.customId.toLowerCase().includes(str));
+			const messageComponentIds = InteractionUtils.MessageComponentIds;
+
+			const isPaginationButton = messageComponentIds.Managed.some((str) =>
+				interaction.customId.toLowerCase().includes(str)
+			);
 
 			if (isPaginationButton) {
 				return;
 			}
 
 			await interaction.deferUpdate();
+			const disableOnClickButtonArray = [
+				messageComponentIds.CancelAction,
+				messageComponentIds.ConfirmAction,
+				messageComponentIds.OneTimeUse
+			];
 
-			const confirmationArray = BUTTON_SUFFIX_CONFIRMATION_ARRAY;
-			const actionButtonSuffix = interaction.customId.split(".").at(-1);
-			const isConfirmationButton = !!actionButtonSuffix && confirmationArray.includes(actionButtonSuffix);
+			const customIDFields = interaction.customId.split(StringUtils.CustomIDFIeldBodySeperator);
+			const disableOnClick = customIDFields.some((str) => disableOnClickButtonArray.includes(str));
 
-			if (isConfirmationButton) {
-				const isCancel = actionButtonSuffix === BUTTON_SUFFIX_CANCEL_ACTION;
+			if (disableOnClick) {
+				const isCancel = interaction.customId === messageComponentIds.CancelAction;
+				const isConfirmAction = interaction.customId === messageComponentIds.ConfirmAction;
 
 				const buttonMessage = interaction.message;
 
-				const cancelEmbed = new EmbedBuilder()
-					.setColor(Colors.Red)
-					.setTitle(CANCEL_ACTION.TITLE)
-					.setDescription(CANCEL_ACTION.DESCRIPTION);
-
-				const embeds = isCancel ? [cancelEmbed] : undefined;
+				const options = isCancel ? { content: "Action cancelled.", embeds: [] } : {};
 
 				if (buttonMessage.editable) {
-					const { components } = buttonMessage;
-
-					const confirmationButtonIndex = components.findIndex((row) =>
-						row.components.every((c) => {
-							const confirmationSuffix = c.customId?.split(".").at(-1);
-
-							return (
-								c.type === ComponentType.Button &&
-								confirmationSuffix &&
-								confirmationArray.includes(confirmationSuffix)
-							);
-						})
-					);
-
-					assert(confirmationButtonIndex !== -1);
-
-					const confirmationButtonComponent = components[confirmationButtonIndex].toJSON();
-
-					const disabledConfirmationButtons = confirmationButtonComponent.components.map((c) =>
-						Object.assign({}, c, { disabled: true })
-					) as APIButtonComponent[];
-
-					const disabledComponentObject: APIActionRowComponent<APIButtonComponent> = {
-						components: disabledConfirmationButtons,
-						type: ComponentType.ActionRow
-					};
-
-					const updatedComponents = [
-						...components.filter((c, index) => index !== confirmationButtonIndex),
-						disabledComponentObject
-					];
-
-					await buttonMessage.edit({
-						embeds,
-						components: updatedComponents
-					});
-				} else if (embeds) {
-					await InteractionUtils.replyOrFollowUp(interaction, { embeds });
+					await InteractionUtils.disableComponents(buttonMessage, options);
+				} else {
+					await InteractionUtils.replyOrFollowUp(interaction, options);
 				}
 
-				if (isCancel) {
+				if (!interaction.replied && !interaction.deferred) {
+					await interaction.deferUpdate().catch(() => {});
+				}
+
+				if (isCancel || isConfirmAction) {
 					return;
 				}
 			}

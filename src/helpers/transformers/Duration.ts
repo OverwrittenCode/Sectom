@@ -3,8 +3,9 @@ import assert from "assert";
 import ms from "ms";
 import prettyMilliseconds from "pretty-ms";
 
-import { NUMBER_REGEX } from "~/constants";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { CommandUtils } from "~/utils/command.js";
+import { StringUtils } from "~/utils/string.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
 

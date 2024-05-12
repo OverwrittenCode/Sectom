@@ -1,4 +1,4 @@
-import type { NonEmptyObject } from "type-fest";
+import type { NonEmptyObject, WritableDeep } from "type-fest";
 
 export abstract class ObjectUtils {
 	public static isValidObject(obj: unknown): obj is NonEmptyObject<Record<string, any>> {
@@ -28,6 +28,8 @@ export abstract class ObjectUtils {
 
 	public static uniqueArray<T>(array: T[]): T[] {
 		return [...new Set(array)];
+	public static cloneObject<T>(obj: T): WritableDeep<T> {
+		return JSON.parse(JSON.stringify(obj)) as WritableDeep<T>;
 	}
 
 	public static splitArrayChunks<T>(array: T[], chunk: number): T[][] {

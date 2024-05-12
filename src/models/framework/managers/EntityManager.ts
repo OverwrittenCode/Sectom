@@ -70,7 +70,7 @@ export abstract class EntityManager {
 	}
 
 	public static isEntityType<const T extends GuildEntityType>(
-		entity: Typings.EntityObjectType,
+		entity: Typings.EntityObjectType<false>,
 		type: T
 	): entity is GuildEntityTypeMap[T] {
 		switch (type) {

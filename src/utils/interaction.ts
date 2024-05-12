@@ -1,15 +1,35 @@
 import assert from "assert";
 
-import { DiscordAPIError, DiscordjsError, DiscordjsErrorCodes, type InteractionReplyOptions } from "discord.js";
+import {
+	DiscordAPIError,
+	DiscordjsError,
+	DiscordjsErrorCodes,
+	RESTJSONErrorCodes,
+} from "discord.js";
 
-import { NO_DATA_MESSAGE } from "~/constants";
+import type { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
+import { ObjectUtils } from "~/utils/object.js";
+import { StringUtils } from "~/utils/string.js";
+import type {
+	InteractionReplyOptions,
+	InteractionResponse,
+	Message,
+} from "discord.js";
 
 type ReplyOptions = InteractionReplyOptions & { ephemeral?: boolean };
 
 export abstract class InteractionUtils {
-	public static async replyOrFollowUp(interaction: Typings.GuildInteraction, replyOptions: ReplyOptions) {
+	public static Messages = {
+		NoData: "Nothing to view yet in this query selection.",
+		NoReason: "No reason provided."
+	} as const;
+	public static async replyOrFollowUp(
+		interaction: Typings.DeferrableGuildInteraction,
+		replyOptions: ReplyOptions
+	): Promise<null | Message<boolean> | InteractionResponse<boolean>> {
 		assert(interaction.channel);
+
 		try {
 			if (interaction.replied) {
 				return await interaction.followUp(replyOptions);
@@ -27,7 +47,8 @@ export abstract class InteractionUtils {
 				err instanceof DiscordjsError && err.code === DiscordjsErrorCodes.InteractionAlreadyReplied;
 
 			const unknownInteractionOrMessage =
-				err instanceof DiscordAPIError && (err.code === 10062 || err.code === 10008);
+				err instanceof DiscordAPIError &&
+				(err.code === RESTJSONErrorCodes.UnknownInteraction || err.code === RESTJSONErrorCodes.UnknownMessage);
 
 			if (unexpectedAlready || unknownInteractionOrMessage) {
 				const { flags, ...messageOptions } = replyOptions;
@@ -38,9 +59,9 @@ export abstract class InteractionUtils {
 		}
 	}
 
-	public static async replyNoData(interaction: Typings.GuildInteraction, ephemeral: boolean = true) {
+	public static async replyNoData(interaction: Typings.DeferrableGuildInteraction, ephemeral: boolean = true) {
 		return await this.replyOrFollowUp(interaction, {
-			content: NO_DATA_MESSAGE,
+			content: this.Messages.NoData,
 			ephemeral
 		});
 	}

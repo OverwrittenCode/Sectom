@@ -3,14 +3,14 @@ import assert from "assert";
 import { GuildMember, Role, User } from "discord.js";
 
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
 
 type ParsedTargetEntityType = Typings.EntityObjectType | string;
 
-export function TargetTransformer(flags: COMMAND_SLASH_OPTION_TARGET_FLAGS[] = []) {
+export function TargetTransformer(flags: Enums.CommandSlashOptionTargetFlags[] = []) {
 	return function (
 		target: ParsedTargetEntityType,
 		interaction: ChatInputCommandInteraction
@@ -23,11 +23,11 @@ export function TargetTransformer(flags: COMMAND_SLASH_OPTION_TARGET_FLAGS[] = [
 			throw new ValidationError("invalid snowflake provided, please check your input");
 		}
 
-		if (flags.includes(COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD) && target instanceof User) {
+		if (flags.includes(Enums.CommandSlashOptionTargetFlags.Guild) && target instanceof User) {
 			throw new ValidationError("given user does not exist in the server");
 		}
 
-		if (!flags.includes(COMMAND_SLASH_OPTION_TARGET_FLAGS.PASSIVE)) {
+		if (!flags.includes(Enums.CommandSlashOptionTargetFlags.Passive)) {
 			let punishmentReflexivePronoun: string | null = null;
 
 			switch (target.id) {

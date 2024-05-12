@@ -2,6 +2,7 @@ import { type Prisma as _Prisma } from "@prisma/client";
 
 import type { Index, Query } from "@upstash/query";
 import type {
+	AutocompleteInteraction,
 	ButtonInteraction,
 	CacheType,
 	ChannelSelectMenuInteraction,
@@ -15,10 +16,11 @@ import type {
 	Role,
 	RoleSelectMenuInteraction,
 	StringSelectMenuInteraction,
+	TextChannel,
 	User,
 	UserSelectMenuInteraction
 } from "discord.js";
-import type { Join, UnionToIntersection } from "type-fest";
+import type { Join } from "type-fest";
 
 export namespace Typings {
 	export namespace Database {
@@ -133,10 +135,20 @@ export namespace Typings {
 		| ModalSubmitInteraction<Cache>
 		| RoleSelectMenuInteraction<Cache>
 		| StringSelectMenuInteraction<Cache>
-		| UserSelectMenuInteraction<Cache>;
+		| UserSelectMenuInteraction<Cache>
+		| AutocompleteInteraction<Cache>;
+
+	export type DeferrableGuildInteraction<Cache extends CacheType | undefined = CacheType> = Extract<
+		GuildInteraction<Cache>,
+		{ deferred: boolean }
+	>;
 
 	export type CachedGuildInteraction = GuildInteraction<"cached">;
+	export type CachedDeferrableGuildInteraction = DeferrableGuildInteraction<"cached">;
 
-	export type TargetType = User | Role | GuildBasedChannel;
-	export type EntityObjectType = TargetType | GuildMember;
+	type TargetType<TextBased extends boolean = true> = TextBased extends true
+		? User | Role | TextChannel
+		: User | Role | GuildBasedChannel;
+
+	export type EntityObjectType<TextBased extends boolean = true> = TargetType<TextBased> | GuildMember;
 }

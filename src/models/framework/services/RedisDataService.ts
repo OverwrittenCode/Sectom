@@ -1,13 +1,10 @@
-import pkg from "lodash";
+import _ from "lodash";
 
 import type { Typings } from "~/ts/Typings.js";
 import { ObjectUtils } from "~/utils/object.js";
 
 import type { Prisma } from "@prisma/client";
 import type { Entries } from "type-fest";
-
-const { isEmpty } = pkg;
-
 interface RedisRecord<M extends Prisma.ModelName = Prisma.ModelName> {
 	id: string;
 	data: Typings.Database.Redis.RetrieveModelDocument<M>;
@@ -22,7 +19,7 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 	}
 
 	public encode<T = unknown>(record: T): string {
-		const redisRecord = { ...record } as RedisRecord<M>;
+		const redisRecord = ObjectUtils.cloneObject(record) as Typings.Database.Redis.RetrieveRecord<M>;
 
 		if (ObjectUtils.isValidObject(redisRecord) && "data" in redisRecord && redisRecord.data) {
 			const { data } = redisRecord;
@@ -58,12 +55,12 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 	}
 
 	public withIDField<const TDoc extends Typings.Database.DocumentInput<M>>(data: TDoc): TDoc & { id: string } {
-		const isLevelingDoc = !("id" in data) || isEmpty(data.id);
+		const isLevelingDoc = !("id" in data) || _.isEmpty(data.id);
 		if (!isLevelingDoc) {
 			return data as TDoc & { id: string };
 		}
 
-		const dataCopy = { ...data };
+		const dataCopy = ObjectUtils.cloneObject(data);
 
 		if (this.forceIsModelType(dataCopy, "Leveling", isLevelingDoc)) {
 			const compoundIDValue = `${dataCopy.guildId}_${dataCopy.entityId}`;

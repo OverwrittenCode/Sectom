@@ -1,13 +1,12 @@
 import assert from "assert";
 
-import { EmbedBuilder } from "@discordjs/builders";
-import { Colors, bold, unorderedList } from "discord.js";
+import { Colors, EmbedBuilder, bold, unorderedList } from "discord.js";
 import { type GuardFunction } from "discordx";
 
-import { COMMAND_OPTION_NAME_CHANNEL_PERMISSION } from "~/constants";
+import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
-import type { CommandInteraction, PermissionFlags } from "discord.js";
+import type { ButtonInteraction, CommandInteraction, PermissionResolvable } from "discord.js";
 
 type BotPermissions = PermissionFlags[keyof PermissionFlags];
 
@@ -42,12 +41,10 @@ export function BotRequiredPermissions(permissions: BotPermissions[]): GuardFunc
 		const missingPermissions = unorderedList(myCurrentPermissions.missing(permissions).map((str) => bold(str)));
 
 		if (missingPermissions) {
-			missingPermissionEmbed.addFields([
-				{
-					name: "My Missing Permissions",
-					value: missingPermissions
-				}
-			]);
+			missingPermissionEmbed.addFields({
+				name: "My Missing Permissions",
+				value: missingPermissions
+			});
 
 			return await InteractionUtils.replyOrFollowUp(interaction, {
 				embeds: [missingPermissionEmbed]

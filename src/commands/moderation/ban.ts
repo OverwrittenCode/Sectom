@@ -3,13 +3,13 @@ import { CaseActionType, EntityType } from "@prisma/client";
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashOption } from "discordx";
 
-import { COMMAND_ENTITY_TYPE, NO_REASON } from "~/constants";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { DurationTransformer } from "~/helpers/transformers/Duration.js";
 import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
-import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
+import { Enums } from "~/ts/Enums.js";
+import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
@@ -17,12 +17,12 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 const mutualPermissions = [PermissionFlagsBits.BanMembers];
 
 @Discord()
-@Category(COMMAND_CATEGORY.MODERATION)
+@Category(Enums.CommandCategory.Moderation)
 export abstract class Ban {
 	@Slash({ description: "Ban a user from the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async ban(
-		@TargetSlashOption({ entityType: COMMAND_ENTITY_TYPE.USER })
+		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
 		@SlashOption({
 			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
@@ -32,7 +32,7 @@ export abstract class Ban {
 		})
 		msDuration: number | undefined,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const isTargetBanned = await this.isTargetBanned(interaction, target);
@@ -70,7 +70,7 @@ export abstract class Ban {
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async softban(
-		@TargetSlashOption({ entityType: COMMAND_ENTITY_TYPE.USER })
+		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
 		@SlashOption({
 			description: "The duration to prune messages. Ex: (30m, 1h, 1 day)",
@@ -81,7 +81,7 @@ export abstract class Ban {
 		})
 		msDuration: number,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const isTargetBanned = await this.isTargetBanned(interaction, target);
@@ -122,10 +122,10 @@ export abstract class Ban {
 	@Slash({ description: "Unban a user from the server", defaultMemberPermissions: mutualPermissions })
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async unban(
-		@TargetSlashOption({ entityType: COMMAND_ENTITY_TYPE.USER })
+		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const isTargetBanned = await this.isTargetBanned(interaction, target);

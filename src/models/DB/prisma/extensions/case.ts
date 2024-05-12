@@ -2,7 +2,7 @@ import { EntityType } from "@prisma/client";
 import { TimestampStyles, time } from "discord.js";
 import { container, singleton } from "tsyringe";
 
-import { TAB_CHARACTER } from "~/constants";
+import { StringUtils } from "~/utils/string.js";
 
 import { EntityInstanceMethods } from "./entity.js";
 
@@ -43,6 +43,6 @@ export class CaseInstanceMethods {
 		return `${time(timestamp, TimestampStyles.LongDateTime)} (${time(
 			timestamp,
 			TimestampStyles.RelativeTime
-		)}) ${TAB_CHARACTER}`;
+		)}) ${StringUtils.TabCharacter}`;
 	}
 }

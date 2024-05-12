@@ -10,19 +10,17 @@ import {
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
-import { NO_REASON } from "~/constants";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { ActionModerationManager } from "~/managers/ActionModerationManager.js";
-import { COMMAND_CATEGORY } from "~/ts/enums/COMMAND_CATEGORY.js";
-import { COMMAND_SLASH_OPTION_TARGET_FLAGS } from "~/ts/enums/COMMAND_SLASH_OPTION_TARGET_FLAGS.js";
+import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 const mutualPermissions = [PermissionFlagsBits.ManageNicknames];
 
 @Discord()
-@Category(COMMAND_CATEGORY.MODERATION)
+@Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 @SlashGroup({
 	description: "set or reset the nickname of a member in the server",
@@ -35,7 +33,7 @@ export abstract class Nick {
 	public set(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
 		})
 		target: GuildMember,
 		@SlashOption({
@@ -46,7 +44,7 @@ export abstract class Nick {
 		})
 		nickname: string,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const auditReason = ActionModerationManager.generateAuditReason(interaction, reason);
@@ -70,11 +68,11 @@ export abstract class Nick {
 	public reset(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
-			flags: [COMMAND_SLASH_OPTION_TARGET_FLAGS.GUILD]
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = NO_REASON,
+		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		if (!target.nickname) {
