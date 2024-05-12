@@ -12,15 +12,18 @@ export abstract class StringUtils {
 		return value as Typings.SentenceCase<T>;
 	}
 
-	public static concatenate<const T extends string[]>(...strs: T): Typings.Concatenate<T> {
+	public static concatenate<const Seperator extends string, const T extends string[]>(
+		seperator: Seperator,
+		...strs: T
+	): Typings.Concatenate<T, Seperator> {
 		let result = "";
 		for (let i = 0; i < strs.length; i++) {
 			result += strs[i];
 			if (i < strs.length - 1 && strs[i] !== "") {
-				result += " ";
+				result += seperator;
 			}
 		}
-		return result as Typings.Concatenate<T>;
+		return result as Typings.Concatenate<T, Seperator>;
 	}
 
 	public static GenerateID(len: number | Buffer = 16, buf?: Buffer): string {

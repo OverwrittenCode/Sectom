@@ -112,15 +112,17 @@ export namespace Typings {
 	export type SentenceCase<T extends string> = T extends `${infer First}${infer Rest}`
 		? `${Uppercase<First>}${Rest}`
 		: T;
-	export type Concatenate<T extends any[]> = T extends []
+
+	export type Concatenate<T extends any[], Seperator extends string = ""> = T extends []
 		? ""
 		: T extends [infer F, ...infer R]
 			? F extends string
 				? F extends ""
-					? `${F}${Concatenate<R>}`
-					: `${F}${R extends [] ? "" : " "}${Concatenate<R>}`
-				: never
+					? Concatenate<R, Seperator>
+					: `${F}${R extends [] | [""] ? "" : Seperator}${Concatenate<R, Seperator>}`
+				: Concatenate<R, Seperator>
 			: never;
+
 	export type GuildInteraction<Cache extends CacheType | undefined = CacheType> =
 		| ButtonInteraction<Cache>
 		| ChannelSelectMenuInteraction<Cache>
