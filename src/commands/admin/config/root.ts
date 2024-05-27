@@ -4,8 +4,12 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
 	ActionRowBuilder,
+	DiscordAPIError,
+	DiscordjsError,
+	DiscordjsErrorCodes,
 	EmbedBuilder,
 	PermissionFlagsBits,
+	RESTJSONErrorCodes,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 	inlineCode
@@ -267,7 +271,7 @@ export abstract class Config {
 			type: PaginationType.SelectMenu,
 			pageText: pageTextArray,
 			placeholder: "View a configuration",
-			enableExit: true,
+			ephemeral: true,
 			showStartEnd: false,
 			filter: (v) => v.user.id === interaction.user.id,
 			onTimeout: (_, message) => InteractionUtils.disableComponents(message)
