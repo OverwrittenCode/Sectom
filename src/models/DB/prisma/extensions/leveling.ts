@@ -9,10 +9,11 @@ import type { PrismaClient } from "@prisma/client";
 
 @singleton()
 export class LevelingInstanceMethods {
-	private client: PrismaClient;
+	private client: FetchExtendedClient;
+
 	constructor(
-		@inject(Beans.IExtensionInstanceMethods)
-		_client: PrismaClient
+		@inject(Beans.IPrismaFetchClientToken)
+		_client: FetchExtendedClient
 	) {
 		this.client = _client;
 	}

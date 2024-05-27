@@ -1,6 +1,11 @@
 import crypto from "node:crypto";
 
+import { ActionType } from "@prisma/client";
+
 import type { Typings } from "~/ts/Typings.js";
+
+import type { PascalCase, Split } from "type-fest";
+import type { SplitWords } from "type-fest/source/split-words.js";
 
 export abstract class StringUtils {
 	public static LineBreak = "\n" as const;
@@ -12,6 +17,7 @@ export abstract class StringUtils {
 	public static Regexes = {
 		Snowflake: /^\d{17,20}$/,
 		HexCode: /^[0-9A-F]{6}$/i,
+		CamelCaseBoundary: /([a-z])([A-Z])/g,
 		Link: /(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?/,
 		Invite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(\.gg|(app)?\.com\/invite|\.me)\/([^ ]+)\/?/gi,
 		BotInvite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(app)?\.com\/(api\/)?oauth2\/authorize\?([^ ]+)\/?/gi,
@@ -20,7 +26,12 @@ export abstract class StringUtils {
 			/((\ud83c[\udde6-\uddff]){2}|([#*0-9]\u20e3)|(\u00a9|\u00ae|[\u2000-\u3300]|[\ud83c-\ud83e][\ud000-\udfff])((\ud83c[\udffb-\udfff])?(\ud83e[\uddb0-\uddb3])?(\ufe0f?\u200d([\u2000-\u3300]|[\ud83c-\ud83e][\ud000-\udfff])\ufe0f?)?)*)/g,
 
 		Number: /^\d+$/,
-		AllActionModifiers: /_(ENABLE|ADD|CREATE|SET|EDIT|UPDATE|RESET|REMOVE|CLOSE|DISABLE)$/g,
+		AllActionModifiers: new RegExp(
+			`_(${Array.from(
+				new Set<string>(Object.values(ActionType).map((actionType) => actionType.split("_").at(-1)!))
+			).join("|")})$`,
+			"g"
+		),
 		CreateBasedActionModifiers: /_(ADD|CREATE|SET)$/g
 	} as const;
 
@@ -31,6 +42,17 @@ export abstract class StringUtils {
 	public static capitaliseFirstLetter<const T extends string>(str: T): Typings.SentenceCase<T> {
 		const value = str.charAt(0).toUpperCase() + str.slice(1);
 		return value as Typings.SentenceCase<T>;
+	}
+	public static convertToTitleCase<const T extends string, const S extends string = " ">(
+		str: T,
+		splitBy?: S
+	): Split<T, S> extends SplitWords<T> ? Typings.Concatenate<SplitWords<PascalCase<Lowercase<T>>>, " "> : string {
+		return str
+			.replace(this.Regexes.CamelCaseBoundary, "$1 $2")
+			.toLowerCase()
+			.split(splitBy || " ")
+			.map(this.capitaliseFirstLetter)
+			.join(" ") as Typings.Concatenate<SplitWords<PascalCase<Lowercase<T>>>, " ">;
 	}
 
 	public static concatenate<const Seperator extends string, const T extends string[]>(

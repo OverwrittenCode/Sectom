@@ -9,7 +9,7 @@ import type { ChatInputCommandInteraction } from "discord.js";
 @Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Ping {
-	@Slash({ description: "Get the latency of the bot in milliseconds" })
+	@Slash({ dmPermission: false, description: "Get the latency of the bot in milliseconds" })
 	public async ping(interaction: ChatInputCommandInteraction<"cached">) {
 		const reply = await interaction.reply({ content: "Pinging...", fetchReply: true });
 

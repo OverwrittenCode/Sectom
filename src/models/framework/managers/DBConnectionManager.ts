@@ -8,24 +8,6 @@ import { Redis as RedisClient } from "@upstash/redis";
 import { PrismaExtensions } from "~/models/DB/prisma/extensions/index.js";
 
 export abstract class DBConnectionManager {
-	private static readonly defaultContentClusterManagerComponents = {
-		panels: [],
-		subjects: []
-	};
-
-	public static Defaults = {
-		Configuration: {
-			suggestion: this.defaultContentClusterManagerComponents,
-			ticket: {
-				...this.defaultContentClusterManagerComponents,
-				prompt: true
-			},
-			warning: {
-				durationMultiplier: 1,
-				thresholds: []
-			}
-		} as PrismaJson.Configuration
-	} as const;
 	public static Redis: RedisClient;
 	public static Prisma: ReturnType<typeof DBConnectionManager.createPrismaClient>;
 	public static connectionDates: {
@@ -66,6 +48,10 @@ export abstract class DBConnectionManager {
 			this.connectionDates.prisma = new Date();
 
 			console.log("> >> Connected", this.connectionDates.prisma);
+
+			// import("~/events/prisma/subscribe.js");
+
+			// console.log("> Started Model Subscriptions")
 			console.groupEnd();
 		}
 
@@ -77,16 +63,9 @@ export abstract class DBConnectionManager {
 
 		const client = new PrismaClient({ errorFormat: "pretty" });
 
-		const withExtensions = client
-			.$extends(PrismaExtensions.computedFields)
-			.$extends(PrismaExtensions.modelMethods)
-			.$extends(PrismaExtensions.clientMethods)
-			.$extends(withAccelerate())
-			.$extends(
-				withPulse({
-					apiKey: process.env.PULSE_API_KEY
-				})
-			);
+		const withExtensions = client.$extends(PrismaExtensions.modelMethods).$extends(PrismaExtensions.clientMethods);
+		// .$extends(withAccelerate())
+		// .$extends(withPulse({ apiKey: process.env.PULSE_API_KEY }));
 
 		return withExtensions;
 	}

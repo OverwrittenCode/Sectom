@@ -17,6 +17,7 @@ const mutualPermissions = [PermissionFlagsBits.DeafenMembers];
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Deafen {
 	@Slash({
+		dmPermission: false,
 		description: "Deafen a user in a voice channel on the server",
 		defaultMemberPermissions: mutualPermissions
 	})
@@ -65,6 +66,7 @@ export abstract class Deafen {
 	}
 
 	@Slash({
+		dmPermission: false,
 		description: "Undeafen a user in a voice channel on the server",
 		defaultMemberPermissions: mutualPermissions
 	})

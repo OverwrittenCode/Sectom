@@ -6,11 +6,9 @@ import ms from "ms";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
-import { RedisCache } from "~/models/DB/cache/index.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
@@ -20,6 +18,7 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 @Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 @SlashGroup({
+	dmPermission: false,
 	description: "hand out infractions to members in the server",
 	name: "warn",
 	defaultMemberPermissions: [PermissionFlagsBits.KickMembers]
@@ -69,28 +68,19 @@ export abstract class Warn {
 				});
 
 				if (warnings.length >= Warn.MinThreshold) {
-					let guildDoc: Typings.Database.Prisma.RetrieveModelDocument<"Guild">;
+					const {
+						configuration: { warning: warningConfiguration }
+					} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+						guildId: interaction.guildId,
+						check: "warning"
+					});
 
-					const guildCacheRecord = await RedisCache.guild.get(guildId);
-
-					if (!guildCacheRecord) {
-						guildDoc = await DBConnectionManager.Prisma.guild.findUniqueOrThrow({
-							where: {
-								id: guildId
-							}
-						});
-					} else {
-						guildDoc = guildCacheRecord.data;
-					}
-
-					const warningConfiguration = guildDoc.configuration?.warning;
-
-					const thresholdMatches = warningConfiguration?.thresholds
+					const thresholdMatches = warningConfiguration.thresholds
 						.sort((a, b) => a.threshold - b.threshold)
 						.filter(({ threshold }) => warnings.length >= threshold);
 
-					const firstThreshold = thresholdMatches?.[0];
-					const nextThreshold = thresholdMatches?.[1];
+					const firstThreshold = thresholdMatches[0];
+					const nextThreshold = thresholdMatches[1];
 
 					const repeatedOffences = nextThreshold
 						? nextThreshold.threshold - firstThreshold!.threshold
@@ -176,7 +166,7 @@ export abstract class Warn {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const caseRecord = await DBConnectionManager.Prisma.case.instanceMethods.retrieveCase({
+		const caseRecord = await DBConnectionManager.Prisma.case.retrieveCase({
 			interaction,
 			allowedActions: [ActionType.WARN_USER_ADD],
 			caseID,

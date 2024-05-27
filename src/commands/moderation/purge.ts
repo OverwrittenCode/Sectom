@@ -2,10 +2,10 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType } from "@prisma/client";
 import {
 	ApplicationCommandOptionType,
+	Constants,
 	FormattingPatterns,
 	MessageMentions,
-	PermissionFlagsBits,
-	channelMention
+	PermissionFlagsBits
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import ms from "ms";
@@ -30,6 +30,7 @@ import type {
 	Role,
 	User
 } from "discord.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
 
 interface PurgeHandlerOptions {
 	count: number;
@@ -45,6 +46,7 @@ const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 @Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 @SlashGroup({
+	dmPermission: false,
 	description: "purge messages in the current or given channel with a filter",
 	name: "purge",
 	defaultMemberPermissions: mutualPermissions
@@ -437,21 +439,20 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		if (!StringUtils.Regexes.Snowflake.test(messageId)) {
-			return await InteractionUtils.replyOrFollowUp(interaction, {
-				content: "Argument Error: invalid snowflakeId provided, please check your input.",
-				ephemeral: true
-			});
+			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
 		}
 
-		const message =
-			interaction.channel!.messages.cache.get(messageId) ||
-			(await interaction.channel!.messages.fetch(messageId).catch());
+		const message = await interaction.channel!.messages.fetch(messageId).catch();
 
 		if (!message) {
-			return await InteractionUtils.replyOrFollowUp(interaction, {
-				content: "I cannot perform this action: message not found or is older than 14 days",
-				ephemeral: true
-			});
+			throw new ValidationError("I cannot perform this action: message not found or is older than 14 days");
+		}
+
+		const twoWeeksAgo = Date.now() - Constants.MaxBulkDeletableMessageAge;
+		const isOlderThanTwoWeeksAgo = message.createdTimestamp < twoWeeksAgo;
+
+		if (isOlderThanTwoWeeksAgo) {
+			throw new ValidationError("I cannot perform this action: message is older than 14 days");
 		}
 
 		return this.handler(interaction, {
@@ -483,21 +484,20 @@ export abstract class Purge {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		if (!StringUtils.Regexes.Snowflake.test(messageId)) {
-			return await InteractionUtils.replyOrFollowUp(interaction, {
-				content: "Argument Error: invalid snowflakeId provided, please check your input.",
-				ephemeral: true
-			});
+			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
 		}
 
-		const message =
-			interaction.channel!.messages.cache.get(messageId) ||
-			(await interaction.channel!.messages.fetch(messageId).catch());
+		const message = await interaction.channel!.messages.fetch(messageId).catch();
 
 		if (!message) {
-			return await InteractionUtils.replyOrFollowUp(interaction, {
-				content: "I cannot perform this action: message not found or is older than 14 days",
-				ephemeral: true
-			});
+			throw new ValidationError("I cannot perform this action: message not found or is older than 14 days");
+		}
+
+		const twoWeeksAgo = Date.now() - Constants.MaxBulkDeletableMessageAge;
+		const isOlderThanTwoWeeksAgo = message.createdTimestamp < twoWeeksAgo;
+
+		if (isOlderThanTwoWeeksAgo) {
+			throw new ValidationError("I cannot perform this action: message is older than 14 days");
 		}
 
 		return this.handler(interaction, {
@@ -561,7 +561,7 @@ export abstract class Purge {
 				: `Successfully deleted ${deletedSuccessCount} / ${count} messages`;
 
 		if (purgeChannel.id !== interaction.channelId) {
-			messageContent += ` in ${channelMention(purgeChannel.id)}`;
+			messageContent += ` in ${purgeChannel.toString()}`;
 		}
 
 		if (deletedSuccessCount) {

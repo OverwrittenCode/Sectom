@@ -21,6 +21,7 @@ import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
+import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import type { PaginationItem } from "@discordx/pagination";
@@ -32,23 +33,18 @@ import type { Entries } from "type-fest";
 @Category(Enums.CommandCategory.Admin)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 @SlashGroup({
+	dmPermission: false,
 	description: "Master configuration of the server",
 	name: "config",
 	defaultMemberPermissions: [PermissionFlagsBits.Administrator]
 })
 @SlashGroup("config")
 export abstract class Config {
-	@Slash({ description: "View all configurations" })
+	@Slash({ dmPermission: false, description: "View all configurations" })
 	public async view(interaction: ChatInputCommandInteraction<"cached">) {
 		const { guild, guildId } = interaction;
 
-		const guildDoc = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
-		});
-
-		if (!guildDoc.configuration) {
-			return await InteractionUtils.replyNoData(interaction);
-		}
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId });
 
 		const paginationPages: Array<Pick<PaginationItem, "embeds" | "components">> = [];
 
@@ -56,26 +52,15 @@ export abstract class Config {
 
 		const configurationName = "Configurations";
 		const configurationValues: string[] = [];
-		const pageTextArray: string[] = ["Configurations"];
+		const pageTextArray: string[] = [configurationName];
 
-		const logChannelWhere = {
-			logChannelGuildId: guildId
-		} satisfies Prisma.EntityWhereInput;
-
-		let logChannelConfigurations: Pick<
-			Typings.Database.Prisma.RetrieveModelDocument<"Entity">,
-			"id" | "logChannelType"
-		>[] = await RedisCache.entity.retrieveDocuments(logChannelWhere);
-
-		if (!logChannelConfigurations.length) {
-			logChannelConfigurations = await DBConnectionManager.Prisma.entity.findMany({
-				where: logChannelWhere,
-				select: {
-					id: true,
-					logChannelType: true
-				}
-			});
-		}
+		const logChannelConfigurations = await DBConnectionManager.Prisma.entity.fetchMany({
+			where: { logChannelGuildId: guildId },
+			select: {
+				id: true,
+				logChannelType: true
+			}
+		});
 
 		if (logChannelConfigurations.length) {
 			const configurationValue = "Log Channel";
@@ -84,17 +69,15 @@ export abstract class Config {
 			configurationValues.push(configurationValue);
 
 			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText}`);
-			const descriptionArray: string[] = [
-				`${bold(underline("Key:"))} #channel ${inlineCode("ACTION")} ${StringUtils.LineBreak}`
-			];
+			const descriptionArray = logChannelConfigurations.map((data) => {
+				const channel = channelMention(data.id);
 
-			logChannelConfigurations.forEach((logChannelConfiguration) => {
-				const channel = channelMention(logChannelConfiguration.id);
-				const type = logChannelConfiguration.logChannelType ?? "DEFAULT";
+				const type = data.logChannelType ?? "DEFAULT";
 
 				const generalisedPunishment = type.replace(StringUtils.Regexes.AllActionModifiers, "");
+				const titleCasePunishment = StringUtils.convertToTitleCase(generalisedPunishment, "_");
 
-				descriptionArray.push(`${channel} ${inlineCode(generalisedPunishment)}`);
+				return `${bold(`${titleCasePunishment}:`)} ${channel}`;
 			});
 
 			embed.setDescription(descriptionArray.join(StringUtils.LineBreak));
@@ -102,14 +85,8 @@ export abstract class Config {
 			paginationPages.push({ embeds: [embed] });
 		}
 
-		const guildConfigurationEntries = (
-			Object.entries(guildDoc.configuration) as [keyof PrismaJson.Configuration, unknown][]
-		).filter(([, v]) => typeof v !== "undefined") as Entries<
-			Record<keyof PrismaJson.Configuration, Required<PrismaJson.Configuration>[keyof PrismaJson.Configuration]>
-		>;
-
-		for (const [name, data] of guildConfigurationEntries) {
-			data.disabled ??= false;
+		for (const [name, _configuration] of ObjectUtils.entries(configuration)) {
+			_configuration.disabled ??= false;
 
 			const sentenceCaseName = StringUtils.capitaliseFirstLetter(name);
 			const pageText = `${sentenceCaseName} Configuration`;
@@ -117,25 +94,25 @@ export abstract class Config {
 			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText}`);
 			const actionRows: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[] = [];
 
-			const descriptionArray: string[] = [`${bold("Disabled:")}: ${data.disabled}`];
+			const descriptionArray: string[] = [`${bold("Disabled:")} ${_configuration.disabled}`];
 
 			switch (name) {
 				case "warning":
 					{
-						const warningData = data as PrismaJson.WarningConfiguration;
+						const warningConfiguration = _configuration as PrismaJson.WarningConfiguration;
 
 						descriptionArray.push(
-							`${bold("Duration Multiplier:")} ${inlineCode(warningData.durationMultiplier.toString())}`
+							`${bold("Duration Multiplier:")} ${inlineCode(warningConfiguration.durationMultiplier.toString())}`
 						);
 
-						if (warningData.thresholds.length) {
+						if (warningConfiguration.thresholds.length) {
 							descriptionArray.push(
 								`${bold(underline("Key:"))} ${inlineCode("Threshold")} ${bold("[PUNISHMENT]")} Duration?` +
 									StringUtils.LineBreak
 							);
 						}
 
-						warningData.thresholds.forEach(({ punishment, threshold, duration }) => {
+						warningConfiguration.thresholds.forEach(({ punishment, threshold, duration }) => {
 							const generalisedPunishment = punishment.replace(
 								StringUtils.Regexes.AllActionModifiers,
 								""
@@ -157,7 +134,7 @@ export abstract class Config {
 				case "ticket":
 					{
 						const componentConfiguration =
-							data as PrismaJson.Configuration[Enums.ContentClusterComponentType];
+							_configuration as PrismaJson.Configuration[Enums.ContentClusterComponentType];
 
 						const componentType =
 							Enums.ContentClusterComponentType[StringUtils.capitaliseFirstLetter(name)];
@@ -242,12 +219,12 @@ export abstract class Config {
 			enableExit: true,
 			showStartEnd: false,
 			filter: (v) => v.user.id === interaction.user.id,
-			onTimeout: () => interaction.deleteReply().catch(() => {})
+			onTimeout: (_, message) => InteractionUtils.disableComponents(message)
 		});
 
 		await pagination.send();
 	}
 
-	@Slash({ description: "Interactive configuration panel" })
+	@Slash({ dmPermission: false, description: "Interactive configuration panel" })
 	public async panel(interaction: ChatInputCommandInteraction<"cached">) {}
 }

@@ -1,7 +1,6 @@
 import assert from "assert";
 
 import * as discordBuilders from "@discordjs/builders";
-import { codeBlock, inlineCode, userMention } from "@discordjs/builders";
 import { Pagination, PaginationType } from "@discordx/pagination";
 import { ActionType, CaseType, EntityType } from "@prisma/client";
 import {
@@ -19,10 +18,10 @@ import _ from "lodash";
 import prettyMilliseconds from "pretty-ms";
 
 import { LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
-import { RedisCache } from "~/models/DB/cache/index.js";
 import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
+import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import { DBConnectionManager } from "./DBConnectionManager.js";
@@ -31,7 +30,7 @@ import { EntityManager } from "./EntityManager.js";
 
 import type { PaginationItem } from "@discordx/pagination";
 import type { Prisma } from "@prisma/client";
-import type { APIEmbedField, ChatInputCommandInteraction, GuildMember, InteractionResponse, Message } from "discord.js";
+import { APIEmbedField, ChatInputCommandInteraction, GuildMember, InteractionResponse, Message } from "discord.js";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn: infer A) => any
@@ -95,9 +94,7 @@ export abstract class ActionManager {
 
 	public static async logCase(options: LogCaseOptions) {
 		const { interaction, target, reason, actionType, caseType, actionOptions, successContent, tx } = options;
-		let { buttonActionRows } = options;
-
-		buttonActionRows ??= [];
+		let { buttonActionRows = [] } = options;
 
 		const commandInteraction =
 			"commandInteraction" in options
@@ -156,7 +153,7 @@ export abstract class ActionManager {
 					]
 				: [];
 
-		const relationFields = _case.instanceMethods.retrieveRelationFields({
+		const relationFields = _case.retrieveRelationFields({
 			guildId,
 			channelId,
 			targetId,
@@ -169,7 +166,7 @@ export abstract class ActionManager {
 		const targetTypeSentenceCase = StringUtils.capitaliseFirstLetter(targetTypeLowercase);
 		const targetMentionFn = discordBuilders[`${targetTypeLowercase}Mention`];
 		const targetMention = targetMentionFn(targetId);
-		const perpetratorMention = userMention(perpetratorId);
+		const perpetratorMention = perpetrator.toString();
 
 		const createdAt = new Date();
 
@@ -178,10 +175,26 @@ export abstract class ActionManager {
 			expiryDate
 		});
 
-		let commandString: string | null = null;
+		let partialCommandString: string | null = null;
+
+		const embeds: EmbedBuilder[] = [];
+
+		let title = isAutoPunishment ? "[AUTO] " : "";
+		title += `CASE ${id}`;
+
+		const colour = isAutoPunishment ? Colors.Purple : Colors.Red;
+
+		const baseEmbed = new EmbedBuilder()
+			.setColor(colour)
+			.setFooter({
+				text: `Perpetrator Name: ${perpetrator.displayName}`,
+				iconURL: perpetrator.displayAvatarURL()
+			})
+			.setTimestamp()
+			.toJSON();
 
 		if (!isAutoPunishment && commandInteraction && commandInteraction.options.data.length) {
-			commandString = `/${commandInteraction.commandName}`;
+			let commandString = `/${commandInteraction.commandName}`;
 
 			const commandOption = commandInteraction.options.data[0];
 			if (
@@ -190,6 +203,13 @@ export abstract class ActionManager {
 			) {
 				commandString += ` ${commandOption.name}`;
 			}
+
+			const commandMentionArgs = commandString.slice(1).split(" ").concat(commandInteraction.commandId) as [
+				commandName: string,
+				subcommandGroupName: string,
+				subcommandName: string,
+				commandId: string
+			];
 
 			const nestedCommandOption = commandOption.options?.[0];
 			if (nestedCommandOption && nestedCommandOption.type === ApplicationCommandOptionType.Subcommand) {
@@ -200,22 +220,47 @@ export abstract class ActionManager {
 				({ value }) => typeof value !== "undefined"
 			);
 
-			if (givenOptions.length) {
-				const longestOptionNameLength = givenOptions.sort((a, b) => b.name.length - a.name.length)[0].name
-					.length;
+			const commandMention = discordBuilders.chatInputApplicationCommandMention(...commandMentionArgs);
 
-				const optionStr = givenOptions
-					.map(
-						(option) =>
-							`${StringUtils.LineBreak + StringUtils.TabCharacter} ${option.name.padEnd(longestOptionNameLength)} ${option.value}`
-					)
-					.join("");
-				if (optionStr) {
-					commandString += optionStr;
-				}
+			if (givenOptions.length) {
+				const commandInputEmbed = new EmbedBuilder(baseEmbed)
+					.setTitle(`${title} | Command Input`)
+					.setDescription(commandMention);
+
+				commandInputEmbed.addFields(
+					givenOptions.map((option) => {
+						const name = StringUtils.convertToTitleCase(option.name, "_");
+
+						const toStringPrototypeKey =
+							ObjectUtils.keys(option).find((key) => !["name", "type", "value"].includes(key)) || "value";
+
+						const toStringPrototypeValue = option[toStringPrototypeKey] ?? option.value!;
+
+						let value = toStringPrototypeValue?.toString();
+
+						if (value in ActionType) {
+							value = StringUtils.convertToTitleCase(
+								value.replace(StringUtils.Regexes.AllActionModifiers, ""),
+								"_"
+							);
+						} else if (option.name.includes("duration") && StringUtils.Regexes.Number.test(value)) {
+							value = prettyMilliseconds(parseInt(value), { verbose: true });
+						}
+
+						return { name, value };
+					})
+				);
+
+				embeds.push(commandInputEmbed);
+			} else {
+				partialCommandString = commandMention;
 			}
 		} else if (interaction.isModalSubmit() && interaction.isFromMessage() && interaction.message.interaction) {
-			commandString = `/${interaction.message.interaction.commandName}`;
+			const { commandName } = interaction.message.interaction;
+
+			const { id } = interaction.guild.commands.cache.find(({ name }) => name === commandName) ?? { id: "???" };
+
+			partialCommandString = discordBuilders.chatInputApplicationCommandMention(commandName, id);
 		}
 
 		const fields: APIEmbedField[] = [
@@ -247,23 +292,17 @@ export abstract class ActionManager {
 					},
 					{
 						name: "User Mention",
-						value: userMention(perpetratorId)
+						value: perpetratorMention
 					}
 				])
 			}
 		];
 
-		if (reason) {
-			fields.push({
-				name: "Reason",
-				value: reason
-			});
-		}
-
-		if (commandString) {
+		if (partialCommandString) {
+			const name = `${!interaction.isChatInputCommand() ? "Partial " : ""}Command Input`;
 			fields.unshift({
-				name: "Command Input",
-				value: codeBlock(commandString)
+				name,
+				value: StringUtils.TabCharacter + discordBuilders.bold(partialCommandString)
 			});
 		}
 
@@ -274,33 +313,17 @@ export abstract class ActionManager {
 			});
 		}
 
-		const embeds: EmbedBuilder[] = [];
-
-		let title = isAutoPunishment ? "[AUTO] " : "";
-		title += `CASE ${id}`;
-
-		const colour = isAutoPunishment ? Colors.Purple : Colors.Red;
-
-		const baseEmbed = new EmbedBuilder()
-			.setColor(colour)
-			.setFooter({
-				text: `Perpetrator Name: ${perpetrator.displayName}`,
-				iconURL: perpetrator.displayAvatarURL()
-			})
-			.setTimestamp()
-			.toJSON();
-
 		const createdCaseEmbed = new EmbedBuilder(baseEmbed)
 			.setTitle(title)
-			.setDescription(`Perpetrator ${perpetratorMention} actioned ${inlineCode(actionType)}.`)
+			.setDescription(`Perpetrator ${perpetratorMention} actioned ${discordBuilders.inlineCode(actionType)}.`)
 			.addFields(fields);
 
 		embeds.push(createdCaseEmbed);
 
+		embeds.reverse();
+
 		if (interaction.isModalSubmit()) {
-			const fields = InteractionUtils.modalSubmitToEmbedFIelds(interaction).filter(
-				({ name }) => !name.toLowerCase().includes("reason")
-			);
+			const fields = InteractionUtils.modalSubmitToEmbedFIelds(interaction);
 
 			if (fields.length) {
 				const modalInputEmbed = new EmbedBuilder(baseEmbed)
@@ -315,7 +338,7 @@ export abstract class ActionManager {
 
 		const APIEmbeds = formattedEmbeds.map((embed) => embed.toJSON());
 
-		let moderativeLogChannel = await _entity.instanceMethods.retrieveGivenGuildLogChannel(interaction, actionType);
+		let moderativeLogChannel = await _entity.retrieveGivenGuildLogChannel(interaction, actionType);
 		let logMessage: Message<true> | null = null;
 		let messageURL: string | null = null;
 		if (!moderativeLogChannel && interaction.channel instanceof TextChannel) {
@@ -352,7 +375,7 @@ export abstract class ActionManager {
 			const fields: APIEmbedField[] = [
 				{
 					name: noticeName,
-					value: `Perpertrator ${userMention(perpetratorId)} actioned ${inlineCode(actionType)} against you.`
+					value: `Perpertrator ${perpetratorMention} actioned ${discordBuilders.inlineCode(actionType)} against you.`
 				}
 			];
 
@@ -373,7 +396,7 @@ export abstract class ActionManager {
 			const warnedNoticeEmbed = new EmbedBuilder()
 				.setAuthor({
 					name: `${interaction.guild.name} | CASE ${id}`,
-					iconURL: interaction.guild.iconURL() ?? undefined
+					iconURL: interaction.guild.iconURL() ?? void 0
 				})
 				.setColor(colour)
 				.addFields(fields)
@@ -403,7 +426,7 @@ export abstract class ActionManager {
 
 			successElement +=
 				successContent ??
-				`${actionOptions?.pastTense ?? `actioned ${inlineCode(actionType)}`} on target ${targetMention}${verboseDuration ? ` for ${inlineCode(verboseDuration)}` : ""}`;
+				`${actionOptions?.pastTense ?? `actioned ${discordBuilders.inlineCode(actionType)}`} on target ${targetMention}${verboseDuration ? ` for ${discordBuilders.inlineCode(verboseDuration)}` : ""}`;
 
 			const successColour = isAutoPunishment ? Colors.Purple : Colors.Green;
 
@@ -459,35 +482,22 @@ export abstract class ActionManager {
 	): Promise<Typings.Prettify<Pick<Doc, keyof typeof this.getCasesSelect>>[]> {
 		const { guildId } = interaction;
 
-		const where = {
-			guildId,
-			...simpleFilter
-		};
-
-		const cacheRecord = simpleFilter
-			? await RedisCache.case.retrieveDocuments(where)
-			: await RedisCache.case.indexes.byGuildId.match(where);
-
-		let rawDocuments: Pick<Doc, keyof typeof this.getCasesSelect>[] = cacheRecord.map((record) =>
-			"data" in record ? record.data : record
-		);
-
-		if (!rawDocuments.length) {
-			rawDocuments = await DBConnectionManager.Prisma.case.findMany({
-				where,
-				select: this.getCasesSelect
-			});
-		}
-
-		return rawDocuments;
+		return await DBConnectionManager.Prisma.case.fetchMany({
+			where: { guildId, ...simpleFilter },
+			select: this.getCasesSelect
+		});
 	}
 
 	public static async listCases(
 		interaction: ChatInputCommandInteraction<"cached">,
 		simpleFilter?: Typings.Database.SimpleFilter<"Case">
 	) {
-		const { guild } = interaction;
-		const rawDocuments = await this.getCases(interaction, simpleFilter);
+		const { guild, guildId } = interaction;
+		const rawDocuments = await DBConnectionManager.Prisma.case.fetchMany({
+			where: { guildId, ...simpleFilter },
+			select: this.getCasesSelect
+		});
+
 		const validDocuments = rawDocuments.filter((doc) => doc.apiEmbeds.length);
 
 		if (!validDocuments.length) {
@@ -497,16 +507,16 @@ export abstract class ActionManager {
 		const paginationPages: Array<Pick<PaginationItem, "embeds" | "components">> = [];
 		const embedTitle = `${guild.name} Cases (${validDocuments.length})`;
 
-		const caseDescriptionStringArray = validDocuments
+		const descriptionArray = validDocuments
 			.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 			.map(
-				(doc) =>
-					`${inlineCode(doc.id)} ${discordBuilders.bold(`[${doc.action}]`)} ${discordBuilders.time(doc.createdAt, discordBuilders.TimestampStyles.RelativeTime)}`
+				({ id, action, createdAt }) =>
+					`${discordBuilders.inlineCode(id)} ${discordBuilders.bold(`[${action}]`)} ${discordBuilders.time(createdAt, discordBuilders.TimestampStyles.RelativeTime)}`
 			);
 
-		const caseDescriptionChunks = _.chunk(caseDescriptionStringArray, MAX_ELEMENTS_PER_PAGE);
+		const descriptionChunks = _.chunk(descriptionArray, MAX_ELEMENTS_PER_PAGE);
 
-		caseDescriptionChunks.forEach((chunk, index, arr) => {
+		descriptionChunks.forEach((chunk, index, arr) => {
 			const embedDescription = chunk.join(StringUtils.LineBreak);
 			const embed = new EmbedBuilder()
 				.setTitle(embedTitle)
@@ -518,7 +528,7 @@ export abstract class ActionManager {
 				.setCustomId(`string_select_menu_pagination_${index}`)
 				.setPlaceholder("View a case");
 
-			const caseIDArray = chunk.map((str) => str.split(" ")[0].slice(1, -1));
+			const caseIDArray = chunk.map((str) => str.match(/`([^`]+)`/)![1]);
 
 			const selectMenuOptions = caseIDArray.map((caseID) =>
 				new discordBuilders.StringSelectMenuOptionBuilder().setLabel(caseID).setValue(caseID)
@@ -542,7 +552,7 @@ export abstract class ActionManager {
 				type: PaginationType.Button,
 				enableExit: true,
 				filter: (v) => v.user.id === interaction.user.id,
-				onTimeout: () => interaction.deleteReply().catch(() => {})
+				onTimeout: (_, message) => InteractionUtils.disableComponents(message)
 			});
 
 			const paginationObject = await pagination.send();
@@ -596,21 +606,21 @@ export abstract class ActionManager {
 		const createdCaseEmbedTimestampFieldValue = [
 			{
 				name: "Created At",
-				value: _case.instanceMethods.unixTimestampHelper(createdAt)
+				value: _case.unixTimestampHelper(createdAt)
 			}
 		];
 
 		if (updatedAt) {
 			createdCaseEmbedTimestampFieldValue.push({
 				name: "Last Updated At",
-				value: _case.instanceMethods.unixTimestampHelper(updatedAt)
+				value: _case.unixTimestampHelper(updatedAt)
 			});
 		}
 
 		if (expiryDate) {
 			createdCaseEmbedTimestampFieldValue.push({
 				name: "Expires At",
-				value: _case.instanceMethods.unixTimestampHelper(expiryDate)
+				value: _case.unixTimestampHelper(expiryDate)
 			});
 		}
 

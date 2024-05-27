@@ -18,8 +18,7 @@ import {
 	bold,
 	channelMention,
 	inlineCode,
-	roleMention,
-	userMention
+	roleMention
 } from "discord.js";
 import { ButtonComponent, Discord, Guard, ModalComponent, Slash, SlashGroup, SlashOption } from "discordx";
 import _ from "lodash";
@@ -28,8 +27,9 @@ import { LIGHT_GOLD, MAX_ACTIVE_THREAD_LIMIT, MAX_REASON_STRING_LENGTH } from "~
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { AtLeastOneSlashOption } from "~/helpers/guards/AtLeastOne.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
-import { RedisCache } from "~/models/DB/cache/index.js";
+import { GuildInstanceMethods } from "~/models/DB/prisma/extensions/guild.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { ContentClusterManager } from "~/models/framework/managers/ContentClusterManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
@@ -136,14 +136,14 @@ export abstract class TicketConfig {
 
 	@Slash({ description: "Configure the embed that is sent in the ticket channel when a ticket is created" })
 	public async openingembed(interaction: ChatInputCommandInteraction<"cached">) {
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(
-			interaction.guildId,
-			{
-				configuration: true
-			}
-		);
+		const {
+			configuration: { ticket }
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "ticket"
+		});
 
-		const currentEmbed = configuration.ticket.apiEmbed;
+		const currentEmbed = ticket.apiEmbed;
 
 		const customIdGenerator = InteractionUtils.constructCustomIdGenerator({
 			baseID: TicketConfig.customIdRecords.ticket_embed.id,
@@ -213,6 +213,7 @@ export abstract class TicketConfig {
 	}
 
 	@Slash({ description: "Configure global ticket settings" })
+	@Guard(AtLeastOneSlashOption, RateLimit(TIME_UNIT.seconds, 3))
 	public async settings(
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.ROLE,
@@ -239,26 +240,23 @@ export abstract class TicketConfig {
 	) {
 		const updatedSettings = { staffRoleId: staffRole?.id, autoStaffMention, prompt };
 
-		if (Object.values(updatedSettings).every((v) => typeof v === "undefined")) {
-			throw new ValidationError("you must provide at least one update argument");
-		}
-
-		const keys = Object.keys(updatedSettings) as Array<keyof typeof updatedSettings>;
+		const keys = ObjectUtils.keys(updatedSettings);
 
 		keys.forEach((key) => typeof updatedSettings[key] === "undefined" && delete updatedSettings[key]);
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(
-			interaction.guildId,
-			{
-				configuration: true
-			}
-		);
+		const {
+			configuration: { ticket },
+			save
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "ticket"
+		});
 
-		const isUpdate = _.isEqual(configuration.ticket, DBConnectionManager.Defaults.Configuration.ticket);
+		const isUpdate = _.isEqual(ticket, GuildInstanceMethods.defaultConfiguration.ticket);
 
 		const actionType = isUpdate ? ActionType.CONFIG_TICKET_SETTINGS_UPDATE : ActionType.CONFIG_TICKET_SETTINGS_ADD;
 
-		const currentSettings = ObjectUtils.pickKeys(configuration.ticket, "staffRoleId", "autoStaffMention", "prompt");
+		const currentSettings = ObjectUtils.pickKeys(ticket, "staffRoleId", "autoStaffMention", "prompt");
 
 		const isEqualToCurrent =
 			ObjectUtils.isValidObject(currentSettings) && _.isEqual(currentSettings, updatedSettings);
@@ -267,8 +265,7 @@ export abstract class TicketConfig {
 			throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
 		}
 
-		Object.assign(currentSettings, updatedSettings);
-		Object.assign(configuration.ticket, currentSettings);
+		Object.assign(ticket, currentSettings, updatedSettings);
 
 		return await ActionManager.logCase({
 			interaction,
@@ -279,11 +276,7 @@ export abstract class TicketConfig {
 			reason,
 			actionType,
 			actionOptions: {
-				pendingExecution: () =>
-					DBConnectionManager.Prisma.guild.update({
-						where: { id: interaction.guildId },
-						data: { configuration }
-					})
+				pendingExecution: save
 			},
 			successContent: "updated ticket settings"
 		});
@@ -294,16 +287,20 @@ export abstract class TicketConfig {
 export abstract class TicketConfigMessageComponentHandler {
 	@ModalComponent({ id: TicketConfig.customIdRecords.ticket_embed.regex })
 	public async modalEmbed(interaction: ModalSubmitInteraction<"cached">) {
-		const { guildId, channelId, fields } = interaction;
+		const { channelId, fields } = interaction;
 		assert(channelId && fields);
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const {
+			configuration: { ticket },
+			save
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "ticket"
 		});
 
-		const isUpdate = _.isEqual(configuration.ticket, DBConnectionManager.Defaults.Configuration.ticket);
+		const isUpdate = _.isEqual(ticket, GuildInstanceMethods.defaultConfiguration.ticket);
 
-		const actionType = isUpdate ? ActionType.CONFIG_TICKET_SETTINGS_UPDATE : ActionType.CONFIG_TICKET_SETTINGS_ADD;
+		const actionType = ActionType[`CONFIG_TICKET_SETTINGS_${isUpdate ? "UPDATE" : "ADD"}`];
 
 		const [title, description, colour, reason] = [
 			EmbedTextInputField.Title,
@@ -322,7 +319,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			throw new ValidationError("invalid hex code provided.");
 		}
 
-		const newEmbed = new EmbedBuilder(configuration.ticket.apiEmbed)
+		const newEmbed = new EmbedBuilder(ticket.apiEmbed)
 			.setTitle(title)
 			.setColor(hexCode)
 			.setDescription(description);
@@ -331,7 +328,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			newEmbed.setTitle(title);
 		}
 
-		configuration.ticket.apiEmbed = newEmbed.toJSON();
+		ticket.apiEmbed = newEmbed.toJSON();
 
 		return await ActionManager.logCase({
 			interaction,
@@ -342,11 +339,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			reason: reason ?? InteractionUtils.Messages.NoReason,
 			actionType,
 			actionOptions: {
-				pendingExecution: () =>
-					DBConnectionManager.Prisma.guild.update({
-						where: { id: guildId },
-						data: { configuration }
-					})
+				pendingExecution: save
 			},
 			successContent: `${isUpdate ? "updated" : "set"} the ticket configuration`
 		});
@@ -354,11 +347,12 @@ export abstract class TicketConfigMessageComponentHandler {
 
 	@ModalComponent({ id: TicketConfig.customIdRecords.ticket_prompt.regex })
 	public async modalPrompt(interaction: ModalSubmitInteraction<"cached">) {
-		const { guildId } = interaction;
-
 		const {
 			configuration: { ticket: ticketConfiguration }
-		} = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, { configuration: true });
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "ticket"
+		});
 
 		const embedFields = InteractionUtils.modalSubmitToEmbedFIelds(interaction);
 
@@ -380,7 +374,9 @@ export abstract class TicketConfigMessageComponentHandler {
 		assert(parentId);
 
 		if (!(parent instanceof TextChannel)) {
-			throw new ValidationError("this must be a text channel");
+			throw new ValidationError(
+				ValidationError.MessageTemplates.InvalidChannelType("current", ChannelType.GuildText)
+			);
 		}
 
 		const { threads: activeSubjectTicketThreads } = await parent.threads.fetchActive();
@@ -393,30 +389,21 @@ export abstract class TicketConfigMessageComponentHandler {
 
 		const {
 			configuration: { ticket: ticketConfiguration }
-		} = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, { configuration: true });
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "ticket"
+		});
 
 		if (!ticketConfiguration.staffRoleId) {
 			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("ticket staff role"));
 		}
 
-		const where = { guildId, parentId, authorId: author.id } satisfies Prisma.TicketWhereInput;
-
-		let authorTicketThreadIds: string[] = [];
-
-		const cacheRecord = await RedisCache.ticket.indexes.byGuildIdAndParentIdAndAuthorId.match(where);
-
-		if (!cacheRecord.length) {
-			const prismaDocs = await DBConnectionManager.Prisma.ticket.findMany({
-				where,
+		const authorTicketThreadIds = await DBConnectionManager.Prisma.ticket
+			.fetchMany({
+				where: { guildId, parentId, authorId: author.id },
 				select: { channelId: true }
-			});
-
-			if (prismaDocs.length) {
-				authorTicketThreadIds = prismaDocs.map(({ channelId }) => channelId);
-			}
-		} else {
-			authorTicketThreadIds = cacheRecord.map(({ data }) => data.channelId);
-		}
+			})
+			.then((data) => data.map(({ channelId }) => channelId));
 
 		let currentTicketThreadId: string | undefined;
 
@@ -471,7 +458,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		}
 
 		if (!interaction.replied && !interaction.deferred) {
-			await interaction.deferReply({ ephemeral: true }).catch(() => {});
+			await InteractionUtils.deferInteraction(interaction, true);
 		}
 
 		return this.createTicket({ interaction, ticketConfiguration });
@@ -480,7 +467,7 @@ export abstract class TicketConfigMessageComponentHandler {
 	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_lock.regex })
 	@Guard(BotRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
 	public async buttonLock(interaction: ButtonInteraction<"cached">) {
-		const { guildId, customId, channel, member } = interaction;
+		const { customId, channel, member } = interaction;
 
 		assert(channel?.isThread());
 
@@ -491,12 +478,13 @@ export abstract class TicketConfigMessageComponentHandler {
 		}
 
 		const {
-			configuration: { ticket: ticketConfiguration }
-		} = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+			configuration: { ticket }
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "ticket"
 		});
 
-		if (!ticketConfiguration.staffRoleId || !member.roles.cache.has(ticketConfiguration.staffRoleId)) {
+		if (!ticket.staffRoleId || !member.roles.cache.has(ticket.staffRoleId)) {
 			throw new ValidationError("you are not a ticket staff");
 		}
 
@@ -578,22 +566,12 @@ export abstract class TicketConfigMessageComponentHandler {
 				new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(onlineURL)
 			);
 
-			let ticketAuthorId: string | null = null;
+			const { doc: ticketRecord } = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
+				where: { channelId },
+				select: { authorId: true }
+			});
 
-			const where = { channelId } satisfies Prisma.TicketWhereInput;
-
-			const cacheRecord = await RedisCache.ticket.indexes.byChannelId.match(where);
-
-			if (!cacheRecord.length) {
-				const { authorId } = await DBConnectionManager.Prisma.ticket.findFirstOrThrow({
-					where,
-					select: { authorId: true }
-				});
-
-				ticketAuthorId = authorId;
-			} else {
-				ticketAuthorId = cacheRecord[0].data.authorId;
-			}
+			const { authorId: ticketAuthorId } = ticketRecord;
 
 			const ticketAuthor = channel.members.cache.find((m) => m.id === ticketAuthorId);
 
@@ -632,11 +610,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		const { interaction, ticketConfiguration, modalEmbed } = options;
 		const { channel: parent, channelId: parentId, guildId, customId, member, user: author } = interaction;
 
-		assert(parentId);
-
-		if (!(parent instanceof TextChannel)) {
-			throw new ValidationError("this must be a text channel");
-		}
+		assert(parentId && parent?.type === ChannelType.GuildText);
 
 		if (!ticketConfiguration.staffRoleId) {
 			throw new ValidationError("ticket staff role not set");
@@ -671,7 +645,7 @@ export abstract class TicketConfigMessageComponentHandler {
 
 		embeds.push(openingEmbed);
 
-		const contentArray = [`${bold("Author:")} ${userMention(author.id)}`];
+		const contentArray = [`${bold("Author:")} ${author.toString()}`];
 
 		const allowedMentions: MessageMentionOptions = { users: [author.id] };
 
@@ -744,7 +718,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			}
 		};
 
-		const relationFieldFn = DBConnectionManager.Prisma.entity.instanceMethods.connectOrCreateHelper;
+		const relationFieldFn = DBConnectionManager.Prisma.entity.connectOrCreateHelper;
 
 		await ActionManager.logCase({
 			interaction,
@@ -775,7 +749,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		await thread.members.add(author, "User is the author");
 
 		await InteractionUtils.replyOrFollowUp(interaction, {
-			content: `Ticket created: ${channelMention(thread.id)}`
+			content: `Ticket created: ${thread.toString()}`
 		});
 	}
 }

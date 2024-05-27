@@ -1,22 +1,18 @@
+import { type Prisma } from "@prisma/client";
 import { Query } from "@upstash/query";
 import { Redis } from "@upstash/redis";
 
 import { RedisDataService } from "~/framework/services/RedisDataService.js";
 import type { Typings } from "~/ts/Typings.js";
+import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import { DBConnectionManager } from "./DBConnectionManager.js";
 
-import type { Prisma } from "@prisma/client";
 import type { Entries } from "type-fest";
 
-type RedisDoc<M extends Prisma.ModelName> = Typings.Database.Redis.RetrieveModelDocument<M>;
 type PrismaDoc<M extends Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 type TDoc<M extends Prisma.ModelName> = Typings.Database.DocumentInput<M>;
-type ModelDataFilterArray<M extends Prisma.ModelName, T extends Partial<PrismaDoc<M>>> = Typings.DisplaceObjects<
-	PrismaDoc<M>,
-	T
->[];
 
 export abstract class RedisCacheManager<
 	const M extends Prisma.ModelName,
@@ -41,17 +37,22 @@ export abstract class RedisCacheManager<
 		this.prismaModel = DBConnectionManager.Prisma[this.modelName.toLowerCase() as Lowercase<M>];
 
 		if (indexList?.length) {
-			indexList
-				.map((data) => `by${data.map((v) => StringUtils.capitaliseFirstLetter(v)).join("And")}`)
-				.forEach((indexKey, i) => {
-					const indexValue = this.collection.createIndex({
-						name: indexKey,
-						terms: indexList[i]
-					});
+			indexList.forEach((data, i) => {
+				const name = RedisCacheManager.toIndexKey(data);
+				const terms = indexList[i];
 
-					Object.assign(this.indexes, { [indexKey]: indexValue });
+				const indexValue = this.collection.createIndex({
+					name,
+					terms
 				});
+
+				Object.assign(this.indexes, { [name]: indexValue });
+			});
 		}
+	}
+
+	public static toIndexKey(tterms: string[]): string {
+		return `by${tterms.map((v) => StringUtils.capitaliseFirstLetter(v)).join("And")}`;
 	}
 
 	public async set(input: TDoc<M>): Promise<"OK"> {
@@ -78,7 +79,7 @@ export abstract class RedisCacheManager<
 		return await this.collection.update(doc.id, doc as PrismaDoc<M>);
 	}
 
-	public async retrieveDocuments(filter?: Partial<PrismaDoc<M>>): Promise<PrismaDoc<M>[]> {
+	public async retrieveDocuments(filter?: Typings.Database.SimpleWhere<M>): Promise<PrismaDoc<M>[]> {
 		const allDocuments = await this.collection.list();
 
 		let expectedCases = allDocuments.map((doc) => doc.data);
@@ -87,19 +88,46 @@ export abstract class RedisCacheManager<
 			return expectedCases;
 		}
 
-		const filterEntries = Object.entries(filter).filter(([, v]) => typeof v !== "undefined") as Entries<
-			PrismaDoc<M>
-		>;
+		const { OR, ...mainFilter } = filter;
 
-		for (const [key, value] of filterEntries) {
-			expectedCases = expectedCases.filter((data: Record<string, unknown>) => data[key] === value);
+		const mainFilterEntries = ObjectUtils.entries<Omit<Typings.Database.SimpleWhere, "OR">>(mainFilter, {
+			excludeUndefined: true
+		});
 
-			if (!expectedCases.length) {
-				break;
-			}
+		if (!mainFilterEntries.length) {
+			return expectedCases;
 		}
 
-		return expectedCases;
+		const applyFilter = (
+			data: Record<string, unknown>,
+			entries: Entries<Omit<Typings.UnionToIntersection<Typings.Database.SimpleWhere>, "OR">>
+		) =>
+			entries.every(([key, value]) => {
+				if (ObjectUtils.isValidObject(value) && ("in" in value || "notIn" in value)) {
+					const boolMatch = "in" in value;
+					const toSearch = Object.values(value);
+
+					return toSearch.includes(data[key]) === boolMatch;
+				}
+
+				return data[key] === value;
+			});
+
+		expectedCases = expectedCases.filter((data: Record<string, unknown>) => applyFilter(data, mainFilterEntries));
+
+		if (!expectedCases.length || !OR) {
+			return expectedCases;
+		}
+
+		const orFilterEntriesMap = OR.map((filter) =>
+			ObjectUtils.entries<Omit<Typings.Database.SimpleWhere, "OR">>(filter).filter(
+				([, v]) => typeof v !== "undefined"
+			)
+		);
+
+		return expectedCases.filter((data: Record<string, any>) =>
+			orFilterEntriesMap.some((entries) => applyFilter(data, entries))
+		);
 	}
 
 	public async deleteAll(): Promise<string[]> {

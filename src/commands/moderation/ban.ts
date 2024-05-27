@@ -19,7 +19,11 @@ const mutualPermissions = [PermissionFlagsBits.BanMembers];
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Ban {
-	@Slash({ description: "Ban a user from the server", defaultMemberPermissions: mutualPermissions })
+	@Slash({
+		dmPermission: false,
+		description: "Ban a user from the server",
+		defaultMemberPermissions: mutualPermissions
+	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async ban(
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
@@ -64,6 +68,7 @@ export abstract class Ban {
 	}
 
 	@Slash({
+		dmPermission: false,
 		description: "Ban a user to prune their messages and then immediately unban them from the server",
 		defaultMemberPermissions: mutualPermissions
 	})
@@ -117,7 +122,11 @@ export abstract class Ban {
 		});
 	}
 
-	@Slash({ description: "Unban a user from the server", defaultMemberPermissions: mutualPermissions })
+	@Slash({
+		dmPermission: false,
+		description: "Unban a user from the server",
+		defaultMemberPermissions: mutualPermissions
+	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async unban(
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })

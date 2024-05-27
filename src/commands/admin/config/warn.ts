@@ -13,7 +13,6 @@ import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
-import { ObjectUtils } from "~/utils/object.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
 import type { SetRequired } from "type-fest";
@@ -54,12 +53,12 @@ export abstract class WarnConfig {
 	) {
 		const { guildId } = interaction;
 
-		const where = {
-			id: guildId
-		};
-
-		const guildDoc = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const {
+			configuration: { warning },
+			save
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: "warning"
 		});
 
 		const mutualLogFields = {
@@ -72,49 +71,29 @@ export abstract class WarnConfig {
 		};
 
 		if (!multiplier) {
-			if (!guildDoc.configuration?.warning) {
-				throw new ValidationError("duration multiplier has not been setup yet");
-			}
-
-			guildDoc.configuration.warning.durationMultiplier = 1;
+			warning.durationMultiplier = 1;
 
 			return await ActionManager.logCase({
 				...mutualLogFields,
 				actionType: ActionType.CONFIG_WARN_DURATION_MULTIPLIER_RESET,
 				actionOptions: {
-					pendingExecution: async () =>
-						await DBConnectionManager.Prisma.guild.update({
-							where,
-							data: {
-								configuration: guildDoc.configuration!
-							}
-						})
+					pendingExecution: save
 				},
 				successContent: `reset the duration multiplier to ${inlineCode("1")}`
 			});
 		}
 
-		const newAppendedConfiguration: PrismaJson.Configuration = guildDoc.configuration
-			? ObjectUtils.cloneObject(guildDoc.configuration)
-			: DBConnectionManager.Defaults.Configuration;
-
-		if (newAppendedConfiguration.warning.durationMultiplier === multiplier) {
+		if (warning.durationMultiplier === multiplier) {
 			throw new ValidationError("a record with the given option already exists");
 		}
 
-		newAppendedConfiguration.warning.durationMultiplier = multiplier;
+		warning.durationMultiplier = multiplier;
 
 		return await ActionManager.logCase({
 			...mutualLogFields,
 			actionType: ActionType.CONFIG_WARN_DURATION_MULTIPLIER_SET,
 			actionOptions: {
-				pendingExecution: async () =>
-					await DBConnectionManager.Prisma.guild.update({
-						where,
-						data: {
-							configuration: newAppendedConfiguration
-						}
-					})
+				pendingExecution: save
 			},
 			successContent: `set the duration multiplier to ${inlineCode(multiplier.toString())}`
 		});
@@ -164,12 +143,12 @@ export abstract class WarnConfig {
 	) {
 		const { guildId, channelId } = interaction;
 
-		const where = {
-			id: guildId
-		};
-
-		const guildDoc = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const {
+			configuration: { warning },
+			save
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: "warning"
 		});
 
 		const mutualLogFields = {
@@ -182,40 +161,25 @@ export abstract class WarnConfig {
 		};
 
 		if (!punishment || punishment === "disable") {
-			if (
-				!guildDoc.configuration?.warning ||
-				!guildDoc.configuration.warning.thresholds.find((t) => t.threshold === threshold)
-			) {
+			if (!warning.thresholds.find((t) => t.threshold === threshold)) {
 				throw new ValidationError("a record with the given threshold does not exist");
 			}
 
-			const newOmittedConfiguration = ObjectUtils.cloneObject(
-				guildDoc.configuration as SetRequired<PrismaJson.Configuration, "warning">
-			);
-
-			newOmittedConfiguration.warning.thresholds = newOmittedConfiguration.warning.thresholds.filter(
-				(t) => t.threshold !== threshold
-			);
+			warning.thresholds = warning.thresholds.filter((t) => t.threshold !== threshold);
 
 			return await ActionManager.logCase({
 				...mutualLogFields,
 				actionType: ActionType.CONFIG_WARN_THRESHOLD_REMOVE,
 				actionOptions: {
-					pendingExecution: async () =>
-						await DBConnectionManager.Prisma.guild.update({
-							where,
-							data: {
-								configuration: newOmittedConfiguration
-							}
-						})
+					pendingExecution: save
 				},
 				successContent: `disabled the threshold for ${inlineCode(threshold.toString())} warnings`
 			});
 		}
 
-		const currentThresholds = guildDoc.configuration.warning.thresholds;
+		const currentThresholds = warning.thresholds;
 
-		if (currentThresholds && currentThresholds.length >= MAX_ELEMENTS_PER_PAGE) {
+		if (currentThresholds.length >= MAX_ELEMENTS_PER_PAGE) {
 			throw new ValidationError(`max number of warning thresholds reached (${MAX_ELEMENTS_PER_PAGE})`);
 		}
 
@@ -240,19 +204,17 @@ export abstract class WarnConfig {
 			!msDuration;
 
 		if (isWithoutTimeoutDuration) {
-			throw new ValidationError("You must provide provide a duration for a timeout punishment");
+			throw new ValidationError("you must provide provide a duration for a timeout punishment");
 		}
-
-		const newAppendedConfiguration = ObjectUtils.cloneObject(guildDoc.configuration);
 
 		const updateIndex = currentThresholds.findIndex((t) => t.threshold === threshold);
 
 		const isUpdated = updateIndex !== -1;
 
-		if (updateIndex !== -1) {
-			newAppendedConfiguration.warning.thresholds[updateIndex] = newThreshold;
+		if (isUpdated) {
+			warning.thresholds[updateIndex] = newThreshold;
 		} else {
-			newAppendedConfiguration.warning.thresholds.push(newThreshold);
+			warning.thresholds.push(newThreshold);
 		}
 
 		const actionType = isUpdated ? ActionType.CONFIG_WARN_THRESHOLD_UPDATE : ActionType.CONFIG_WARN_THRESHOLD_ADD;
@@ -263,16 +225,7 @@ export abstract class WarnConfig {
 			...mutualLogFields,
 			actionType,
 			actionOptions: {
-				pendingExecution: async () =>
-					await DBConnectionManager.Prisma.guild.update({
-						where,
-						data: {
-							configuration: newAppendedConfiguration
-						},
-						select: {
-							id: true
-						}
-					})
+				pendingExecution: save
 			},
 			successContent: `${pastTenseAction} threshold for ${inlineCode(threshold.toString())} warnings`
 		});

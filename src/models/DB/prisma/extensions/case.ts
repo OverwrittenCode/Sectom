@@ -3,14 +3,14 @@ import { TimestampStyles, time } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { RedisCache } from "~/models/DB/cache/index.js";
+import type { FetchExtendedClient } from "~/models/DB/prisma/extensions/types/index.js";
 import { Beans } from "~/models/framework/DI/Beans.js";
 import type { Typings } from "~/ts/Typings.js";
 import { StringUtils } from "~/utils/string.js";
 
 import { EntityInstanceMethods } from "./entity.js";
 
-import type { ActionType, Prisma, PrismaClient } from "@prisma/client";
+import type { ActionType, Prisma } from "@prisma/client";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 type RelationFields = Pick<Prisma.CaseCreateInput, "channel" | "perpetrator" | "target" | "guild">;
@@ -31,7 +31,8 @@ interface RetrieveCaseOptions {
 
 @singleton()
 export class CaseInstanceMethods {
-	private client: PrismaClient;
+	private client: FetchExtendedClient;
+
 	private retrieveCaseSelect = {
 		id: true,
 		perpetratorId: true,
@@ -43,13 +44,13 @@ export class CaseInstanceMethods {
 	} as const satisfies Prisma.CaseSelectScalar;
 
 	constructor(
-		@inject(Beans.IExtensionInstanceMethods)
-		_client: PrismaClient
+		@inject(Beans.IPrismaFetchClientToken)
+		_client: FetchExtendedClient
 	) {
 		this.client = _client;
 	}
 
-	public retrieveRelationFields(options: RelationFieldOptions): RelationFields {
+	public retrieveRelationFields<T>(this: T, options: RelationFieldOptions): RelationFields {
 		const { guildId, channelId, perpetratorId, targetId } = options;
 		const entityInstanceMethods = container.resolve(EntityInstanceMethods);
 
@@ -69,42 +70,30 @@ export class CaseInstanceMethods {
 		};
 	}
 
-	public async retrieveCase(
+	public async retrieveCase<T>(
+		this: T,
 		options: RetrieveCaseOptions
-	): Promise<Typings.Prettify<Pick<Doc, keyof typeof this.retrieveCaseSelect>>> {
+	): Promise<Typings.Prettify<Pick<Doc, keyof CaseInstanceMethods["retrieveCaseSelect"]>>> {
 		const { interaction, allowedActions, caseID, targetId } = options;
 		const { guildId } = interaction;
 
-		let caseDoc: Pick<Doc, keyof typeof this.retrieveCaseSelect> | null = null;
+		let caseDoc: Pick<Doc, keyof CaseInstanceMethods["retrieveCaseSelect"]> | undefined | null = null;
+
+		const clazz = container.resolve(CaseInstanceMethods);
 
 		if (caseID) {
-			const where = {
-				guildId,
-				id: caseID
-			};
-
-			const cachedRecords = await RedisCache.case.indexes.byGuildIdAndId.match(where);
-
-			if (cachedRecords.length) {
-				caseDoc = cachedRecords[0].data;
-			} else {
-				caseDoc = await this.client.case.findFirst({ where, select: this.retrieveCaseSelect });
-			}
+			caseDoc = await clazz.client.case
+				.fetchFirst({
+					where: {
+						guildId,
+						id: caseID
+					},
+					select: clazz.retrieveCaseSelect
+				})
+				.then((v) => v?.doc);
 		} else {
-			const cachedRecords = await RedisCache.case.indexes.byGuildId.match({ guildId });
-
-			if (cachedRecords.length) {
-				caseDoc = cachedRecords
-					.map((record) => record.data)
-					.filter((data) => {
-						const actionFilter = !allowedActions || allowedActions.includes(data.action);
-						const targetFilter = !targetId || data.targetId === targetId;
-
-						return actionFilter && targetFilter;
-					})
-					.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-			} else {
-				caseDoc = await this.client.case.findFirst({
+			caseDoc = await clazz.client.case
+				.fetchFirst({
 					where: {
 						guildId,
 						targetId,
@@ -117,9 +106,9 @@ export class CaseInstanceMethods {
 					orderBy: {
 						createdAt: "desc"
 					},
-					select: this.retrieveCaseSelect
-				});
-			}
+					select: clazz.retrieveCaseSelect
+				})
+				.then((v) => v?.doc);
 		}
 
 		if (!caseDoc) {
@@ -129,7 +118,7 @@ export class CaseInstanceMethods {
 		return caseDoc;
 	}
 
-	public unixTimestampHelper(timestamp: Date): string {
+	public unixTimestampHelper<T>(this: T, timestamp: Date): string {
 		return `${time(timestamp, TimestampStyles.LongDateTime)} (${time(
 			timestamp,
 			TimestampStyles.RelativeTime

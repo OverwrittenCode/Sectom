@@ -24,14 +24,7 @@ export function BotRequiredPermissions<T = CommandInteraction>(permissions: Perm
 
 		if (interaction.isChatInputCommand()) {
 			permissionChannelId =
-				interaction.options.data
-					.flatMap((data) =>
-						data.options
-							? data.options.some((o) => !!o.options)
-								? data.options.flatMap((o) => o.options ?? [o])
-								: data.options
-							: [data]
-					)
+				CommandUtils.retrieveCommandInteractionOptions(interaction)
 					.find((data) => data.name === CommandUtils.SlashOptions.ChannelPermissionName)
 					?.value?.toString() ?? interaction.channelId;
 		}

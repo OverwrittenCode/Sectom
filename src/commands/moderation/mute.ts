@@ -16,7 +16,11 @@ const mutualPermissions = [PermissionFlagsBits.MuteMembers];
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Mute {
-	@Slash({ description: "Mute a user in a voice channel on the server", defaultMemberPermissions: mutualPermissions })
+	@Slash({
+		dmPermission: false,
+		description: "Mute a user in a voice channel on the server",
+		defaultMemberPermissions: mutualPermissions
+	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async mute(
 		@TargetSlashOption({
@@ -61,6 +65,7 @@ export abstract class Mute {
 	}
 
 	@Slash({
+		dmPermission: false,
 		description: "Unmute a user in a voice channel on the server",
 		defaultMemberPermissions: mutualPermissions
 	})

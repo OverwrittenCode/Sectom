@@ -1,5 +1,3 @@
-import assert from "assert";
-
 import { defaultIds } from "@discordx/pagination";
 import {
 	ButtonStyle,
@@ -79,27 +77,27 @@ export abstract class InteractionUtils {
 	public static PaginationButtons = {
 		end: {
 			emoji: { name: "⏩" },
-			label: defaultIds.buttons.end,
+			id: defaultIds.buttons.end,
 			style: ButtonStyle.Secondary
 		},
 		exit: {
 			emoji: { name: "❌" },
-			label: defaultIds.buttons.exit,
+			id: defaultIds.buttons.exit,
 			style: ButtonStyle.Danger
 		},
 		next: {
 			emoji: { name: "▶️" },
-			label: defaultIds.buttons.next,
+			id: defaultIds.buttons.next,
 			style: ButtonStyle.Primary
 		},
 		previous: {
 			emoji: { name: "◀️" },
-			label: defaultIds.buttons.previous,
+			id: defaultIds.buttons.previous,
 			style: ButtonStyle.Primary
 		},
 		start: {
 			emoji: { name: "⏪" },
-			label: defaultIds.buttons.start,
+			id: defaultIds.buttons.start,
 			style: ButtonStyle.Secondary
 		}
 	} as const satisfies ButtonPaginationOptions;
@@ -108,8 +106,6 @@ export abstract class InteractionUtils {
 		interaction: Typings.DeferrableGuildInteraction,
 		replyOptions: ReplyOptions
 	): Promise<null | Message<boolean> | InteractionResponse<boolean>> {
-		assert(interaction.channel);
-
 		try {
 			if (interaction.replied) {
 				return await interaction.followUp(replyOptions);
@@ -149,7 +145,7 @@ export abstract class InteractionUtils {
 
 	public static async deferInteraction(interaction: Typings.DeferrableGuildInteraction, ephemeral: boolean = false) {
 		if (!interaction.replied && !interaction.deferred) {
-			return await interaction.deferReply({ ephemeral }).catch(() => {});
+			return await interaction.deferReply({ ephemeral }).catch();
 		}
 	}
 
@@ -185,7 +181,7 @@ export abstract class InteractionUtils {
 	}
 
 	public static modalSubmitToEmbedFIelds(interaction: ModalSubmitInteraction<"cached">): APIEmbedField[] {
-		const textInputComponents = [...interaction.fields.fields.toJSON().values()];
+		const textInputComponents = [...interaction.fields.fields.toJSON().values()].filter(({ value }) => !!value);
 
 		const fields: APIEmbedField[] = textInputComponents.map(({ customId, value }) => ({
 			name: customId.replaceAll("_", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()),
@@ -197,20 +193,19 @@ export abstract class InteractionUtils {
 
 	public static async disableComponents(
 		message: Message,
-		options?: Omit<MessageEditOptions, "components">
+		options: Omit<MessageEditOptions, "components"> = {}
 	): Promise<InteractionResponse<boolean> | Message<boolean> | null> {
-		options ??= {};
+		const disabledComponents = ObjectUtils.cloneObject(message.components).map((data) => ({
+			...data,
+			components: data.components.map((c) => ({ ...c, disabled: true }))
+		}));
 
-		const disabledComponents = ObjectUtils.cloneObject(message.components);
-
-		disabledComponents.forEach((_, i) => {
-			disabledComponents[i].components = disabledComponents[i].components.map((c) => ({ ...c, disabled: true }));
-		});
-
-		return await message.edit({
-			...options,
-			components: disabledComponents
-		});
+		return await message
+			.edit({
+				...options,
+				components: disabledComponents
+			})
+			.catch(() => null);
 	}
 
 	public static emojiMention(emoji: APIMessageComponentEmoji): string {

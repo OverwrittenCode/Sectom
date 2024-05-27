@@ -2,14 +2,16 @@ import assert from "assert";
 
 import { ActionType } from "@prisma/client";
 import { TextChannel } from "discord.js";
-import { inject, singleton } from "tsyringe";
+import { container, inject, singleton } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
+import type { FetchExtendedClient } from "~/models/DB/prisma/extensions/types/index.js";
 import type { Typings } from "~/ts/Typings.js";
 
-import type { EntityType, Prisma, PrismaClient } from "@prisma/client";
+import type { EntityType, Prisma } from "@prisma/client";
+import type { Message } from "discord.js";
 
 interface CreateOptions extends Pick<Prisma.CaseCreateInput, "guild"> {
 	id: string;
@@ -31,19 +33,17 @@ interface ConnectOrCreate {
 
 @singleton()
 export class EntityInstanceMethods {
-	private client: PrismaClient;
-	private retrieveAllGuildLogChannelSelect = {
-		id: true,
-		logChannelType: true
-	} as const satisfies Prisma.EntitySelectScalar;
+	private client: FetchExtendedClient;
+
 	constructor(
-		@inject(Beans.IExtensionInstanceMethods)
-		_client: PrismaClient
+		@inject(Beans.IPrismaFetchClientToken)
+		_client: FetchExtendedClient
 	) {
 		this.client = _client;
 	}
 
-	public connectOrCreateHelper(
+	public connectOrCreateHelper<T>(
+		this: T,
 		id: string,
 		connectGuild: Pick<Prisma.CaseCreateInput, "guild">,
 		type: EntityType
@@ -60,12 +60,15 @@ export class EntityInstanceMethods {
 		};
 	}
 
-	public async retrieveGivenGuildLogChannel(
-		interaction: Typings.CachedGuildInteraction,
+	public async retrieveGivenGuildLogChannel<T>(
+		this: T,
+		interaction: Typings.CachedGuildInteraction | Message<true>,
 		givenGuildLogChannelType: ActionType | null = null
 	): Promise<TextChannel | null> {
-		const { guildId, channel } = interaction;
+		const { guildId, guild, channel } = interaction;
 		assert(channel);
+
+		const clazz = container.resolve(EntityInstanceMethods);
 
 		const omittedAccessModifier = givenGuildLogChannelType?.substring(0, givenGuildLogChannelType.lastIndexOf("_"));
 
@@ -84,30 +87,26 @@ export class EntityInstanceMethods {
 						: givenGuildLogChannelType === logChannelType) || logChannelType === null
 			)?.id;
 		} else {
-			let logChannelTypeArraySearch: Prisma.EntityWhereInput["logChannelType"] = null;
+			const logChannelTypeArraySearch = givenGuildLogChannelType
+				? {
+						in: Object.values(ActionType).filter((caseActionType) =>
+							caseActionType.startsWith(omittedAccessModifier!)
+						)
+					}
+				: null;
 
-			if (givenGuildLogChannelType) {
-				logChannelTypeArraySearch = {
-					in: Object.values(ActionType).filter((caseActionType) =>
-						caseActionType.startsWith(omittedAccessModifier!)
-					)
-				};
-			}
-
-			const prismaDoc = await this.client.entity.findFirst({
+			const data = await clazz.client.entity.fetchFirst({
 				where: {
 					...moderativeLogWhereFilter,
-					OR: [{ logChannelType: logChannelTypeArraySearch }, { logChannelType: null }]
+					logChannelType: logChannelTypeArraySearch
 				},
 				select: { id: true }
 			});
 
-			moderativeLogChannelId = prismaDoc?.id;
+			moderativeLogChannelId = data?.doc.id;
 		}
 
-		const moderativeLogChannel = moderativeLogChannelId
-			? await interaction.guild.channels.fetch(moderativeLogChannelId)
-			: null;
+		const moderativeLogChannel = moderativeLogChannelId ? await guild.channels.fetch(moderativeLogChannelId) : null;
 
 		if (moderativeLogChannel && !(moderativeLogChannel instanceof TextChannel)) {
 			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall("log channel"));

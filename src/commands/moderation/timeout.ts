@@ -20,7 +20,11 @@ const mutualPermissions = [PermissionFlagsBits.ModerateMembers];
 export abstract class Timeout {
 	private checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
 
-	@Slash({ description: "Timeout a user on the server", defaultMemberPermissions: mutualPermissions })
+	@Slash({
+		dmPermission: false,
+		description: "Timeout a user on the server",
+		defaultMemberPermissions: mutualPermissions
+	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async timeout(
 		@TargetSlashOption({
@@ -58,7 +62,11 @@ export abstract class Timeout {
 		});
 	}
 
-	@Slash({ description: "Remove a timeout a user on the server", defaultMemberPermissions: mutualPermissions })
+	@Slash({
+		dmPermission: false,
+		description: "Remove a timeout a user on the server",
+		defaultMemberPermissions: mutualPermissions
+	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 	public async untimeout(
 		@TargetSlashOption({

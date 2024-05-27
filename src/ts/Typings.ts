@@ -52,12 +52,13 @@ export namespace Typings {
 			export type RetrieveRecord<M extends _Prisma.ModelName> = {
 				id: string;
 				ts: number;
-				data: RetrieveModelDocument<M>;
+				data: Prisma.RetrieveModelDocument<M>;
 			};
 
 			export type TTerms<M extends _Prisma.ModelName> = Parameters<
 				ModelCollection<M>["createIndex"]
-			>["0"]["terms"];
+			>["0"]["terms"] &
+				Array<keyof Prisma.RetrieveModelDocument<M>>;
 
 			export type IndexNames<T extends string[]> = `by${Join<T, "And", true>}`;
 
@@ -107,15 +108,57 @@ export namespace Typings {
 			| Redis.RetrieveModelDocument<M>
 			| Prisma.RetrieveModelDocument<M>;
 
+		export type OnlyFilterableTypes<T> = T extends T
+			? {
+					[K in keyof T as NonNullable<T[K]> extends Record<string, any> | any[] ? never : K]: T[K];
+				}
+			: never;
+
 		export type SimpleFilter<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
-			? Omit<
-					Partial<
-						Intersection<
-							Required<_Prisma.TypeMap["model"][M]["operations"]["findFirst"]["args"]>["where"],
-							Prisma.RetrieveModelDocument<M>
+			? Prettify<
+					OnlyFilterableTypes<
+						Partial<
+							Intersection<
+								Required<_Prisma.TypeMap["model"][M]["operations"]["findFirst"]["args"]>["where"],
+								Prisma.RetrieveModelDocument<M>
+							>
 						>
-					>,
-					"apiEmbeds"
+					>
+				>
+			: never;
+
+		export type SimpleWhere<
+			M extends _Prisma.ModelName = _Prisma.ModelName,
+			State extends "retrievable" | "wildcard" | "union" = "union"
+		> = M extends M
+			? OnlyFilterableTypes<Prisma.RetrieveModelDocument<M>> extends infer T
+				? {
+						[K in keyof T]?: State extends "retrievable"
+							? T[K]
+							: NonNullable<T[K]> extends boolean
+								? T[K]
+								: ExactlyOneOf<
+											Record<
+												"in" | "notIn",
+												Array<T[K] extends NonNullable<T[K]> ? T[K] : NonNullable<T[K]>>
+											>
+									  > extends infer U
+									? State extends "wildcard"
+										? U
+										: T[K] | U
+									: never;
+					} extends infer U
+					? State extends "retrievable"
+						? U
+						: U & { OR?: U[] }
+					: never
+				: never
+			: never;
+
+		export type SimpleUniqueWhereId<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
+			? Exclude<
+					_Prisma.TypeMap["model"][M]["operations"]["findUnique"]["args"]["where"]["id"],
+					undefined | (string & Record<any, any>)
 				>
 			: never;
 
@@ -123,15 +166,24 @@ export namespace Typings {
 			? Partial<Record<keyof Prisma.RetrieveModelDocument<M>, true>>
 			: never;
 
-		export type SimpleSelectOutput<M extends _Prisma.ModelName, T extends SimpleSelect<M>> = {} extends T
-			? Prisma.RetrieveModelDocument<M>
-			: keyof T extends keyof Prisma.RetrieveModelDocument<M>
-				? Pick<Prisma.RetrieveModelDocument<M>, keyof T>
-				: never;
+		export type SimpleSelectOutput<
+			M extends _Prisma.ModelName,
+			T extends SimpleSelect<M> | undefined = undefined
+		> = M extends M
+			? T extends T
+				? undefined extends T
+					? Prisma.RetrieveModelDocument<M>
+					: keyof T extends keyof Prisma.RetrieveModelDocument<M>
+						? Pick<Prisma.RetrieveModelDocument<M>, keyof T>
+						: never
+				: never
+			: never;
 	}
 
 	export type AllowedStringify = string | number | bigint | boolean | null | undefined;
 	export type DisplaceObjects<T1, T2> = Omit<T1, keyof T2> & T2;
+	export type Listable<T> = T | T[];
+	export type ObjectValues<T> = T[keyof T];
 	export type SetNullableCase<T, WithoutFalsyCase extends boolean = true> = WithoutFalsyCase extends true
 		? T
 		: T | null | undefined;
@@ -139,6 +191,9 @@ export namespace Typings {
 		[K in keyof T]: T[K];
 	} & {};
 	export type PickMatching<T, V> = { [K in keyof T as T[K] extends V | (() => V) ? K : never]: T[K] };
+	export type ExactlyOneOf<T> = {
+		[K in keyof T]: Prettify<Pick<T, K> & Partial<Record<Exclude<keyof T, K>, never>>>;
+	}[keyof T];
 	export type Intersection<T, U> = {
 		[K in keyof T & keyof U]: U[K];
 	};

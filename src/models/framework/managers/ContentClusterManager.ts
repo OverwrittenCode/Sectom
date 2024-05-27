@@ -5,6 +5,7 @@ import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
+	ChannelType,
 	EmbedBuilder,
 	HeadingLevel,
 	ModalBuilder,
@@ -139,12 +140,10 @@ export abstract class ContentClusterManager {
 
 		const customIdRecords = this.constructCustomIdRecords(componentType);
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(
-			interaction.guildId,
-			{
-				configuration: true
-			}
-		);
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: componentType
+		});
 
 		const { NotConfigured } = ValidationError.MessageTemplates;
 
@@ -189,12 +188,10 @@ export abstract class ContentClusterManager {
 
 		const customIdRecords = this.constructCustomIdRecords(componentType);
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(
-			interaction.guildId,
-			{
-				configuration: true
-			}
-		);
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: componentType
+		});
 
 		const componentConfiguration = configuration[componentType];
 
@@ -227,7 +224,7 @@ export abstract class ContentClusterManager {
 			];
 
 			if (noSubjects) {
-				panelDescriptionArray.push("Panel Button is disabled as it there are no subjects to add to it");
+				panelDescriptionArray.push("- Panel Button is disabled as there are no subjects to add to it");
 			}
 
 			const subjectDescriptionArray = [
@@ -338,8 +335,9 @@ export abstract class ContentClusterMessageComponentHandler {
 		const actionTypeBody = [componentType, propertyType, modifierType].map((v) => v.toUpperCase()).join("_");
 		const actionType = `CONFIG_${actionTypeBody}` as ActionType;
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: componentType
 		});
 
 		const componentConfiguration = configuration[componentType];
@@ -382,7 +380,7 @@ export abstract class ContentClusterMessageComponentHandler {
 			}
 
 			if (unicodeEmojiCount && unicodeEmojiCount > 1) {
-				throw new ValidationError("You may only provide one emoji");
+				throw new ValidationError("you may only provide one emoji");
 			}
 		}
 
@@ -502,8 +500,9 @@ export abstract class ContentClusterMessageComponentHandler {
 
 		const propertyConfigKey = `${propertyType}s` as `${typeof propertyType}s`;
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: componentType
 		});
 
 		const componentConfiguration = configuration[componentType];
@@ -541,8 +540,9 @@ export abstract class ContentClusterMessageComponentHandler {
 		const { componentType, propertyType: propertyType } = ContentClusterManager.retrieveCustomIdFields(customId);
 		const propertyTypeConfigKey = `${propertyType}s` as `${Enums.ContentClusterPropertyType}s`;
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: componentType
 		});
 
 		const componentConfiguration = configuration[componentType];
@@ -603,15 +603,18 @@ export abstract class ContentClusterMessageComponentHandler {
 		}
 
 		if (!(channel instanceof TextChannel)) {
-			throw new ValidationError(ValidationError.MessageTemplates.InvalidChannelType("Panel", "TextChannel"));
+			throw new ValidationError(
+				ValidationError.MessageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
+			);
 		}
 
 		const { componentType } = ContentClusterManager.retrieveCustomIdFields(customId);
 
 		const customIdRecords = ContentClusterManager.constructCustomIdRecords(componentType);
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: componentType
 		});
 
 		const componentConfiguration = configuration[componentType];
@@ -693,12 +696,12 @@ export abstract class ContentClusterMessageComponentHandler {
 		let configuration = data?.configuration;
 
 		if (!configuration) {
-			const prismaDoc = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(
-				interaction.guildId,
-				{ configuration: true }
-			);
+			const { configuration: _configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+				guildId: interaction.guildId,
+				check: componentType
+			});
 
-			configuration = prismaDoc.configuration;
+			configuration = _configuration;
 		}
 
 		const customIdRecords = ContentClusterManager.constructCustomIdRecords(componentType);
@@ -731,7 +734,6 @@ export abstract class ContentClusterMessageComponentHandler {
 			.setCustomId(BaseTextInputField.Reason)
 			.setLabel(`What is the reason for ${continuousTense} this?`)
 			.setPlaceholder("Provide some text (optional)")
-			.setValue(InteractionUtils.Messages.NoReason)
 			.setMaxLength(MAX_REASON_STRING_LENGTH)
 			.setStyle(TextInputStyle.Paragraph)
 			.setRequired(false);

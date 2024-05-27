@@ -13,10 +13,7 @@ import type { ChatInputCommandInteraction } from "discord.js";
 @Discord()
 @Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
-@SlashGroup({
-	description: "Display the avatar of a user",
-	name: "avatar"
-})
+@SlashGroup({ dmPermission: false, description: "Display the avatar of a user", name: "avatar" })
 @SlashGroup("avatar")
 export abstract class Avatar {
 	private sizeURLSuffix = "?size=4096";

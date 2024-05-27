@@ -8,7 +8,6 @@ import { MAX_DEFER_RESPONSE_WAIT } from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
-import { RedisCache } from "~/models/DB/cache/index.js";
 import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -24,29 +23,7 @@ export abstract class InteractionCreate {
 
 		assert(interaction.inCachedGuild());
 
-		const isCacheHit = await RedisCache.guild.collection.get(interaction.guildId).then(Boolean);
-
-		if (!isCacheHit) {
-			const guildRecord = await DBConnectionManager.Prisma.guild.findUnique({
-				where: {
-					id: interaction.guildId
-				}
-			});
-
-			if (!guildRecord) {
-				await DBConnectionManager.Prisma.guild.create({
-					data: {
-						id: interaction.guildId,
-						configuration: DBConnectionManager.Defaults.Configuration
-					},
-					select: {
-						id: true
-					}
-				});
-			} else {
-				await RedisCache.guild.collection.set(interaction.guildId, guildRecord);
-			}
-		}
+		await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId: interaction.guildId });
 
 		if (interaction.isButton() || interaction.isStringSelectMenu()) {
 			const messageComponentIds = InteractionUtils.MessageComponentIds;
@@ -113,7 +90,7 @@ export abstract class InteractionCreate {
 
 	private async autoDeferInteraction(interaction: Typings.CachedGuildInteraction, timeElapsed: number) {
 		if (interaction.isModalSubmit()) {
-			return await interaction.deferReply({ ephemeral: true }).catch(() => {});
+			return await InteractionUtils.deferInteraction(interaction, true)
 		}
 
 		const isDeferrableInteraction =

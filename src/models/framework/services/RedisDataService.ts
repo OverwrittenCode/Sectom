@@ -1,15 +1,27 @@
+import assert from "node:assert";
+
+import { Prisma } from "@prisma/client";
 import _ from "lodash";
 
 import type { Typings } from "~/ts/Typings.js";
 import { ObjectUtils } from "~/utils/object.js";
 
-import type { Prisma } from "@prisma/client";
-import type { Entries } from "type-fest";
+type IDFields<M extends Prisma.ModelName> =
+	Typings.Database.SimpleUniqueWhereId<M> extends infer T ? (T extends string ? ["id"] : Array<keyof T>) : never;
+
 export class RedisDataService<const M extends Prisma.ModelName> {
+	public idFields: IDFields<M>;
 	public modelName: M;
 
 	constructor(modelName: M) {
 		this.modelName = modelName;
+		this.idFields = ObjectUtils.cloneObject(
+			Prisma.dmmf.datamodel.models.find(({ name }) => name === modelName)!.primaryKey?.fields ?? ["id"]
+		) as IDFields<M>;
+
+		const scalarFieldEnum = Prisma[`${this.modelName}ScalarFieldEnum`];
+
+		assert(this.idFields.every((idField) => idField in scalarFieldEnum));
 	}
 
 	public encode<T = unknown>(record: T): string {
@@ -27,9 +39,9 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 		const redisRecord = JSON.parse(str) as Typings.Database.Redis.RetrieveRecord<M>;
 		const { data } = redisRecord;
 
-		const dateFields = Object.entries(data).filter(([, value]) => ObjectUtils.isDateString(value)) as Entries<
-			Record<string, string>
-		>;
+		const dateFields = ObjectUtils.entries<Record<string, string>>(data).filter(([, value]) =>
+			ObjectUtils.isDateString(value)
+		);
 
 		for (const [key, value] of dateFields) {
 			Object.assign(data, { [key]: new Date(value) });
@@ -48,18 +60,28 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 		return redisRecord as T;
 	}
 
+	public pickIDFields(
+		data: Typings.Database.DocumentInput<M> | (typeof Prisma)[`${M}ScalarFieldEnum`] = Prisma[
+			`${this.modelName}ScalarFieldEnum`
+		]
+	) {
+		return ObjectUtils.pickKeys(data, this.idFields);
+	}
+
 	public withIDField<const TDoc extends Typings.Database.DocumentInput<M>>(data: TDoc): TDoc & { id: string } {
-		const isLevelingDoc = !("id" in data) || _.isEmpty(data.id);
-		if (!isLevelingDoc) {
+		const isCompoundIdDoc = !("id" in data) || _.isEmpty(data.id);
+
+		if (!isCompoundIdDoc) {
 			return data as TDoc & { id: string };
 		}
 
 		const dataCopy = ObjectUtils.cloneObject(data);
 
-		if (!("id" in dataCopy)) {
-			const compoundIDValue = `${dataCopy.guildId}_${dataCopy.entityId}`;
-			Object.assign(dataCopy, { id: compoundIDValue });
-		}
+		const idFields = this.pickIDFields(data);
+
+		const compoundIDValue = Object.values(idFields).join("_");
+
+		Object.assign(dataCopy, { id: compoundIDValue });
 
 		return dataCopy as TDoc & { id: string };
 	}

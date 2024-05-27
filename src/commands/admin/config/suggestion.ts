@@ -19,12 +19,10 @@ import { ButtonComponent, Discord, SelectMenuComponent, Slash, SlashGroup } from
 import { LIGHT_GOLD } from "~/constants.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { RedisCache } from "~/models/DB/cache/index.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { ContentClusterManager } from "~/models/framework/managers/ContentClusterManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { StringUtils } from "~/utils/string.js";
@@ -91,14 +89,14 @@ export abstract class SuggestionConfig {
 	) {
 		assert(interaction.channel);
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(
-			interaction.guildId,
-			{
-				configuration: true
-			}
-		);
+		const {
+			configuration: { suggestion }
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "suggestion"
+		});
 
-		const { panels } = configuration.suggestion;
+		const { panels } = suggestion;
 
 		if (!panels.length) {
 			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("Suggestion Panel"));
@@ -155,11 +153,15 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 		const channelId = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
 
-		const { configuration } = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(guildId, {
-			configuration: true
+		const {
+			configuration: { suggestion },
+			save
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: "suggestion"
 		});
 
-		const { panels } = configuration.suggestion;
+		const { panels } = suggestion;
 
 		panelNames.forEach((name) => {
 			const panelIndex = panels.findIndex((panel) => panel.name === name);
@@ -174,7 +176,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 				throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
 			}
 
-			configuration.suggestion.panels[panelIndex].channelId = channelId;
+			suggestion.panels[panelIndex].channelId = channelId;
 		});
 
 		return await ActionManager.logCase({
@@ -185,11 +187,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			},
 			actionType: ActionType.CONFIG_SUGGESTION_PANEL_UPDATE,
 			actionOptions: {
-				pendingExecution: () =>
-					DBConnectionManager.Prisma.guild.update({
-						where: { id: guildId },
-						data: { configuration }
-					})
+				pendingExecution: save
 			},
 			successContent: `updated all panels' channels to ${channelMention(channelId)}`
 		});
@@ -197,17 +195,12 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 	@ButtonComponent({ id: SuggestionConfig.customIdRecords.suggestion_create.regex })
 	public async buttonCreate(interaction: ButtonInteraction<"cached">) {
-		const componentTypeSentenceCase = StringUtils.capitaliseFirstLetter(componentType);
-
 		const {
 			configuration: { suggestion }
-		} = await DBConnectionManager.Prisma.guild.instanceMethods.retrieveGuild(interaction.guildId, {
-			configuration: true
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "suggestion"
 		});
-
-		if (suggestion.disabled) {
-			throw new ValidationError(ValidationError.MessageTemplates.SystemIsDisabled(componentTypeSentenceCase));
-		}
 
 		const subjectName = interaction.customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
 		const isInvalidSubject = !suggestion.subjects.find(({ name }) => name === subjectName);
@@ -234,7 +227,9 @@ export abstract class SuggestionConfigMessageComponentHandler {
 		}
 
 		if (!(channel instanceof TextChannel)) {
-			throw new ValidationError(ValidationError.MessageTemplates.InvalidChannelType("Panel", "Text Channel"));
+			throw new ValidationError(
+				ValidationError.MessageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
+			);
 		}
 
 		const modalCustomIdGenerator = InteractionUtils.constructCustomIdGenerator({
@@ -318,7 +313,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 				}
 			};
 
-			const author = DBConnectionManager.Prisma.entity.instanceMethods.connectOrCreateHelper(
+			const author = DBConnectionManager.Prisma.entity.connectOrCreateHelper(
 				interaction.user.id,
 				connectGuild,
 				EntityType.USER
@@ -350,7 +345,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 			const viewMessageEmbed = new EmbedBuilder()
 				.setColor(LIGHT_GOLD)
-				.setDescription(`Successfully sent suggestion in ${channelMention(channel.id)}`);
+				.setDescription(`Successfully sent suggestion in ${channel.toString()}`);
 
 			const viewMessageActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("View Message").setURL(url)
@@ -374,7 +369,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			isVerdictBased && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator);
 
 		if (isInsufficientPermission) {
-			throw new ValidationError("You need Administrator to perform this action");
+			throw new ValidationError("you need Administrator to perform this action");
 		}
 
 		const apiEmbed = interaction.message.embeds[0].toJSON();
@@ -409,21 +404,10 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			});
 		}
 
-		let doc: Pick<
-			Typings.Database.Prisma.RetrieveModelDocument<"Suggestion">,
-			"upvotedUserIDs" | "downvotedUserIDs"
-		>;
-
-		const cacheRecord = await RedisCache.suggestion.get(suggestionId);
-
-		if (!cacheRecord) {
-			doc = await DBConnectionManager.Prisma.suggestion.findUniqueOrThrow({
-				where: { id: suggestionId },
-				select: { upvotedUserIDs: true, downvotedUserIDs: true }
-			});
-		} else {
-			doc = cacheRecord.data;
-		}
+		const { doc } = await DBConnectionManager.Prisma.suggestion.fetchByIdOrThrow({
+			id: suggestionId,
+			select: { upvotedUserIDs: true, downvotedUserIDs: true }
+		});
 
 		const hasAlreadyVoted = [...doc.downvotedUserIDs, ...doc.upvotedUserIDs].includes(interaction.user.id);
 

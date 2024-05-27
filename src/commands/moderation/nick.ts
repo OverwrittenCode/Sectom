@@ -5,8 +5,7 @@ import {
 	type ChatInputCommandInteraction,
 	type GuildMember,
 	PermissionFlagsBits,
-	inlineCode,
-	userMention
+	inlineCode
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
@@ -23,13 +22,14 @@ const mutualPermissions = [PermissionFlagsBits.ManageNicknames];
 @Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 @SlashGroup({
+	dmPermission: false,
 	description: "set or reset the nickname of a member in the server",
 	name: "nick",
 	defaultMemberPermissions: mutualPermissions
 })
 @SlashGroup("nick")
 export abstract class Nick {
-	@Slash({ description: "set the nickname of a member in the server" })
+	@Slash({ dmPermission: false, description: "set the nickname of a member in the server" })
 	public set(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -57,14 +57,14 @@ export abstract class Nick {
 			},
 			reason,
 			actionType: ActionType.NICK_USER_SET,
-			successContent: `nicknamed ${userMention(target.id)} as ${inlineCode(nickname)}`,
+			successContent: `nicknamed ${target.toString()} as ${inlineCode(nickname)}`,
 			actionOptions: {
 				pendingExecution: () => target.setNickname(nickname, auditReason)
 			}
 		});
 	}
 
-	@Slash({ description: "reset the nickname of a member in the server" })
+	@Slash({ dmPermission: false, description: "reset the nickname of a member in the server" })
 	public reset(
 		@TargetSlashOption({
 			entityType: EntityType.USER,

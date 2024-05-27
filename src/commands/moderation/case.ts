@@ -17,22 +17,19 @@ import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
-import { RedisCache } from "~/models/DB/cache/index.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import type { ChatInputCommandInteraction, GuildBasedChannel } from "discord.js";
 
-type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
-@SlashGroup({ description: "container of all cases in the server", name: "case" })
+@SlashGroup({ dmPermission: false, description: "container of all cases in the server", name: "case" })
 @SlashGroup("case")
 export abstract class Case {
 	@Slash({ description: "Edit a case reason" })
@@ -50,7 +47,7 @@ export abstract class Case {
 	) {
 		const { guildId } = interaction;
 
-		const caseData = await DBConnectionManager.Prisma.case.instanceMethods.retrieveCase({
+		const caseData = await DBConnectionManager.Prisma.case.retrieveCase({
 			interaction,
 			caseID
 		});
@@ -70,7 +67,7 @@ export abstract class Case {
 			!interaction.memberPermissions.has(PermissionFlagsBits.Administrator);
 
 		if (isInsufficientPermission) {
-			throw new ValidationError("Administrator permission required to edit cases not initiated by you");
+			throw new ValidationError("administrator permission required to edit cases not initiated by you");
 		}
 
 		const updatedEmbeds: PrismaJson.APIEmbed[] = [];
@@ -215,27 +212,13 @@ export abstract class Case {
 		}
 
 		const { guildId } = interaction;
-		const where = { guildId, id };
 
-		let embeds: Doc["apiEmbeds"];
+		const { doc } = await DBConnectionManager.Prisma.case.fetchFirstOrThrow({
+			where: { guildId, id },
+			select: { apiEmbeds: true },
+			validationError: true
+		});
 
-		const cacheRecord = await RedisCache.case.indexes.byGuildIdAndId.match(where);
-
-		if (!cacheRecord.length) {
-			const prismaDoc = await DBConnectionManager.Prisma.case.findUnique({
-				where,
-				select: { apiEmbeds: true }
-			});
-
-			if (!prismaDoc) {
-				return await InteractionUtils.replyNoData(interaction);
-			}
-
-			embeds = prismaDoc.apiEmbeds;
-		} else {
-			embeds = cacheRecord[0].data.apiEmbeds;
-		}
-
-		return await InteractionUtils.replyOrFollowUp(interaction, { embeds });
+		return await InteractionUtils.replyOrFollowUp(interaction, { embeds: doc.apiEmbeds });
 	}
 }

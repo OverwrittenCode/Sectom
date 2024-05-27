@@ -1,40 +1,76 @@
-import { inject, singleton } from "tsyringe";
+import { container, inject, singleton } from "tsyringe";
 
-import { RedisCache } from "~/models/DB/cache/index.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import type { FetchExtendedClient } from "~/models/DB/prisma/extensions/types/index.js";
 import { Beans } from "~/models/framework/DI/Beans.js";
-import type { Typings } from "~/ts/Typings.js";
 
-import type { PrismaClient } from "@prisma/client";
+interface FetchValidConfigurationOptions {
+	guildId: string;
+	check?: keyof PrismaJson.Configuration;
+}
 
 @singleton()
 export class GuildInstanceMethods {
-	private client: PrismaClient;
+	private static defaultContentClusterManagerComponents = {
+		panels: [],
+		subjects: []
+	};
+
+	public static defaultConfiguration: PrismaJson.Configuration = {
+		warning: {
+			durationMultiplier: 1,
+			thresholds: []
+		},
+		suggestion: GuildInstanceMethods.defaultContentClusterManagerComponents,
+		ticket: {
+			...GuildInstanceMethods.defaultContentClusterManagerComponents,
+			prompt: true
+		},
+
+		leveling: {
+			stackXPMultipliers: true,
+			cooldown: 3000,
+			multiplier: 1,
+			roles: [],
+			overrides: []
+		}
+	};
+
+	private client: FetchExtendedClient;
+
 	constructor(
-		@inject(Beans.IExtensionInstanceMethods)
-		_client: PrismaClient
+		@inject(Beans.IPrismaFetchClientToken)
+		_client: FetchExtendedClient
 	) {
 		this.client = _client;
 	}
-	public async retrieveGuild<const T extends Typings.Database.SimpleSelect<"Guild">>(
-		guildId: string,
-		select?: T
-	): Promise<Typings.Prettify<Typings.Database.SimpleSelectOutput<"Guild", T>>> {
-		const where = { id: guildId };
 
-		let guildDoc: Typings.Database.SimpleSelectOutput<"Guild", T>;
+	public async fetchValidConfiguration<T, const Options extends FetchValidConfigurationOptions>(
+		this: T,
+		options: Options
+	) {
+		const clazz = container.resolve(GuildInstanceMethods);
 
-		const guildCacheRecord = await RedisCache.guild.get(guildId);
-		if (!guildCacheRecord) {
-			const prismaDoc = await this.client.guild.findUniqueOrThrow({
-				where,
-				select
-			});
+		const { guildId } = options;
 
-			guildDoc = prismaDoc as Typings.Database.SimpleSelectOutput<"Guild", T>;
-		} else {
-			guildDoc = guildCacheRecord.data as Typings.Database.SimpleSelectOutput<"Guild", T>;
+		const {
+			doc: { configuration },
+			save
+		} = await clazz.client.guild.fetchById({
+			id: guildId,
+			select: {
+				configuration: true
+			},
+			createData: {
+				id: guildId,
+				configuration: GuildInstanceMethods.defaultConfiguration
+			}
+		});
+
+		if (options.check && configuration[options.check].disabled) {
+			throw new ValidationError(ValidationError.MessageTemplates.SystemIsDisabled(options.check));
 		}
 
-		return guildDoc;
+		return { configuration, save };
 	}
 }

@@ -59,11 +59,10 @@ export abstract class LogChannelConfig {
 		const { guildId } = interaction;
 		const actionTypeGroup = !actionTypeChoice || actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
 
-		const retrievedGuildLogChannel =
-			await DBConnectionManager.Prisma.entity.instanceMethods.retrieveGivenGuildLogChannel(
-				interaction,
-				actionTypeGroup
-			);
+		const retrievedGuildLogChannel = await DBConnectionManager.Prisma.entity.retrieveGivenGuildLogChannel(
+			interaction,
+			actionTypeGroup
+		);
 
 		const currentCorrespondingLogChannelId = retrievedGuildLogChannel?.id;
 
@@ -158,11 +157,10 @@ export abstract class LogChannelConfig {
 	) {
 		const actionTypeGroup = actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
 
-		const retrievedGuildLogChannel =
-			await DBConnectionManager.Prisma.entity.instanceMethods.retrieveGivenGuildLogChannel(
-				interaction,
-				actionTypeGroup
-			);
+		const retrievedGuildLogChannel = await DBConnectionManager.Prisma.entity.retrieveGivenGuildLogChannel(
+			interaction,
+			actionTypeGroup
+		);
 
 		const currentCorrespondingLogChannelId = retrievedGuildLogChannel?.id;
 

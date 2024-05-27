@@ -15,7 +15,11 @@ const mutualPermissions = [PermissionFlagsBits.KickMembers];
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Kick {
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
-	@Slash({ description: "Kick a user from the server", defaultMemberPermissions: mutualPermissions })
+	@Slash({
+		dmPermission: false,
+		description: "Kick a user from the server",
+		defaultMemberPermissions: mutualPermissions
+	})
 	public kick(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
