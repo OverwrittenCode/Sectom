@@ -30,7 +30,7 @@ import { EntityManager } from "./EntityManager.js";
 
 import type { PaginationItem } from "@discordx/pagination";
 import type { Prisma } from "@prisma/client";
-import { APIEmbedField, ChatInputCommandInteraction, GuildMember, InteractionResponse, Message } from "discord.js";
+import type { APIEmbedField, ChatInputCommandInteraction, GuildMember, InteractionResponse, Message } from "discord.js";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn: infer A) => any

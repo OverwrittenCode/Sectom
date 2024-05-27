@@ -88,7 +88,7 @@ export abstract class InteractionCreate {
 
 	private async autoDeferInteraction(interaction: Typings.CachedGuildInteraction, timeElapsed: number) {
 		if (interaction.isModalSubmit()) {
-			return await InteractionUtils.deferInteraction(interaction, true)
+			return await InteractionUtils.deferInteraction(interaction, true);
 		}
 
 		const isDeferrableInteraction =

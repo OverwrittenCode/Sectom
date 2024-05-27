@@ -38,7 +38,7 @@ interface LeaderboardProps {
 	text: LeaderboardText;
 	abbreviate: boolean;
 	header?: LeaderboardHeader;
-};
+}
 
 export class LeaderboardBuilder extends Builder<LeaderboardProps> {
 	public constructor() {

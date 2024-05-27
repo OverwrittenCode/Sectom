@@ -1,6 +1,6 @@
 import { ActionType, EntityType } from "@prisma/client";
 import canvacord from "canvacord";
-import { AttachmentBuilder, ChannelType, roleMention, type Message } from "discord.js";
+import { AttachmentBuilder, ChannelType, type Message, roleMention } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
@@ -9,9 +9,9 @@ import type { Typings } from "~/ts/Typings.js";
 
 import { EntityInstanceMethods } from "./entity.js";
 
+import type { FetchExtendedClient } from "./types/index.js";
 import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember } from "discord.js";
 import type { SetOptional } from "type-fest";
-import type { FetchExtendedClient } from "./types/index.js";
 
 interface GetLevelingDataOutput extends Required<PrismaJson.LevelingXPOptions> {
 	doc: Typings.Database.Prisma.RetrieveModelDocument<"Leveling">;
