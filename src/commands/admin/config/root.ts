@@ -273,7 +273,19 @@ export abstract class Config {
 			onTimeout: (_, message) => InteractionUtils.disableComponents(message)
 		});
 
-		await pagination.send();
+		const sendPagination = () => pagination.send();
+
+		sendPagination().catch((e) => {
+			if (
+				(e instanceof DiscordjsError || e instanceof DiscordAPIError) &&
+				(e.code === DiscordjsErrorCodes.InteractionAlreadyReplied ||
+					e.code === RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged)
+			) {
+				return sendPagination(); // try again, auto defer happened just before this
+			}
+
+			throw e;
+		});
 	}
 
 	@Slash({ dmPermission: false, description: "Interactive configuration panel" })
