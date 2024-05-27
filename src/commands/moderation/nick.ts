@@ -11,6 +11,7 @@ import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
@@ -76,10 +77,7 @@ export abstract class Nick {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		if (!target.nickname) {
-			return InteractionUtils.replyOrFollowUp(interaction, {
-				content: "I cannot perform this action: that user does not have a nickname set.",
-				ephemeral: true
-			});
+			throw new ValidationError("I cannot perform this action: that user does not have a nickname set.");
 		}
 
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);

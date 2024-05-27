@@ -13,6 +13,7 @@ import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
 
 const mutualPermissions = [PermissionFlagsBits.BanMembers];
 
@@ -39,13 +40,7 @@ export abstract class Ban {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const isTargetBanned = await this.isTargetBanned(interaction, target);
-		if (isTargetBanned) {
-			return await InteractionUtils.replyOrFollowUp(interaction, {
-				content: "I cannot perform this action: that user is already banned.",
-				ephemeral: true
-			});
-		}
+		await this.validateBanStatus(interaction, target, false);
 
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 		const deleteMessageSeconds = msDuration ? msDuration / 1000 : undefined;
@@ -77,9 +72,7 @@ export abstract class Ban {
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
 		@DurationSlashOption({
-			transformerOptions: {
-				max: "7d"
-			},
+			transformerOptions: CommandUtils.DurationLimits.Ban,
 			name: "prune_messages_duration",
 			descriptionPrefix: "The duration to prune messages"
 		})
@@ -88,13 +81,7 @@ export abstract class Ban {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const isTargetBanned = await this.isTargetBanned(interaction, target);
-		if (isTargetBanned) {
-			return await InteractionUtils.replyOrFollowUp(interaction, {
-				content: "I cannot perform this action: that user is already banned.",
-				ephemeral: true
-			});
-		}
+		await this.validateBanStatus(interaction, target, false);
 
 		const auditReason = `[SOFT BAN] ${ActionManager.generateAuditReason(interaction, reason)}`;
 		const deleteMessageSeconds = msDuration / 1000;
@@ -135,13 +122,7 @@ export abstract class Ban {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const isTargetBanned = await this.isTargetBanned(interaction, target);
-		if (!isTargetBanned) {
-			return await InteractionUtils.replyOrFollowUp(interaction, {
-				content: "I cannot perform this action: that user is not banned.",
-				ephemeral: true
-			});
-		}
+		await this.validateBanStatus(interaction, target, true);
 
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
@@ -160,8 +141,20 @@ export abstract class Ban {
 		});
 	}
 
-	private async isTargetBanned(interaction: ChatInputCommandInteraction<"cached">, target: User | GuildMember) {
-		const banList = await interaction.guild.bans.fetch();
-		return banList.has(target.id);
+	private async validateBanStatus(
+		interaction: ChatInputCommandInteraction<"cached">,
+		target: User | GuildMember,
+		shouldBeBanned: boolean
+	): Promise<void> {
+		const bool = await interaction.guild.bans
+			.fetch(target.id)
+			.then(() => true)
+			.catch(() => false);
+
+		if (bool !== shouldBeBanned) {
+			throw new ValidationError(
+				`I cannot perform this action: that user is ${shouldBeBanned ? "not" : "already"} banned`
+			);
+		}
 	}
 }
