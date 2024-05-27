@@ -12,3 +12,5 @@ export const MAX_ELEMENTS_PER_PAGE = 10;
 export const MAX_DEFER_RESPONSE_WAIT = 2500;
 
 export const LIGHT_GOLD = 0xe6c866;
+
+export const SRC_PATH = "C:/Users/mthap/Desktop/Folders/Code/Sectom/src";

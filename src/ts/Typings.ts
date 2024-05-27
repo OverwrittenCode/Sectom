@@ -1,6 +1,7 @@
 import { type Prisma as _Prisma } from "@prisma/client";
 
 import type { Index, Query } from "@upstash/query";
+import type { ImageSource } from "canvacord";
 import type {
 	AutocompleteInteraction,
 	ButtonInteraction,
@@ -241,4 +242,6 @@ export namespace Typings {
 		: User | Role | GuildBasedChannel;
 
 	export type EntityObjectType<TextBased extends boolean = true> = TargetType<TextBased> | GuildMember;
+
+	export type CanvacordImage = Extract<ImageSource, { mime: string }>;
 }

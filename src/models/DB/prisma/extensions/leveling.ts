@@ -1,14 +1,54 @@
-import { EntityType, Prisma } from "@prisma/client";
+import { ActionType, EntityType } from "@prisma/client";
 import canvacord from "canvacord";
-import { AttachmentBuilder, Colors, type Message } from "discord.js";
+import { AttachmentBuilder, ChannelType, roleMention, type Message } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
+import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
+import type { Typings } from "~/ts/Typings.js";
 
-import type { PrismaClient } from "@prisma/client";
+import { EntityInstanceMethods } from "./entity.js";
+
+import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember } from "discord.js";
+import type { SetOptional } from "type-fest";
+import type { FetchExtendedClient } from "./types/index.js";
+
+interface GetLevelingDataOutput extends Required<PrismaJson.LevelingXPOptions> {
+	doc: Typings.Database.Prisma.RetrieveModelDocument<"Leveling">;
+	currentXP: number;
+	currentLevel: number;
+	isOnCooldown: boolean;
+}
+
+interface AwardXPOptions {
+	interaction: InteractionType;
+	target: GuildMember;
+	levelingData?: GetLevelingDataOutput | null;
+}
+
+interface LevelRequiredOptions extends AwardXPOptions {
+	levelAfter: number;
+}
+
+interface FetchLeaderboardOptions {
+	guildId: string;
+	take?: number;
+	fetchAfter?: boolean;
+}
+
+type FetchLeaderboardOutput = Array<
+	Typings.Prettify<Omit<Typings.Database.Prisma.RetrieveModelDocument<"Leveling">, "createdAt" | "updatedAt">>
+>;
+
+type InteractionType = Message<true> | ChatInputCommandInteraction<"cached">;
+
+canvacord.Font.loadDefault();
 
 @singleton()
 export class LevelingInstanceMethods {
+	private static MAX_XP = 45 as const;
+	private static MIN_XP = 10 as const;
+
 	private client: FetchExtendedClient;
 
 	constructor(
@@ -17,75 +57,148 @@ export class LevelingInstanceMethods {
 	) {
 		this.client = _client;
 	}
-	public async awardXP<T>(this: T, currentXP: number, message: Message<true>): Promise<void> {
-		const instance = container.resolve(LevelingInstanceMethods);
 
-		const guildMember = message.guild.members.resolve(message.author.id);
+	public async awardXP<T>(this: T, options: AwardXPOptions): Promise<void> {
+		const clazz = container.resolve(LevelingInstanceMethods);
 
-		const multiplier = await instance.getTotalMultiplier(message);
-		const xpAmount = Math.floor(Math.random() * multiplier * (45 - 10 + 1) + 10);
-		const levelBefore = instance.getCurrentLevel(currentXP);
-		const levelAfter = instance.getCurrentLevel(currentXP + xpAmount);
+		const { interaction, target, levelingData = await clazz.getLevelingData(interaction, target) } = options;
 
-		// Add to redis cache.
-		if (levelBefore > levelAfter) {
-			// do something
+		const { guildId } = interaction;
+
+		if (!levelingData) {
+			return;
+		}
+
+		const { currentLevel: levelBefore, currentXP, multiplier } = levelingData;
+
+		const xpAmount = Math.floor(
+			Math.random() * multiplier * (LevelingInstanceMethods.MAX_XP - LevelingInstanceMethods.MIN_XP + 1) + 10
+		);
+
+		const newXP = currentXP + xpAmount;
+
+		const levelAfter = clazz.getCurrentLevel(newXP);
+
+		await clazz.client.leveling.upsert({
+			where: {
+				id: {
+					guildId,
+					entityId: target.id
+				}
+			},
+			update: {
+				currentXP: newXP
+			},
+			create: {
+				...levelingData.doc,
+				currentXP: newXP
+			},
+			select: {
+				currentXP: true
+			}
+		});
+
+		const requiredXP = clazz.getRequiredXP(levelBefore);
+
+		const isNextLevel = levelAfter > levelBefore;
+		const isNotDuplicateRequest = currentXP <= requiredXP;
+
+		if (isNextLevel && isNotDuplicateRequest) {
+			await clazz.sendLevelUp({ interaction, target, levelAfter, levelingData });
 		}
 	}
-	public async sendLevelUp<T>(this: T, message: Message<true>, levelAfter: number): Promise<Message<true>> {
-		const instance = container.resolve(LevelingInstanceMethods);
 
-		const guildMember = message.guild.members.resolve(message.author.id);
+	public async sendLevelUp<T>(this: T, options: LevelRequiredOptions): Promise<void> {
+		const clazz = container.resolve(LevelingInstanceMethods);
 
-		await message.channel.sendTyping();
-		const attachment = await instance.buildRankCard(levelAfter, message);
+		const { interaction, target, levelingData, levelAfter } = options;
 
-		return await message.channel.send({
-			content: `Congrats ${guildMember}! You are now level **${levelAfter}**!`,
+		let grantedRoleMention: string | null = null;
+
+		if (levelingData) {
+			const grantedRoleData = levelingData.roles
+				.toSorted((a, b) => b.level - a.level)
+				.find(({ level }) => level === levelAfter);
+
+			if (grantedRoleData) {
+				try {
+					await target.roles.add(grantedRoleData.id);
+
+					grantedRoleMention = roleMention(grantedRoleData.id);
+				} catch {
+					// delibertly do nothing
+					// the error will be to do with:
+					// permission or unknown role/member
+				}
+			}
+		}
+
+		let levelChannel: GuildBasedChannel | null = await container
+			.resolve(EntityInstanceMethods)
+			.retrieveGivenGuildLogChannel(interaction, ActionType.LEVEL_UP_ACKNOWLEDGED_NEW);
+
+		levelChannel ??= interaction.channel;
+
+		if (!levelChannel || levelChannel.type !== ChannelType.GuildText) {
+			return;
+		}
+
+		await levelChannel.sendTyping();
+		const attachment = await clazz.buildRankCard({ interaction, target, levelAfter });
+
+		if (!attachment) {
+			return;
+		}
+
+		let content = `Congrats ${target.toString()}! You are now level **${levelAfter}**!`;
+
+		if (grantedRoleMention) {
+			content += ` You have earned ${grantedRoleMention}`;
+		}
+
+		await levelChannel.send({
+			content,
 			files: [attachment]
 		});
 	}
-	public async buildRankCard<T>(this: T, levelAfter: number, message: Message<true>) {
-		const instance = container.resolve(LevelingInstanceMethods);
-		const ctx = Prisma.getExtensionContext(this);
 
-		const DEFAULT_COLOUR = "#FFFFFF" as const;
-		const RANK_COLOUR = "#E6C866" as const;
+	public async buildRankCard<T>(
+		this: T,
+		options: SetOptional<Omit<LevelRequiredOptions, "levelingData">, "levelAfter">
+	): Promise<AttachmentBuilder> {
+		const clazz = container.resolve(LevelingInstanceMethods);
 
-		const guildMember = message.guild.members.resolve(message.author.id)!;
+		const { interaction, target, levelAfter } = options;
 
-		const currentXP = instance.getRequiredXP(levelAfter - 1);
-		const currentLevel = instance.getCurrentLevel(currentXP);
+		let currentXP: number | null;
+		let currentLevel: number | null;
 
-		const leaderboardPosition = await instance.client.leveling
-			.findMany({
-				where: {
-					entity: {
-						type: EntityType.USER
-					}
-				},
-				orderBy: {
-					currentXp: "desc"
-				},
-				select: {
-					entityId: true
-				}
-			})
-			.then((arr) => arr.findIndex(({ entityId }) => entityId === message.author.id) + 1);
+		if (levelAfter) {
+			currentXP = clazz.getRequiredXP(levelAfter - 1);
+
+			currentLevel = clazz.getCurrentLevel(currentXP);
+		} else {
+			const data = await clazz.getLevelingData(interaction, target);
+
+			currentLevel = data.currentLevel;
+			currentXP = data.currentXP;
+		}
+
+		const leaderboardPosition = await clazz
+			.fetchLeaderboard({ guildId: interaction.guildId })
+			.then((arr) => arr.findIndex(({ entityId }) => entityId === target.id) + 1);
 
 		const nextLevel = currentLevel + 1;
-		const requiredXP = instance.getRequiredXP(nextLevel);
-
-		const progressBarTrackHexCode = "#" + Colors.Blue.toString(16);
+		const requiredXP = clazz.getRequiredXP(nextLevel);
 
 		const rank = new canvacord.RankCardBuilder()
-			.setAvatar(guildMember.displayAvatarURL({ forceStatic: true }))
+			.setAvatar(target.displayAvatarURL({ forceStatic: true }))
 			.setRank(leaderboardPosition)
 			.setCurrentXP(currentXP)
 			.setLevel(currentLevel)
 			.setRequiredXP(requiredXP)
-			.setStatus(guildMember.presence?.status || "online")
-			.setUsername(guildMember.user.username);
+			.setStatus(target.presence?.status ?? "none")
+			.setDisplayName(target.user.displayName);
 
 		const rankCard = await rank.build();
 
@@ -95,9 +208,10 @@ export class LevelingInstanceMethods {
 
 		return attachment;
 	}
+
 	public getCurrentLevel<T>(this: T, currentXP: number): number {
-		const a = 45;
-		const b = 10 * 3;
+		const a = LevelingInstanceMethods.MAX_XP;
+		const b = LevelingInstanceMethods.MIN_XP * 3;
 		const c = -currentXP;
 
 		const discriminant = b ** 2 - 4 * a * c;
@@ -113,30 +227,112 @@ export class LevelingInstanceMethods {
 
 		return Math.floor(level);
 	}
+
 	public getRequiredXP<T>(this: T, currentLevel: number): number {
-		currentLevel++;
+		const nextLevel = ++currentLevel;
 
-		return 45 * currentLevel ** 2 + 30 * currentLevel;
+		const a = LevelingInstanceMethods.MAX_XP;
+		const b = LevelingInstanceMethods.MIN_XP * 3;
+
+		return a * nextLevel ** 2 + b * nextLevel;
 	}
-	public async getTotalMultiplier<T>(this: T, message: Message<true>): Promise<number> {
-		const instance = container.resolve(LevelingInstanceMethods);
 
-		const guildMember = message.guild.members.resolve(message.author.id)!;
+	public async getLevelingData<T>(
+		this: T,
+		interaction: InteractionType,
+		target: GuildMember
+	): Promise<GetLevelingDataOutput> {
+		const clazz = container.resolve(LevelingInstanceMethods);
 
-		const userRoleIDs = Array.from(guildMember.roles.cache.values()).map((r) => r.id);
+		const { guildId, channelId } = interaction;
 
 		const {
-			_sum: { xpMultiplier }
-		} = await instance.client.leveling.aggregate({
-			_sum: {
-				xpMultiplier: true
+			configuration: { leveling }
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId, check: "leveling" });
+
+		const connectGuild = {
+			connect: {
+				id: guildId
+			}
+		};
+
+		const { doc } = await clazz.client.leveling.fetchById({
+			id: {
+				guildId,
+				entityId: target.id
 			},
-			where: {
-				entityId: {
-					in: [...userRoleIDs, guildMember.id, message.channelId]
+			createData: {
+				guild: connectGuild,
+				entity: {
+					connectOrCreate: {
+						where: {
+							id: target.id
+						},
+						create: {
+							id: target.id,
+							type: EntityType.USER,
+							guild: connectGuild
+						}
+					}
 				}
 			}
 		});
-		return xpMultiplier || 1;
+
+		if (leveling.overrides) {
+			const ids = [channelId, target.id, ...Array.from(target.roles.cache.values()).map(({ id }) => id)];
+
+			const { cooldown, multiplier } = Object.values(leveling.overrides).reduce(
+				(acc, curr) => {
+					if (!ids.includes(curr.id)) {
+						return acc;
+					}
+
+					const cooldown = Math.max(curr.cooldown ?? 0, acc.cooldown);
+
+					let multiplier = curr.multiplier ?? 0;
+
+					if (leveling.stackXPMultipliers) {
+						multiplier += acc.multiplier;
+					} else if (acc.multiplier > multiplier) {
+						multiplier = acc.multiplier;
+					}
+
+					return { cooldown, multiplier };
+				},
+				{ cooldown: 0, multiplier: 0 }
+			);
+
+			leveling.cooldown = cooldown || leveling.cooldown;
+			leveling.multiplier = multiplier || leveling.multiplier;
+		}
+
+		const { updatedAt, currentXP } = doc;
+
+		const cooldownExpiryTimestamp = +updatedAt + leveling.cooldown;
+
+		const isOnCooldown = Date.now() < cooldownExpiryTimestamp;
+
+		const currentLevel = clazz.getCurrentLevel(currentXP);
+
+		return { doc, isOnCooldown, currentXP, currentLevel, ...leveling };
+	}
+
+	public async fetchLeaderboard<T>(this: T, options: FetchLeaderboardOptions): Promise<FetchLeaderboardOutput> {
+		const clazz = container.resolve(LevelingInstanceMethods);
+
+		const { guildId, take } = options;
+
+		return await clazz.client.leveling.fetchMany({
+			where: {
+				guildId
+			},
+			take,
+			orderBy: {
+				currentXP: "desc"
+			},
+			select: {
+				currentXP: true
+			}
+		});
 	}
 }

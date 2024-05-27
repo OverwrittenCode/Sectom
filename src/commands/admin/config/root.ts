@@ -1,6 +1,7 @@
 import { bold, channelMention, orderedList, underline } from "@discordjs/builders";
 import { Pagination, PaginationType } from "@discordx/pagination";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { ActionType, EntityType } from "@prisma/client";
 import {
 	ActionRowBuilder,
 	EmbedBuilder,
@@ -13,21 +14,18 @@ import { Discord, Guard, Slash, SlashGroup } from "discordx";
 import prettyMilliseconds from "pretty-ms";
 
 import { LIGHT_GOLD } from "~/constants.js";
-import { RedisCache } from "~/models/DB/cache";
+import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { ContentClusterManager } from "~/models/framework/managers/ContentClusterManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
 import { Enums } from "~/ts/Enums.js";
-import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import type { PaginationItem } from "@discordx/pagination";
-import type { Prisma } from "@prisma/client";
 import type { ButtonBuilder, ChatInputCommandInteraction } from "discord.js";
-import type { Entries } from "type-fest";
 
 @Discord()
 @Category(Enums.CommandCategory.Admin)
@@ -40,6 +38,8 @@ import type { Entries } from "type-fest";
 })
 @SlashGroup("config")
 export abstract class Config {
+	public static LevelingCustomIDRecords = InteractionUtils.customIdPrefixRecords("leveling_view");
+
 	@Slash({ dmPermission: false, description: "View all configurations" })
 	public async view(interaction: ChatInputCommandInteraction<"cached">) {
 		const { guild, guildId } = interaction;
@@ -97,6 +97,57 @@ export abstract class Config {
 			const descriptionArray: string[] = [`${bold("Disabled:")} ${_configuration.disabled}`];
 
 			switch (name) {
+				case "leveling":
+					{
+						const { disabled, ...levelingConfiguration } =
+							_configuration as PrismaJson.LevelingConfiguration;
+
+						const entries = ObjectUtils.entries(levelingConfiguration);
+
+						const customIdGenerator = InteractionUtils.constructCustomIdGenerator({
+							baseID: Config.LevelingCustomIDRecords.leveling_view.id,
+							messageComponentType: Enums.MessageComponentType.SelectMenu
+						});
+
+						const arrayValueBasedSelectMenu = new StringSelectMenuBuilder().setCustomId(
+							customIdGenerator()
+						);
+
+						for (const [key, value] of entries) {
+							const titleCaseLabel = StringUtils.convertToTitleCase(key);
+
+							if (Array.isArray(value)) {
+								if (!value.length) {
+									continue;
+								}
+
+								arrayValueBasedSelectMenu.addOptions(
+									new StringSelectMenuOptionBuilder()
+										.setDescription(`View The ${titleCaseLabel}`)
+										.setLabel(titleCaseLabel)
+										.setValue(key)
+								);
+							} else {
+								const valueStr =
+									key === "cooldown" && typeof value === "number"
+										? prettyMilliseconds(value, { verbose: true })
+										: `${value}`;
+
+								descriptionArray.push(`${bold(`${titleCaseLabel}:`)} ${valueStr}`);
+							}
+						}
+
+						const optionLength = arrayValueBasedSelectMenu.options.length;
+
+						if (optionLength) {
+							actionRows.push(
+								new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+									arrayValueBasedSelectMenu.setPlaceholder(`(+${optionLength}) more`)
+								)
+							);
+						}
+					}
+					break;
 				case "warning":
 					{
 						const warningConfiguration = _configuration as PrismaJson.WarningConfiguration;

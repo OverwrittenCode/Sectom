@@ -138,6 +138,9 @@ build
 # madge
 madge/
 
+# assets
+src/assets
+
 # Workspace
 .code-workspace
 

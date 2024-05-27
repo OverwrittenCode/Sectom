@@ -35,7 +35,10 @@
 		"useUnknownInCatchVariables": true,
 		"types": [
 			"jest"
-		]
+		],
+		"jsx": "react", 
+		"jsxFactory": "JSX.createElement",
+		"jsxFragmentFactory": "JSX.Fragment"
 	},
 	"include": [
 		"src/**/*"

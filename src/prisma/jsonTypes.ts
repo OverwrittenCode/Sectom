@@ -13,6 +13,10 @@ declare global {
 			disabled?: boolean;
 		}
 
+		interface IDLink {
+			id: string;
+		}
+
 		interface WarningThresholds {
 			threshold: number;
 			punishment: ActionType;
@@ -79,10 +83,30 @@ declare global {
 			autoStaffMention?: boolean;
 		}
 
+		interface LevelingRole extends IDLink {
+			level: number;
+		}
+
+		interface LevelingXPOptions {
+			multiplier: number;
+			cooldown: number;
+			roles: LevelingRole[];
+		}
+
+		interface LevelingXPOverride extends Partial<Omit<LevelingXPOptions, "roles">>, IDLink {
+			mention: string;
+		}
+
+		interface LevelingConfiguration extends ActiveState, LevelingXPOptions {
+			stackXPMultipliers: boolean;
+			overrides: LevelingXPOverride[];
+		}
+
 		interface Configuration {
 			warning: WarningConfiguration;
 			suggestion: SuggestionConfiguration;
 			ticket: TicketConfiguration;
+			leveling: LevelingConfiguration;
 		}
 	}
 }
