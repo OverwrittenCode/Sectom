@@ -13,6 +13,7 @@
 		"lint": "eslint --fix \"./**/*.{ts,tsx}\"",
 		"prettier": "prettier --write .",
 		"format": "npm run lint & npm run prettier",
+		"prisma": "npx prisma db push & npx prisma generate",
 		"start": "tsx --trace-warnings src/bot.ts",
 		"load": "npm run build && npm run format && npm run start",
 		"madge": "madge --extensions ts src --ts-config ./tsconfig.json",

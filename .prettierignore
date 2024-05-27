@@ -3,7 +3,6 @@ coverage
 
 # Ignore file types:
 **/*.json
-**/*.d.ts
 **/*.cjs
 **/*.md
 **/*.yml
