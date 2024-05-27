@@ -1,5 +1,6 @@
 import assert from "assert";
 
+import { RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import { createTranscript } from "discord-html-transcripts";
 import {
@@ -23,6 +24,7 @@ import {
 import { ButtonComponent, Discord, Guard, ModalComponent, Slash, SlashGroup, SlashOption } from "discordx";
 import _ from "lodash";
 
+import { Config } from "~/commands/admin/config/root.js";
 import { LIGHT_GOLD, MAX_ACTIVE_THREAD_LIMIT, MAX_REASON_STRING_LENGTH } from "~/constants.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
@@ -93,6 +95,15 @@ export abstract class TicketConfig {
 		"close",
 		"lock"
 	);
+
+	@Slash({ description: "Enables/disables this configuration " })
+	public toggle(
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Config.togglestate("ticket", reason, interaction);
+	}
 
 	@Slash({ description: "Add a new ticket subject or panel" })
 	public async add(interaction: ChatInputCommandInteraction<"cached">) {

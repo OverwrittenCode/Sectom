@@ -4,6 +4,7 @@ import { ApplicationCommandOptionType, inlineCode } from "discord.js";
 import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 import _ from "lodash";
 
+import { Config } from "~/commands/admin/config/root.js";
 import { Warn } from "~/commands/moderation/warn.js";
 import { MAX_ELEMENTS_PER_PAGE } from "~/constants.js";
 import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.js";
@@ -15,7 +16,6 @@ import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
-import type { SetRequired } from "type-fest";
 
 type ThresholdPunishmentType = (typeof ThresholdPunishmentOption)[keyof typeof ThresholdPunishmentOption];
 
@@ -30,6 +30,15 @@ const ThresholdPunishmentOption = {
 @SlashGroup({ description: "Warning configuration", name: "warn", root: "config" })
 @SlashGroup("warn", "config")
 export abstract class WarnConfig {
+	@Slash({ description: "Enables/disables this configuration " })
+	public toggle(
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Config.togglestate("warning", reason, interaction);
+	}
+
 	@Slash({
 		description:
 			"Configures the duration multilpier for repeated automated offences. I.e. for 2 => 3m, 6m, 12m, 24m"
@@ -122,10 +131,7 @@ export abstract class WarnConfig {
 						allowDisableOption: true,
 						...CommandUtils.DurationLimits.Timeout
 					},
-					[ThresholdPunishmentOption.ban]: {
-						allowDisableOption: true,
-						...CommandUtils.DurationLimits.Ban
-					},
+					[ThresholdPunishmentOption.ban]: { forceDisableOption: true },
 					[ThresholdPunishmentOption.kick]: { forceDisableOption: true }
 				}
 			},

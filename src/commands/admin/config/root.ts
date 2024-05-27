@@ -227,4 +227,31 @@ export abstract class Config {
 
 	@Slash({ dmPermission: false, description: "Interactive configuration panel" })
 	public async panel(interaction: ChatInputCommandInteraction<"cached">) {}
+
+	public static async togglestate(
+		key: keyof PrismaJson.Configuration,
+		reason: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		const { guildId, channelId } = interaction;
+
+		const { configuration, save } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId });
+
+		configuration[key].disabled = !configuration[key].disabled;
+
+		return await ActionManager.logCase({
+			interaction,
+			target: {
+				id: channelId,
+				type: EntityType.CHANNEL
+			},
+			reason,
+			actionType: ActionType.CONFIG_LEVEL_SETTINGS_UPDATE,
+			actionOptions: {
+				pastTense: "updated the leveling configuration",
+				pendingExecution: save
+			},
+			successContent: `${configuration[key].disabled ? "disabled" : "enabled"} the ${key} configuration`
+		});
+	}
 }

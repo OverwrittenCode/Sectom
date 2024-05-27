@@ -23,8 +23,9 @@ import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
-import type { ChatInputCommandInteraction, GuildBasedChannel } from "discord.js";
-
+import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember, User } from "discord.js";
+import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { CommandUtils } from "~/utils/command.js";
 
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
@@ -201,10 +202,37 @@ export abstract class Case {
 			type: ApplicationCommandOptionType.String
 		})
 		id: string | undefined,
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
+			descriptionNote: "This is ignored if case_id is provided",
+			name: "perpetrator",
+			required: false
+		})
+		perpetrator: GuildMember | User | undefined,
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
+			descriptionNote: "This is ignored if case_id is provided",
+			name: "target",
+			required: false
+		})
+		target: GuildMember | User | undefined,
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.CHANNEL,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
+			descriptionNote: "This is ignored if case_id is provided",
+			required: false
+		})
+		channel: GuildBasedChannel | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		if (!id) {
-			return ActionManager.listCases(interaction);
+			return ActionManager.listCases(interaction, {
+				perpetratorId: perpetrator?.valueOf(),
+				targetId: target?.valueOf(),
+				channelId: channel?.valueOf()
+			});
 		}
 
 		const { guildId } = interaction;

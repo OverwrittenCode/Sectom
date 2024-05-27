@@ -6,6 +6,7 @@ import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
+	ChannelType,
 	Colors,
 	EmbedBuilder,
 	PermissionFlagsBits,
@@ -16,7 +17,9 @@ import {
 } from "discord.js";
 import { ButtonComponent, Discord, SelectMenuComponent, Slash, SlashGroup } from "discordx";
 
+import { Config } from "~/commands/admin/config/root.js";
 import { LIGHT_GOLD } from "~/constants.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
@@ -53,6 +56,15 @@ const componentType = Enums.ContentClusterComponentType.Suggestion;
 @SlashGroup("suggestion", "config")
 export abstract class SuggestionConfig {
 	public static readonly customIdRecords = ContentClusterManager.constructCustomIdRecords(componentType, "status");
+
+	@Slash({ description: "Enables/disables this configuration " })
+	public toggle(
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Config.togglestate("suggestion", reason, interaction);
+	}
 
 	@Slash({ description: "Add a suggestion subject or panel" })
 	public async add(interaction: ChatInputCommandInteraction<"cached">) {

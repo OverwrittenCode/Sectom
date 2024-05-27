@@ -8,7 +8,6 @@ import {
 	PermissionFlagsBits
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
-import ms from "ms";
 
 import { MAX_MESSAGE_FETCH_LIMIT, MAX_PURGE_COUNT_LIMIT } from "~/constants";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
@@ -24,6 +23,7 @@ import { StringUtils } from "~/utils/string.js";
 import type {
 	Channel,
 	ChatInputCommandInteraction,
+	FetchMessagesOptions,
 	GuildMember,
 	GuildTextBasedChannel,
 	Message,
@@ -32,7 +32,7 @@ import type {
 } from "discord.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 
-interface PurgeHandlerOptions {
+interface PurgeHandlerOptions extends Pick<FetchMessagesOptions, "before" | "after"> {
 	count: number;
 	reason: string;
 	channel?: GuildTextBasedChannel;
@@ -371,7 +371,7 @@ export abstract class Purge {
 			reason,
 			channel,
 			inverse,
-			messageFilter: (msg) => !!StringUtils.Regexes.Link.test(msg.content)
+			messageFilter: (msg) => StringUtils.Regexes.Link.test(msg.content)
 		});
 	}
 
@@ -460,7 +460,7 @@ export abstract class Purge {
 			reason,
 			channel,
 			inverse,
-			messageFilter: (msg) => msg.createdTimestamp < message.createdTimestamp
+			before: messageId
 		});
 	}
 
@@ -505,42 +505,64 @@ export abstract class Purge {
 			reason,
 			channel,
 			inverse,
-			messageFilter: (msg) => msg.createdTimestamp > message.createdTimestamp
+			after: messageId
 		});
 	}
 
 	private async handler(interaction: ChatInputCommandInteraction<"cached">, options: PurgeHandlerOptions) {
 		await InteractionUtils.deferInteraction(interaction, true);
 
-		const { channel, count, reason, inverse, messageFilter } = options;
+		const { channel, count, reason, inverse, after, messageFilter } = options;
+		let { before: lastDeletedMessageId } = options;
 
 		const purgeChannel = channel ?? interaction.channel!;
 
 		const purgeChunks = NumberUtils.chunkByModulus(count, MAX_MESSAGE_FETCH_LIMIT);
-
-		const twoWeeksAgo = Date.now() - ms("14d");
 
 		let deletedSuccessCount = 0;
 
 		for (const currentChunk of purgeChunks) {
 			try {
 				const msgCollection = await purgeChannel.messages.fetch({
-					limit: currentChunk
+					limit: currentChunk,
+					before: lastDeletedMessageId,
+					after
 				});
 
-				const bulkDeleteMessages = msgCollection.filter((msg) => {
-					const isDeletable = msg.bulkDeletable;
-					const isGreaterThanTwoWeeksAgo = msg.createdTimestamp > twoWeeksAgo;
+				if (!msgCollection.size) {
+					break;
+				}
 
-					let bool = isDeletable && isGreaterThanTwoWeeksAgo;
+				let olderThanTwoWeeksAgoCount = 0;
+
+				const bulkDeleteMessages = msgCollection.filter((msg) => {
+					const twoWeeksAgo = Date.now() - Constants.MaxBulkDeletableMessageAge;
+
+					const isDeletable = msg.bulkDeletable;
+					const isOlderThanTwoWeeksAgo = msg.createdTimestamp < twoWeeksAgo;
+
+					if (isOlderThanTwoWeeksAgo) {
+						olderThanTwoWeeksAgoCount++;
+					}
+
+					let bool = isDeletable && !isOlderThanTwoWeeksAgo;
 
 					if (messageFilter) {
-						const isMatchingMessageFilter = inverse ? !messageFilter(msg) : messageFilter(msg);
-						bool &&= isMatchingMessageFilter;
+						bool &&= !!inverse !== messageFilter(msg);
+					}
+
+					if (bool) {
+						lastDeletedMessageId = msg.id;
 					}
 
 					return bool;
 				});
+
+				const cannotDeleteFurther = olderThanTwoWeeksAgoCount === msgCollection.size;
+
+				if (cannotDeleteFurther) {
+					break;
+				}
 
 				if (bulkDeleteMessages.size) {
 					const deleted = await purgeChannel.bulkDelete(bulkDeleteMessages, true);
