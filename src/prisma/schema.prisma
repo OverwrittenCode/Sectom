@@ -1,6 +1,6 @@
 generator client {
     provider        = "prisma-client-js"
-    previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+    previewFeatures = ["postgresqlExtensions", "fullTextSearch", "tracing"]
 }
 
 generator json {
@@ -31,8 +31,11 @@ model Entity {
     levelingData      Leveling?
     guild             Guild        @relation(name: "Guild-Entity", fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     guildId           String
+    /// only for {@link $Enums.EntityType.CHANNEL}
     logChannelGuild   Guild?       @relation(name: "LogChannel", fields: [logChannelGuildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    /// only for {@link $Enums.EntityType.CHANNEL}
     logChannelGuildId String?
+    /// only for {@link $Enums.EntityType.CHANNEL}
     logChannelType    ActionType?
 
     @@index([guildId])
@@ -46,7 +49,7 @@ model Case {
     type          CaseType   @default(AUTO)
     action        ActionType
     reason        String     @default("No reason provided.") @db.Citext
-    expiryDate    DateTime?
+    expiryDate    DateTime?  @db.Timestamptz()
     /// [APIEmbed]
     apiEmbeds     Json[]
     messageURL    String?
@@ -68,18 +71,15 @@ model Case {
 }
 
 model Leveling {
-    createdAt            DateTime @default(now()) @db.Timestamptz()
-    updatedAt            DateTime @updatedAt @db.Timestamptz()
-    stackRoleMultipliers Boolean  @default(true)
-    currentXp            Int      @default(0)
-    xpMultiplier         Int      @default(0)
-    xpCooldown           Int      @default(0)
-    entity               Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade, onUpdate: Restrict)
-    entityId             String   @unique
-    guild                Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Restrict)
-    guildId              String
+    createdAt DateTime @default(now()) @db.Timestamptz()
+    updatedAt DateTime @updatedAt @db.Timestamptz()
+    currentXP Int      @default(0)
+    entity    Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+    entityId  String   @unique
+    guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+    guildId   String
 
-    @@id([guildId, entityId])
+    @@id(name: "id", fields: [guildId, entityId])
     @@index([guildId])
     @@index([entityId])
 }
