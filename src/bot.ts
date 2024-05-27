@@ -12,6 +12,7 @@ import { container } from "tsyringe";
 import { BOT_ID, GUILD_IDS } from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
+
 dotenv.config();
 
 const { BOT_TOKEN } = process.env;
@@ -36,7 +37,7 @@ export abstract class Main {
 		],
 		partials: [Partials.Channel, Partials.GuildMember, Partials.User],
 		allowedMentions: {
-			parse: ["users", "roles"]
+			parse: ["users"]
 		},
 		silent: false,
 		guards: [NotBot],
@@ -114,6 +115,7 @@ export abstract class Main {
 			console.group("[TIMING]");
 			const { prisma, redis } = DBConnectionManager.connectionDates;
 			const { loggedIn, readyAt } = Main.connectionDates;
+
 			const timings = {
 				Databases: {
 					prisma,
@@ -124,6 +126,7 @@ export abstract class Main {
 					readyAt
 				}
 			};
+
 			const discordBotTimeDifference = readyAt.getTime() - loggedIn.getTime();
 
 			console.log(timings);
