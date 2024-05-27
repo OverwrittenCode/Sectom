@@ -310,6 +310,11 @@ export abstract class LevelingConfigMessageComponentHandler {
 
 		const embedTitle = `${guild.name} | Leveling | ${StringUtils.convertToTitleCase(option)}`;
 
-		return EmbedManager.handleStaticEmbedPagination({ sendTo: interaction, embedTitle, descriptionArray });
+		return EmbedManager.handleStaticEmbedPagination({
+			sendTo: interaction,
+			embedTitle,
+			descriptionArray,
+			ephemeral: true
+		});
 	}
 }

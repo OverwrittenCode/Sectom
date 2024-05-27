@@ -4,8 +4,12 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
 	ActionRowBuilder,
+	DiscordAPIError,
+	DiscordjsError,
+	DiscordjsErrorCodes,
 	EmbedBuilder,
 	PermissionFlagsBits,
+	RESTJSONErrorCodes,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 	inlineCode
@@ -267,13 +271,25 @@ export abstract class Config {
 			type: PaginationType.SelectMenu,
 			pageText: pageTextArray,
 			placeholder: "View a configuration",
-			enableExit: true,
+			ephemeral: true,
 			showStartEnd: false,
 			filter: (v) => v.user.id === interaction.user.id,
 			onTimeout: (_, message) => InteractionUtils.disableComponents(message)
 		});
 
-		await pagination.send();
+		const sendPagination = () => pagination.send();
+
+		sendPagination().catch((e) => {
+			if (
+				(e instanceof DiscordjsError || e instanceof DiscordAPIError) &&
+				(e.code === DiscordjsErrorCodes.InteractionAlreadyReplied ||
+					e.code === RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged)
+			) {
+				return sendPagination(); // try again, auto defer happened just before this
+			}
+
+			throw e;
+		});
 	}
 
 	@Slash({ dmPermission: false, description: "Interactive configuration panel" })

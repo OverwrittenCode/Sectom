@@ -1,5 +1,5 @@
 import { Pagination, PaginationType } from "@discordx/pagination";
-import { type APIEmbedField, EmbedBuilder, bold } from "discord.js";
+import { EmbedBuilder, bold, type APIEmbedField } from "discord.js";
 import _ from "lodash";
 
 import { LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants.js";
@@ -31,6 +31,7 @@ interface HandleStaticEmbedPaginationOptions {
 	embedTitle: string;
 	descriptionArray: string[];
 	config?: PaginationOptions;
+	ephemeral?: boolean;
 }
 
 export abstract class EmbedManager {
@@ -108,7 +109,7 @@ export abstract class EmbedManager {
 	}
 
 	public static async handleStaticEmbedPagination(options: HandleStaticEmbedPaginationOptions) {
-		const { sendTo, embedTitle, descriptionArray, config } = options;
+		const { sendTo, embedTitle, descriptionArray, config, ephemeral } = options;
 
 		const paginationPages: Array<{ embeds: APIEmbed[] }> = [];
 
@@ -131,15 +132,16 @@ export abstract class EmbedManager {
 			delete paginationPage.embeds[0].footer;
 
 			if ("deferred" in sendTo) {
-				return await InteractionUtils.replyOrFollowUp(sendTo, paginationPage);
+				return await InteractionUtils.replyOrFollowUp(sendTo, { ...paginationPage, ephemeral });
 			}
 
 			return await sendTo.channel.send(paginationPage);
 		}
 
 		const pagination = new Pagination(sendTo, paginationPages, {
+			ephemeral,
+			enableExit: !ephemeral, // mutually exclusive
 			type: PaginationType.Button,
-			enableExit: true,
 			filter: (v) => v.user.id === ("user" in sendTo ? sendTo.user : sendTo.author).id,
 			...InteractionUtils.PaginationButtons,
 			...config
