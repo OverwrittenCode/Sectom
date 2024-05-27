@@ -17,11 +17,11 @@ interface DurationOptions {
 
 export function DurationSlashOption(options: DurationOptions) {
 	const { transformerOptions } = options;
-	let { name, descriptionPrefix, required } = options;
-
-	name ??= "duration";
-	descriptionPrefix ??= "The duration";
-	required ??= !transformerOptions?.allowDisableOption;
+	const {
+		name = "duration" as const,
+		descriptionPrefix = "The duration",
+		required = !transformerOptions?.allowDisableOption
+	} = options;
 
 	return function (target: Record<string, any>, propertyKey: string, parameterIndex: number) {
 		SlashOption({

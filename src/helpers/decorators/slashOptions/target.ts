@@ -18,11 +18,8 @@ interface TargetSlashOptionArguments {
 }
 
 export function TargetSlashOption(args: TargetSlashOptionArguments) {
-	const { entityType, flags, name } = args;
-	let { required, descriptionNote, channelTypes } = args;
-
-	required ??= true;
-	descriptionNote ??= "";
+	const { entityType, flags, required = true, name } = args;
+	let {  descriptionNote = "", channelTypes } = args;
 
 	if (descriptionNote) {
 		descriptionNote += ". ";
@@ -57,10 +54,7 @@ export function TargetSlashOption(args: TargetSlashOptionArguments) {
 export function GivenChannelSlashOption(
 	options: Omit<TargetSlashOptionArguments, "entityType" | "flags" | "name"> = {}
 ) {
-	const { channelTypes, descriptionNote } = options;
-	let { required } = options;
-
-	required ??= false;
+	const { channelTypes, descriptionNote, required = false } = options;
 
 	return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
 		TargetSlashOption({

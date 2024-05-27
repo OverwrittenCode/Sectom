@@ -58,8 +58,8 @@ export abstract class Case {
 
 		const actionTypeEdit = actionTypes.find((actionType) => actionType === `${actionTypeStem}_EDIT`);
 
-		if (!actionTypeEdit) {
-			throw new ValidationError("You may not edit cases under this group");
+		if (caseData.action.endsWith("EDIT") || !actionTypeEdit) {
+			throw new ValidationError("you may not edit cases under this group");
 		}
 
 		const isInsufficientPermission =
@@ -70,9 +70,7 @@ export abstract class Case {
 			throw new ValidationError("administrator permission required to edit cases not initiated by you");
 		}
 
-		const updatedEmbeds: PrismaJson.APIEmbed[] = [];
-
-		const apiEmbed: PrismaJson.APIEmbed | undefined = caseData.apiEmbeds[0];
+		const [apiEmbed, ...updatedEmbeds] = caseData.apiEmbeds;
 
 		const buttonActionRows: ActionRowBuilder<ButtonBuilder>[] = [];
 
@@ -134,7 +132,7 @@ export abstract class Case {
 			updatedEmbed.fields.push({ name: "Reason", value: newReason });
 		}
 
-		updatedEmbeds.push(updatedEmbed);
+		updatedEmbeds.unshift(updatedEmbed);
 
 		if (timestampFieldIndex) {
 			updatedEmbeds[0].fields![timestampFieldIndex] = ActionManager.generateTimestampField({
@@ -144,16 +142,14 @@ export abstract class Case {
 		}
 
 		if (caseRecordChannel instanceof TextChannel) {
-			const caseRecordLogMessage = await caseRecordChannel.messages
-				.fetch(retrievedMessageId ?? "")
-				.catch(() => {});
+			const caseRecordLogMessage = await caseRecordChannel.messages.fetch(retrievedMessageId ?? "").catch();
 
 			if (caseRecordLogMessage?.editable) {
 				await caseRecordLogMessage
 					.edit({
 						embeds: updatedEmbeds
 					})
-					.catch(() => {});
+					.catch();
 			} else {
 				const message = await caseRecordChannel.send({ embeds: updatedEmbeds });
 				messageURL = messageLink(caseRecordChannel.id, message.id, guildId);

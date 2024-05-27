@@ -42,9 +42,7 @@ export abstract class Timeout {
 	) {
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
-		const actionType = target.isCommunicationDisabled()
-			? ActionType.TIME_OUT_USER_UPDATE
-			: ActionType.TIME_OUT_USER_ADD;
+		const actionType = ActionType[`TIME_OUT_USER_${target.isCommunicationDisabled() ? "UPDATE" : "ADD"}`];
 
 		return ActionManager.logCase({
 			interaction,

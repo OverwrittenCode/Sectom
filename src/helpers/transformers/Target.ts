@@ -57,7 +57,7 @@ export function TargetTransformer(flags: Enums.CommandSlashOptionTargetFlags[] =
 						? target.position
 						: null;
 
-			if (targetHighestRolePosition !== null) {
+			if (targetHighestRolePosition) {
 				const myHighestRolePosition = guild.members.me!.roles.highest.position;
 				const usersHighestRolePosition = member.roles.highest.position;
 

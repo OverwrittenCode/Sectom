@@ -186,7 +186,6 @@ export abstract class TicketConfig {
 			.setCustomId(EmbedTextInputField.Reason)
 			.setLabel("What is the reason for this?")
 			.setPlaceholder("Provide some text (optional)")
-			.setValue(InteractionUtils.Messages.NoReason)
 			.setMaxLength(MAX_REASON_STRING_LENGTH)
 			.setStyle(TextInputStyle.Paragraph)
 			.setRequired(false);
@@ -254,7 +253,7 @@ export abstract class TicketConfig {
 
 		const isUpdate = _.isEqual(ticket, GuildInstanceMethods.defaultConfiguration.ticket);
 
-		const actionType = isUpdate ? ActionType.CONFIG_TICKET_SETTINGS_UPDATE : ActionType.CONFIG_TICKET_SETTINGS_ADD;
+		const actionType = ActionType[`CONFIG_TICKET_SETTINGS_${isUpdate ? "UPDATE" : "ADD"}`];
 
 		const currentSettings = ObjectUtils.pickKeys(ticket, "staffRoleId", "autoStaffMention", "prompt");
 
@@ -533,7 +532,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			.awaitMessageComponent({
 				filter: (i) => i.customId === confirmButtonId
 			})
-			.catch(() => void interaction.deleteReply().catch(() => {}));
+			.catch(() => void interaction.deleteReply().catch());
 
 		if (confirmInteraction) {
 			await InteractionUtils.replyOrFollowUp(confirmInteraction, {

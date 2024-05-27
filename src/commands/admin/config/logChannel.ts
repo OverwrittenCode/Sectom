@@ -16,19 +16,22 @@ import type { Prisma, PrismaPromise } from "@prisma/client";
 import type { ChatInputCommandInteraction, TextChannel } from "discord.js";
 
 const LogChannelChoices = ActionManager.CreateBasedTypes.reduce(
-	(acc, actionType) => ({
-		...acc,
-		[StringUtils.concatenate(
+	(acc, actionType) => {
+		const formattedKey = StringUtils.concatenate(
 			" ",
 			...actionType
 				.replace(StringUtils.Regexes.CreateBasedActionModifiers, "")
 				.toLowerCase()
 				.split("_")
 				.map((str) => StringUtils.capitaliseFirstLetter(str))
-		)]: actionType
-	}),
-	{}
-) as Record<string, string>;
+		);
+
+		acc[formattedKey] = actionType;
+
+		return acc;
+	},
+	{} as Record<string, string>
+);
 
 @Discord()
 @SlashGroup({
@@ -119,9 +122,7 @@ export abstract class LogChannelConfig {
 			})
 		);
 
-		const actionType = currentCorrespondingLogChannelId
-			? ActionType.CONFIG_LOG_CHANNEL_UPDATE
-			: ActionType.CONFIG_LOG_CHANNEL_ADD;
+		const actionType = ActionType[`CONFIG_LOG_CHANNEL_${currentCorrespondingLogChannelId ? "UPDATE" : "ADD"}`];
 
 		const actionStr = currentCorrespondingLogChannelId ? "updated" : "set";
 

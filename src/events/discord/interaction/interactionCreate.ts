@@ -19,8 +19,6 @@ import type { ArgsOf, Client } from "discordx";
 export abstract class InteractionCreate {
 	@On({ event: "interactionCreate" })
 	async interactionCreate([interaction]: ArgsOf<"interactionCreate">) {
-		const start = Date.now();
-
 		assert(interaction.inCachedGuild());
 
 		await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId: interaction.guildId });
@@ -60,7 +58,7 @@ export abstract class InteractionCreate {
 				}
 
 				if (!interaction.replied && !interaction.deferred) {
-					await interaction.deferUpdate().catch(() => {});
+					await interaction.deferUpdate().catch();
 				}
 
 				if (isCancel || isConfirmAction) {
@@ -73,7 +71,7 @@ export abstract class InteractionCreate {
 
 		try {
 			await Promise.all([
-				this.autoDeferInteraction(interaction, Date.now() - start),
+				this.autoDeferInteraction(interaction, Date.now() - interaction.createdTimestamp),
 				bot.executeInteraction(interaction)
 			]);
 		} catch (err) {

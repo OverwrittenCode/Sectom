@@ -27,11 +27,7 @@ const ThresholdPunishmentOption = {
 } as const;
 
 @Discord()
-@SlashGroup({
-	description: "Warning configuration",
-	name: "warn",
-	root: "config"
-})
+@SlashGroup({ description: "Warning configuration", name: "warn", root: "config" })
 @SlashGroup("warn", "config")
 export abstract class WarnConfig {
 	@Slash({
@@ -217,8 +213,7 @@ export abstract class WarnConfig {
 			warning.thresholds.push(newThreshold);
 		}
 
-		const actionType = isUpdated ? ActionType.CONFIG_WARN_THRESHOLD_UPDATE : ActionType.CONFIG_WARN_THRESHOLD_ADD;
-
+		const actionType = ActionType[`CONFIG_WARN_THRESHOLD_${isUpdated ? "UPDATE" : "ADD"}`];
 		const pastTenseAction = isUpdated ? "updated the" : "added a";
 
 		return await ActionManager.logCase({

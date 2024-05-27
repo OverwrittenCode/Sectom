@@ -25,7 +25,7 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 })
 @SlashGroup("warn")
 export abstract class Warn {
-	public static MinThreshold = 3;
+	public static MinThreshold = 3 as const;
 
 	@Slash({ description: "Warn a user" })
 	public async add(

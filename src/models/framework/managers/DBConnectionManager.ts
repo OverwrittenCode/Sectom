@@ -1,8 +1,6 @@
 import assert from "assert";
 
 import { PrismaClient } from "@prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
-import { withPulse } from "@prisma/extension-pulse";
 import { Redis as RedisClient } from "@upstash/redis";
 
 import { PrismaExtensions } from "~/models/DB/prisma/extensions/index.js";

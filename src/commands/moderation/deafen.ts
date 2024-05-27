@@ -99,7 +99,6 @@ export abstract class Deafen {
 
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);
 
-		const actionType = ActionType.SERVER_DEAFEN_USER_REMOVE;
 		return ActionManager.logCase({
 			interaction,
 			target: {
@@ -107,7 +106,7 @@ export abstract class Deafen {
 				type: EntityType.USER
 			},
 			reason,
-			actionType,
+			actionType: ActionType.SERVER_DEAFEN_USER_REMOVE,
 			actionOptions: {
 				pastTense: "server undeafened",
 				pendingExecution: () => target.voice.setDeaf(false, auditReason)

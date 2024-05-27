@@ -265,7 +265,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 				time: CommandUtils.CollectionTime,
 				filter: (i) => i.customId === modalCustomId
 			})
-			.catch(() => void interaction.deleteReply().catch(() => {}));
+			.catch(() => void interaction.deleteReply().catch());
 
 		if (modalSubmitInteraction) {
 			const { fields } = modalSubmitInteraction;

@@ -89,7 +89,7 @@ export abstract class Config {
 			_configuration.disabled ??= false;
 
 			const sentenceCaseName = StringUtils.capitaliseFirstLetter(name);
-			const pageText = `${sentenceCaseName} Configuration`;
+			const pageText = `${sentenceCaseName} Configurations`;
 
 			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText}`);
 			const actionRows: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[] = [];
