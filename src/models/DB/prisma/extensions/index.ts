@@ -29,7 +29,7 @@ import type {
 	IWithSave,
 	ModelCTX,
 	RetrieveModelName,
-	ShadowCTXName as ShadowCTXModelName
+	ShadowCTXName
 } from "./types/index.js";
 
 type Doc<M extends Prisma.ModelName = Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
@@ -67,8 +67,7 @@ export abstract class PrismaExtensions {
 							 */
 							const shadowCtx = Prisma.getExtensionContext(this) as unknown as ModelCTX<TModel, true>;
 
-							const shadowCtxNameLowercase =
-								shadowCtx.$name.toLowerCase() as Lowercase<ShadowCTXModelName>;
+							const shadowCtxNameLowercase = shadowCtx.$name.toLowerCase() as Lowercase<ShadowCTXName>;
 
 							const shadowClientModel = client[shadowCtxNameLowercase];
 							const shadowRedisModel = RedisCache[shadowCtxNameLowercase];
@@ -83,7 +82,7 @@ export abstract class PrismaExtensions {
 								Object.assign(select, idSelect);
 							}
 
-							const shadowSelect = select as Typings.Database.SimpleSelect<ShadowCTXModelName>;
+							const shadowSelect = select as Typings.Database.SimpleSelect<ShadowCTXName>;
 
 							let take = undefined;
 
@@ -107,7 +106,7 @@ export abstract class PrismaExtensions {
 								| undefined;
 
 							let shadowCreateData:
-								| Prisma.TypeMap["model"][ShadowCTXModelName]["operations"][
+								| Prisma.TypeMap["model"][ShadowCTXName]["operations"][
 										| "create"
 										| "createMany"]["args"]["data"]
 								| undefined;
@@ -121,7 +120,7 @@ export abstract class PrismaExtensions {
 							let shadowDoc: FetchShadowDoc = null;
 							let shadowCacheDocs: FetchShadowDoc = null;
 							let shadowWhere: Typings.Database.OnlyFilterableTypes<
-								Typings.Database.SimpleWhere<ShadowCTXModelName> | { id: string }
+								Typings.Database.SimpleWhere<ShadowCTXName> | { id: string }
 							>;
 
 							if ("id" in options) {
@@ -140,7 +139,7 @@ export abstract class PrismaExtensions {
 								shadowCacheDocs = shadowCacheRecord?.data;
 							} else {
 								shadowWhere = (options.where ??
-									{}) as unknown as Typings.Database.SimpleWhere<ShadowCTXModelName>;
+									{}) as unknown as Typings.Database.SimpleWhere<ShadowCTXName>;
 								shadowCacheDocs = [];
 
 								const keys = ObjectUtils.keys(shadowWhere);
@@ -314,7 +313,7 @@ class WithSave<TModel> implements IWithSave<TModel> {
 	public doc: Doc<RetrieveModelName<TModel>>;
 
 	constructor(doc: Doc<RetrieveModelName<TModel>>, ctx: ModelCTX<any, true>) {
-		this.idFields = RedisCache[ctx.$name.toLowerCase() as Lowercase<ShadowCTXModelName>].pickIDFields(doc);
+		this.idFields = RedisCache[ctx.$name.toLowerCase() as Lowercase<ShadowCTXName>].pickIDFields(doc);
 
 		this.nonUpdatedFields = Object.assign(this.idFields, ObjectUtils.pickKeys(doc, "createdAt", "updatedAt"));
 

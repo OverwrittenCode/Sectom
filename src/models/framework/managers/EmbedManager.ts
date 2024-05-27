@@ -1,5 +1,5 @@
 import { Pagination, PaginationType } from "@discordx/pagination";
-import { EmbedBuilder, bold, type APIEmbedField } from "discord.js";
+import { type APIEmbedField, EmbedBuilder, bold } from "discord.js";
 import _ from "lodash";
 
 import { LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants.js";
