@@ -44,20 +44,20 @@ export abstract class InteractionCreate {
 			const disableOnClick = customIDFields.some((str) => disableOnClickButtonArray.includes(str));
 
 			if (disableOnClick) {
-				const isCancel = interaction.customId === messageComponentIds.CancelAction;
-				const isConfirmAction = interaction.customId === messageComponentIds.ConfirmAction;
+				const { customId, message, replied, deferred } = interaction;
 
-				const buttonMessage = interaction.message;
+				const isCancel = customId === messageComponentIds.CancelAction;
+				const isConfirmAction = customId === messageComponentIds.ConfirmAction;
 
 				const options = isCancel ? { content: "Action cancelled.", embeds: [] } : {};
 
-				if (buttonMessage.editable) {
-					await InteractionUtils.disableComponents(buttonMessage, options);
+				if (message.editable) {
+					await InteractionUtils.disableComponents(message, options);
 				} else {
 					await InteractionUtils.replyOrFollowUp(interaction, options);
 				}
 
-				if (!interaction.replied && !interaction.deferred) {
+				if (!replied && !deferred) {
 					await interaction.deferUpdate().catch();
 				}
 

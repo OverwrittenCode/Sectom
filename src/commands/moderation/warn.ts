@@ -71,7 +71,7 @@ export abstract class Warn {
 					const {
 						configuration: { warning: warningConfiguration }
 					} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-						guildId: interaction.guildId,
+						guildId,
 						check: "warning"
 					});
 

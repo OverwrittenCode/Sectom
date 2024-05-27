@@ -297,14 +297,14 @@ export abstract class TicketConfig {
 export abstract class TicketConfigMessageComponentHandler {
 	@ModalComponent({ id: TicketConfig.customIdRecords.ticket_embed.regex })
 	public async modalEmbed(interaction: ModalSubmitInteraction<"cached">) {
-		const { channelId, fields } = interaction;
+		const { channelId, fields, guildId } = interaction;
 		assert(channelId && fields);
 
 		const {
 			configuration: { ticket },
 			save
 		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-			guildId: interaction.guildId,
+			guildId,
 			check: "ticket"
 		});
 
@@ -400,7 +400,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		const {
 			configuration: { ticket: ticketConfiguration }
 		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-			guildId: interaction.guildId,
+			guildId,
 			check: "ticket"
 		});
 
@@ -477,7 +477,7 @@ export abstract class TicketConfigMessageComponentHandler {
 	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_lock.regex })
 	@Guard(BotRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
 	public async buttonLock(interaction: ButtonInteraction<"cached">) {
-		const { customId, channel, member } = interaction;
+		const { customId, channel, member, guildId } = interaction;
 
 		assert(channel?.isThread());
 
@@ -490,7 +490,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		const {
 			configuration: { ticket }
 		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-			guildId: interaction.guildId,
+			guildId,
 			check: "ticket"
 		});
 
