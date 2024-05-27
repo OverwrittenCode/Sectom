@@ -304,11 +304,11 @@ export abstract class PrismaExtensions {
 
 class WithSave<TModel> implements IWithSave<TModel> {
 	private shadowCtx: ModelCTX<any, true>;
+	private idFields: PrismaJson.IDLink;
 	/**
 	 * - If the model has relations, Prisma will throw an error if id fields are provided in update#data
 	 * - and we don't want to modify the createdAt/updatedAt information, let the database handle that
 	 */
-	private idFields: PrismaJson.IDLink;
 	private nonUpdatedFields: PrismaJson.IDLink & Pick<Doc, "createdAt" | "updatedAt">;
 
 	public doc: Doc<RetrieveModelName<TModel>>;
@@ -326,11 +326,11 @@ class WithSave<TModel> implements IWithSave<TModel> {
 	public async save<const T extends FetchSimpleSelect<TModel>>(
 		select?: T
 	): Promise<Typings.Database.SimpleSelectOutput<RetrieveModelName<TModel>, T>> {
-		ObjectUtils.keys(this.nonUpdatedFields)
-			.filter((field) => field in this.doc)
-			.forEach((field) => {
+		ObjectUtils.keys(this.nonUpdatedFields).forEach((field) => {
+			if (field in this.doc) {
 				delete this.doc[field];
-			});
+			}
+		});
 
 		const result = await this.shadowCtx.update({
 			where: this.nonUpdatedFields,
