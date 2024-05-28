@@ -1,5 +1,5 @@
-import { Pagination, PaginationType, defaultIds } from "@discordx/pagination";
-import { ButtonStyle, EmbedBuilder } from "discord.js";
+import { Pagination, PaginationType } from "@discordx/pagination";
+import { EmbedBuilder } from "discord.js";
 import _ from "lodash";
 
 import { LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants.js";
@@ -23,39 +23,9 @@ interface HandleStaticOptions {
 	ephemeral?: boolean;
 }
 
-type ButtonPositions = "end" | "exit" | "next" | "previous" | "start";
-type ButtonOptions = Required<Pick<Extract<PaginationOptions, { type: PaginationType.Button }>, ButtonPositions>>;
 type PaginationOutput = Awaited<ReturnType<Pagination["send"]>>;
 
 export class PaginationManager<T extends PaginationResolver = PaginationResolver> extends Pagination<T> {
-	public static ButtonOptions = {
-		end: {
-			emoji: { name: "⏩" },
-			id: defaultIds.buttons.end,
-			style: ButtonStyle.Secondary
-		},
-		exit: {
-			emoji: { name: "❌" },
-			id: defaultIds.buttons.exit,
-			style: ButtonStyle.Danger
-		},
-		next: {
-			emoji: { name: "▶️" },
-			id: defaultIds.buttons.next,
-			style: ButtonStyle.Primary
-		},
-		previous: {
-			emoji: { name: "◀️" },
-			id: defaultIds.buttons.previous,
-			style: ButtonStyle.Primary
-		},
-		start: {
-			emoji: { name: "⏪" },
-			id: defaultIds.buttons.start,
-			style: ButtonStyle.Secondary
-		}
-	} as const satisfies ButtonOptions;
-
 	public static async handleStatic(
 		options: HandleStaticOptions
 	): Promise<PaginationOutput | Message<boolean> | InteractionResponse<boolean> | null> {
@@ -102,20 +72,14 @@ export class PaginationManager<T extends PaginationResolver = PaginationResolver
 		pages: PaginationItem[] | T,
 		config: PaginationOptions
 	) {
-		const isButtonPagination = config.type === PaginationType.Button;
-
-		config.showStartEnd ??= false;
+		config.showStartEnd ??= true;
 		config.time ??= CommandUtils.CollectionTime;
-		config.enableExit ??= !config.ephemeral && isButtonPagination;
+		config.enableExit ??= !config.ephemeral;
 		config.onTimeout ??= (_, message) => InteractionUtils.disableComponents(message);
 
 		if (!config.filter && "applicationId" in sendTo) {
 			const controllerId = "user" in sendTo ? sendTo.user.id : sendTo.author.id;
 			config.filter = (i) => i.user.id === controllerId;
-		}
-
-		if (isButtonPagination) {
-			Object.assign(config, PaginationManager.ButtonOptions);
 		}
 
 		super(sendTo, pages, config);
