@@ -1,6 +1,7 @@
 import assert from "assert";
 
 import { ModalBuilder, channelMention } from "@discordjs/builders";
+import { Category } from "@discordx/utilities";
 import { ActionType, EntityType, SuggestionStatus } from "@prisma/client";
 import {
 	ActionRowBuilder,
@@ -48,6 +49,7 @@ enum StatusType {
 const componentType = Enums.ContentClusterComponentType.Suggestion;
 
 @Discord()
+@Category(Enums.CommandCategory.Admin)
 @SlashGroup({
 	description: "Suggestion Configuration",
 	name: "suggestion",

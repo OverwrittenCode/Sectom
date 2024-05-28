@@ -1,4 +1,4 @@
-import { EnumChoice } from "@discordx/utilities";
+import { Category, EnumChoice } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import { ApplicationCommandOptionType, inlineCode } from "discord.js";
 import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
@@ -8,6 +8,7 @@ import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
+import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { StringUtils } from "~/utils/string.js";
@@ -34,6 +35,7 @@ const LogChannelChoices = ActionManager.CreateBasedTypes.reduce(
 );
 
 @Discord()
+@Category(Enums.CommandCategory.Admin)
 @SlashGroup({
 	description: "Controls where different logs are sent to",
 	name: "logchannel",

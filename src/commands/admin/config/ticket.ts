@@ -1,6 +1,6 @@
 import assert from "assert";
 
-import { RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import { createTranscript } from "discord-html-transcripts";
 import {
@@ -72,6 +72,7 @@ interface CreateTicketOptions {
 }
 
 @Discord()
+@Category(Enums.CommandCategory.Admin)
 @SlashGroup({
 	description: "Ticket Configuration",
 	name: "ticket",
