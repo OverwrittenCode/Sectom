@@ -1,5 +1,8 @@
 import { type Prisma as _Prisma } from "@prisma/client";
 
+import type { Enums } from "~/ts/Enums.js";
+
+import type { ICategory } from "@discordx/utilities";
 import type { Index, Query } from "@upstash/query";
 import type { ImageSource } from "canvacord";
 import type {
@@ -21,6 +24,7 @@ import type {
 	User,
 	UserSelectMenuInteraction
 } from "discord.js";
+import type { DApplicationCommand } from "discordx";
 import type { Join } from "type-fest";
 
 export namespace Typings {
@@ -244,4 +248,6 @@ export namespace Typings {
 	export type EntityObjectType<TextBased extends boolean = true> = TargetType<TextBased> | GuildMember;
 
 	export type CanvacordImage = Extract<ImageSource, { mime: string }>;
+
+	export type DSlashCommand = DApplicationCommand & ICategory<Enums.CommandCategory>;
 }

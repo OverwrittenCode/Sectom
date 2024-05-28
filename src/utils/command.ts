@@ -1,9 +1,24 @@
 import { EntityType } from "@prisma/client";
 import ms from "ms";
 
+import type { Enums } from "~/ts/Enums.js";
+import type { Typings } from "~/ts/Typings.js";
+
 import type { CommandInteraction, CommandInteractionOption } from "discord.js";
 
+type CategoryGroupedDataKey = Enums.CommandCategory;
+type CategoryGroupedDataValue = Array<
+	Typings.Prettify<Pick<Required<Typings.DSlashCommand>, "name" | "description" | "options" | "category">>
+>;
+
+interface CategoryGroupedData {
+	keys: CategoryGroupedDataKey[];
+	values: CategoryGroupedDataValue[];
+	obj: Record<CategoryGroupedDataKey, CategoryGroupedDataValue>;
+}
+
 export abstract class CommandUtils {
+	public static CategoryGroupedData: CategoryGroupedData;
 	public static CollectionTime = ms("10m");
 	public static EntityType = { ...EntityType, SNOWFLAKE: "SNOWFLAKE" as const };
 	public static SlashOptions = {

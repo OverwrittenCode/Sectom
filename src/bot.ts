@@ -5,13 +5,26 @@ import "reflect-metadata";
 import { dirname, importx } from "@discordx/importer";
 import { NotBot } from "@discordx/utilities";
 import { ActivityType, IntentsBitField, Partials } from "discord.js";
-import { type ArgsOf, Client, DIService, Discord, On, tsyringeDependencyRegistryEngine } from "discordx";
+import {
+	type ArgsOf,
+	Client,
+	DIService,
+	Discord,
+	MetadataStorage,
+	On,
+	tsyringeDependencyRegistryEngine
+} from "discordx";
 import dotenv from "dotenv";
+import _ from "lodash";
 import { container } from "tsyringe";
 
 import { BOT_ID, GUILD_IDS } from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
+import type { Enums } from "~/ts/Enums.js";
+import type { Typings } from "~/ts/Typings.js";
+import { CommandUtils } from "~/utils/command.js";
+import { ObjectUtils } from "~/utils/object.js";
 
 dotenv.config();
 
@@ -102,6 +115,36 @@ export abstract class Main {
 
 			console.group("[DISCORDX INFO]");
 			await Main.bot.initApplicationCommands();
+
+			const commandSlashes = _.cloneDeep(
+				MetadataStorage.instance.applicationCommandSlashes
+			) as Array<Typings.DSlashCommand>;
+
+			const flatCommandSlashes = MetadataStorage.instance
+				.applicationCommandSlashesFlat as ReadonlyArray<Typings.DSlashCommand>;
+
+			const categoryAppliedCommands = commandSlashes.map((cmd) => {
+				cmd.category = flatCommandSlashes.find(({ name, group }) => [name, group].includes(cmd.name))!.category;
+
+				return ObjectUtils.pickKeys(
+					cmd as Required<Typings.DSlashCommand>,
+					"name",
+					"description",
+					"options",
+					"category"
+				);
+			});
+
+			const categoryGroupedObj = Object.groupBy(categoryAppliedCommands, ({ category }) => category!) as Record<
+				Enums.CommandCategory,
+				typeof categoryAppliedCommands
+			>;
+
+			CommandUtils.CategoryGroupedData = {
+				keys: ObjectUtils.keys(categoryGroupedObj),
+				values: Object.values(categoryGroupedObj),
+				obj: categoryGroupedObj
+			};
 
 			console.groupEnd();
 
