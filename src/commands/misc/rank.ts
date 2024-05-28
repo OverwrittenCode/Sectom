@@ -14,7 +14,7 @@ import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 @Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Rank {
-	@Slash({ dmPermission: false, description: "view a members or your current rank" })
+	@Slash({ dmPermission: false, description: "View a members or your current rank" })
 	public async rank(
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.USER,

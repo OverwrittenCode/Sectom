@@ -47,7 +47,7 @@ const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 @Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 @SlashGroup({
 	dmPermission: false,
-	description: "purge messages in the current or given channel with a filter",
+	description: "Purge messages in the current or given channel with a filter",
 	name: "purge",
 	defaultMemberPermissions: mutualPermissions
 })
@@ -77,7 +77,7 @@ export abstract class Purge {
 		};
 	}
 
-	@Slash({ description: "purge all messages in the current or given channel" })
+	@Slash({ description: "Purge all messages in the current or given channel" })
 	public all(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -94,7 +94,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all or specific snowflake mention messages in the current or given channel" })
+	@Slash({ description: "Purge all or specific snowflake mention messages in the current or given channel" })
 	public mentions(
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.SNOWFLAKE,
@@ -138,7 +138,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all or a specific user's messages in the current or given channel" })
+	@Slash({ description: "Purge all or a specific user's messages in the current or given channel" })
 	public users(
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.USER,
@@ -165,7 +165,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all or a specific bot's messages in the current or given channel" })
+	@Slash({ description: "Purge all or a specific bot's messages in the current or given channel" })
 	public bots(
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.USER,
@@ -192,7 +192,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages of users with a given role in the current or given channel" })
+	@Slash({ description: "Purge all messages of users with a given role in the current or given channel" })
 	public role(
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.ROLE,
@@ -219,7 +219,7 @@ export abstract class Purge {
 	}
 
 	@Slash({
-		description: "purge all messages containing a given text (case insensitive) in the current or given channel"
+		description: "Purge all messages containing a given text (case insensitive) in the current or given channel"
 	})
 	public wildcard(
 		@SlashOption({
@@ -282,7 +282,7 @@ export abstract class Purge {
 	}
 
 	@Slash({
-		description: "purge all messages that ends with a given text (case insensitive) in the current or given channel"
+		description: "Purge all messages that ends with a given text (case insensitive) in the current or given channel"
 	})
 	public endswith(
 		@SlashOption({
@@ -312,7 +312,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages containing attachments in the current or given channel" })
+	@Slash({ description: "Purge all messages containing attachments in the current or given channel" })
 	public attachments(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -333,7 +333,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages containing embeds in the current or given channel" })
+	@Slash({ description: "Purge all messages containing embeds in the current or given channel" })
 	public embeds(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -354,7 +354,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages containing links in the current or given channel" })
+	@Slash({ description: "Purge all messages containing links in the current or given channel" })
 	public links(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -375,7 +375,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages containing discord invites in the current or given channel" })
+	@Slash({ description: "Purge all messages containing discord invites in the current or given channel" })
 	public invites(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -397,7 +397,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages containing discord emojis in the current or given channel" })
+	@Slash({ description: "Purge all messages containing discord emojis in the current or given channel" })
 	public emojis(
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
@@ -419,7 +419,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages before a given messageId in the current or given channel" })
+	@Slash({ description: "Purge all messages before a given messageId in the current or given channel" })
 	public async before(
 		@SlashOption({
 			description: "The messageId to match",
@@ -464,7 +464,7 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "purge all messages after a given messageId in the current or given channel" })
+	@Slash({ description: "Purge all messages after a given messageId in the current or given channel" })
 	public async after(
 		@SlashOption({
 			description: "The messageId to match",

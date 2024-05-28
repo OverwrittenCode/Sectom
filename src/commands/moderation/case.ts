@@ -30,13 +30,13 @@ import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember, User 
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
-@SlashGroup({ dmPermission: false, description: "container of all cases in the server", name: "case" })
+@SlashGroup({ dmPermission: false, description: "Container of all cases in the server", name: "case" })
 @SlashGroup("case")
 export abstract class Case {
 	@Slash({ description: "Edit a case reason" })
 	public async edit(
 		@SlashOption({
-			description: "The case id.",
+			description: "The case id",
 			name: "case_id",
 			type: ApplicationCommandOptionType.String,
 			required: true

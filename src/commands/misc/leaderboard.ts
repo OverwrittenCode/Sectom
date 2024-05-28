@@ -14,7 +14,7 @@ import { InteractionUtils } from "~/utils/interaction.js";
 export abstract class Leaderboard {
 	private static TopDisplayedUsers = 5;
 
-	@Slash({ dmPermission: false, description: "view the leaderboard for the leveling system" })
+	@Slash({ dmPermission: false, description: "View the leaderboard for the leveling system" })
 	public async leaderboard(interaction: ChatInputCommandInteraction<"cached">) {
 		const { guildId, guild } = interaction;
 

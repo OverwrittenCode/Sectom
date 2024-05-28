@@ -6,6 +6,7 @@ import { Discord, Guard, Slash } from "discordx";
 import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
@@ -13,7 +14,6 @@ import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
-import { ValidationError } from "~/helpers/errors/ValidationError.js";
 
 const mutualPermissions = [PermissionFlagsBits.BanMembers];
 

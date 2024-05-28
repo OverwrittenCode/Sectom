@@ -1,19 +1,10 @@
-import { defaultIds } from "@discordx/pagination";
-import {
-	ButtonStyle,
-	DiscordAPIError,
-	DiscordjsError,
-	DiscordjsErrorCodes,
-	RESTJSONErrorCodes,
-	formatEmoji
-} from "discord.js";
+import { DiscordAPIError, DiscordjsError, DiscordjsErrorCodes, RESTJSONErrorCodes, formatEmoji } from "discord.js";
 
 import type { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
-import type { PaginationOptions, PaginationType } from "@discordx/pagination";
 import type {
 	APIEmbedField,
 	APIMessageComponentEmoji,
@@ -31,12 +22,6 @@ interface ConstructCustomIdGeneratorOptions {
 }
 
 type ReplyOptions = InteractionReplyOptions & { ephemeral?: boolean };
-
-type ButtonPaginationPositions = "end" | "exit" | "next" | "previous" | "start";
-type ButtonPaginationOptions = Required<
-	Pick<Extract<PaginationOptions, { type: PaginationType.Button }>, ButtonPaginationPositions>
->;
-
 type MessageComponentFlags = Omit<typeof InteractionUtils.MessageComponentIds, "Managed">;
 
 type ConstructCustomIdGeneratorOutput<
@@ -74,34 +59,6 @@ export abstract class InteractionUtils {
 		NoReason: "No reason provided."
 	} as const;
 
-	public static PaginationButtons = {
-		end: {
-			emoji: { name: "⏩" },
-			id: defaultIds.buttons.end,
-			style: ButtonStyle.Secondary
-		},
-		exit: {
-			emoji: { name: "❌" },
-			id: defaultIds.buttons.exit,
-			style: ButtonStyle.Danger
-		},
-		next: {
-			emoji: { name: "▶️" },
-			id: defaultIds.buttons.next,
-			style: ButtonStyle.Primary
-		},
-		previous: {
-			emoji: { name: "◀️" },
-			id: defaultIds.buttons.previous,
-			style: ButtonStyle.Primary
-		},
-		start: {
-			emoji: { name: "⏪" },
-			id: defaultIds.buttons.start,
-			style: ButtonStyle.Secondary
-		}
-	} as const satisfies ButtonPaginationOptions;
-
 	public static async replyOrFollowUp(
 		interaction: Typings.DeferrableGuildInteraction,
 		replyOptions: ReplyOptions
@@ -119,16 +76,11 @@ export abstract class InteractionUtils {
 
 			return await interaction.reply(replyOptions);
 		} catch (err) {
-			const unexpectedAlready =
-				(err instanceof DiscordjsError && err.code === DiscordjsErrorCodes.InteractionAlreadyReplied) ||
-				(err instanceof DiscordAPIError &&
-					err.code === RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged);
-
 			const unknownInteractionOrMessage =
 				err instanceof DiscordAPIError &&
 				(err.code === RESTJSONErrorCodes.UnknownInteraction || err.code === RESTJSONErrorCodes.UnknownMessage);
 
-			if (unexpectedAlready || unknownInteractionOrMessage) {
+			if (this.isDeferRaceCondition(err) || unknownInteractionOrMessage) {
 				return await this.replyOrFollowUp(interaction, replyOptions).catch(() => null);
 			}
 
@@ -218,6 +170,13 @@ export abstract class InteractionUtils {
 	public static isValidEmoji(interaction: Typings.GuildInteraction, emojiIdOrSymbol: string): boolean {
 		return Boolean(
 			StringUtils.Regexes.UnicodeEmoji.test(emojiIdOrSymbol) || interaction.client.emojis.resolve(emojiIdOrSymbol)
+		);
+	}
+
+	public static isDeferRaceCondition(err: unknown): err is DiscordjsError | DiscordAPIError {
+		return (
+			(err instanceof DiscordjsError && err.code === DiscordjsErrorCodes.InteractionAlreadyReplied) ||
+			(err instanceof DiscordAPIError && err.code === RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged)
 		);
 	}
 }

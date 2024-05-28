@@ -24,13 +24,13 @@ const mutualPermissions = [PermissionFlagsBits.ManageNicknames];
 @Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
 @SlashGroup({
 	dmPermission: false,
-	description: "set or reset the nickname of a member in the server",
+	description: "Set or reset the nickname of a member in the server",
 	name: "nick",
 	defaultMemberPermissions: mutualPermissions
 })
 @SlashGroup("nick")
 export abstract class Nick {
-	@Slash({ dmPermission: false, description: "set the nickname of a member in the server" })
+	@Slash({ dmPermission: false, description: "Set the nickname of a member in the server" })
 	public set(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -65,7 +65,7 @@ export abstract class Nick {
 		});
 	}
 
-	@Slash({ dmPermission: false, description: "reset the nickname of a member in the server" })
+	@Slash({ dmPermission: false, description: "Reset the nickname of a member in the server" })
 	public reset(
 		@TargetSlashOption({
 			entityType: EntityType.USER,

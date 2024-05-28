@@ -1,15 +1,11 @@
 import { bold, channelMention, orderedList, underline } from "@discordjs/builders";
-import { Pagination, PaginationType } from "@discordx/pagination";
+import { PaginationType } from "@discordx/pagination";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
 	ActionRowBuilder,
-	DiscordAPIError,
-	DiscordjsError,
-	DiscordjsErrorCodes,
 	EmbedBuilder,
 	PermissionFlagsBits,
-	RESTJSONErrorCodes,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 	inlineCode
@@ -22,8 +18,8 @@ import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { ContentClusterManager } from "~/models/framework/managers/ContentClusterManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
+import { PaginationManager } from "~/models/framework/managers/PaginationManager.js";
 import { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
@@ -266,30 +262,14 @@ export abstract class Config {
 
 		paginationPages.unshift({ embeds: [displayEmbed] });
 
-		const pagination = new Pagination(interaction, paginationPages, {
-			time: CommandUtils.CollectionTime,
+		const pagination = new PaginationManager(interaction, paginationPages, {
 			type: PaginationType.SelectMenu,
 			pageText: pageTextArray,
 			placeholder: "View a configuration",
-			ephemeral: true,
-			showStartEnd: false,
-			filter: (v) => v.user.id === interaction.user.id,
-			onTimeout: (_, message) => InteractionUtils.disableComponents(message)
+			ephemeral: true
 		});
 
-		const sendPagination = () => pagination.send();
-
-		sendPagination().catch((e) => {
-			if (
-				(e instanceof DiscordjsError || e instanceof DiscordAPIError) &&
-				(e.code === DiscordjsErrorCodes.InteractionAlreadyReplied ||
-					e.code === RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged)
-			) {
-				return sendPagination(); // try again, auto defer happened just before this
-			}
-
-			throw e;
-		});
+		return await pagination.init()
 	}
 
 	@Slash({ dmPermission: false, description: "Interactive configuration panel" })

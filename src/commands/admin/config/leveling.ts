@@ -1,3 +1,4 @@
+import { Category } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import { ApplicationCommandOptionType, bold, inlineCode, roleMention } from "discord.js";
 import { Discord, SelectMenuComponent, Slash, SlashGroup, SlashOption } from "discordx";
@@ -9,7 +10,8 @@ import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
-import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
+import { PaginationManager } from "~/models/framework/managers/PaginationManager.js";
+import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -19,6 +21,7 @@ import { StringUtils } from "~/utils/string.js";
 import type { ChatInputCommandInteraction, Role, StringSelectMenuInteraction } from "discord.js";
 
 @Discord()
+@Category(Enums.CommandCategory.Admin)
 @SlashGroup({
 	description: "Leveling Configuration",
 	name: "leveling",
@@ -310,7 +313,7 @@ export abstract class LevelingConfigMessageComponentHandler {
 
 		const embedTitle = `${guild.name} | Leveling | ${StringUtils.convertToTitleCase(option)}`;
 
-		return EmbedManager.handleStaticEmbedPagination({
+		return await PaginationManager.handleStatic({
 			sendTo: interaction,
 			embedTitle,
 			descriptionArray,

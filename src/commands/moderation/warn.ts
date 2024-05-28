@@ -19,7 +19,7 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 @SlashGroup({
 	dmPermission: false,
-	description: "hand out infractions to members in the server",
+	description: "Hand out infractions to members in the server",
 	name: "warn",
 	defaultMemberPermissions: [PermissionFlagsBits.KickMembers]
 })
@@ -157,7 +157,7 @@ export abstract class Warn {
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
 		@SlashOption({
-			description: "The warn case id. Defaults to the most recent.",
+			description: "The warn case id. Defaults to the most recent",
 			name: "case_id",
 			type: ApplicationCommandOptionType.String
 		})

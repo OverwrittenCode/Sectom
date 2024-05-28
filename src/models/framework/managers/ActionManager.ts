@@ -1,7 +1,7 @@
 import assert from "assert";
 
 import * as discordBuilders from "@discordjs/builders";
-import { Pagination, PaginationType } from "@discordx/pagination";
+import { PaginationType } from "@discordx/pagination";
 import { ActionType, CaseType, EntityType } from "@prisma/client";
 import {
 	ActionRowBuilder,
@@ -18,6 +18,7 @@ import _ from "lodash";
 import prettyMilliseconds from "pretty-ms";
 
 import { LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
+import { PaginationManager } from "~/models/framework/managers/PaginationManager.js";
 import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -546,16 +547,11 @@ export abstract class ActionManager {
 		if (paginationPages.length === 1) {
 			collectorTarget = await InteractionUtils.replyOrFollowUp(interaction, paginationPages[0]);
 		} else {
-			const pagination = new Pagination(interaction, paginationPages, {
-				...InteractionUtils.PaginationButtons,
-				time: CommandUtils.CollectionTime,
-				type: PaginationType.Button,
-				enableExit: true,
-				filter: (v) => v.user.id === interaction.user.id,
-				onTimeout: (_, message) => InteractionUtils.disableComponents(message)
+			const pagination = new PaginationManager(interaction, paginationPages, {
+				type: PaginationType.Button
 			});
 
-			const paginationObject = await pagination.send();
+			const paginationObject = await pagination.init();
 			collectorTarget = paginationObject.message;
 		}
 
