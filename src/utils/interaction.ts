@@ -176,7 +176,10 @@ export abstract class InteractionUtils {
 				...(suffixStr || [])
 			].filter(Boolean);
 
-			return StringUtils.concatenate(StringUtils.CustomIDFIeldBodySeperator, ...input);
+			return StringUtils.concatenate(
+				StringUtils.CustomIDFIeldBodySeperator,
+				...input
+			) as ConstructCustomIdGeneratorOutput<Prefix, Suffix, Options>;
 		};
 	}
 

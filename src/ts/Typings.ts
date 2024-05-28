@@ -214,7 +214,7 @@ export namespace Typings {
 					? Concatenate<R, Seperator>
 					: `${F}${R extends [] | [""] ? "" : Seperator}${Concatenate<R, Seperator>}`
 				: Concatenate<R, Seperator>
-			: never;
+			: string;
 
 	export type GuildInteraction<Cache extends CacheType | undefined = CacheType> =
 		| ButtonInteraction<Cache>
