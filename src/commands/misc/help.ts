@@ -6,7 +6,8 @@ import {
 	EmbedBuilder,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
-	bold
+	bold,
+	unorderedList
 } from "discord.js";
 import { Discord, Guard, SelectMenuComponent, Slash } from "discordx";
 
@@ -20,7 +21,6 @@ import { StringUtils } from "~/utils/string.js";
 
 import type { PaginationItem } from "@discordx/pagination";
 import type { StringSelectMenuInteraction } from "discord.js";
-import type { DApplicationCommandOption } from "discordx";
 
 @Discord()
 @Category(Enums.CommandCategory.Misc)
@@ -48,15 +48,13 @@ export abstract class Help {
 							[
 								"Here you can select a category of commands to view by selecting a category below:" +
 									StringUtils.LineBreak,
-								...CommandUtils.CategoryGroupedData.keys.map((categoryName, i) => {
-									pageTextArray.push(`${categoryName} Commands`);
+								unorderedList(
+									CommandUtils.CategoryGroupedData.keys.map((categoryName) => {
+										pageTextArray.push(`${categoryName} Commands`);
 
-									let str = bold(categoryName);
-									const quantity = CommandUtils.CategoryGroupedData.values[i].length;
-
-									str += ` (${quantity}) command${quantity > 1 ? "s" : ""}`;
-									return str;
-								})
+										return bold(categoryName);
+									})
+								)
 							].join(StringUtils.LineBreak)
 						)
 				]
@@ -101,6 +99,7 @@ export abstract class Help {
 			type: PaginationType.SelectMenu,
 			pageText: pageTextArray,
 			placeholder: "View a category",
+			showStartEnd: false,
 			ephemeral: true
 		});
 
@@ -115,42 +114,20 @@ export abstract class HelpMessageComponentHandler {
 		const { customId, values } = interaction;
 
 		const categoryName = customId.split(StringUtils.CustomIDFIeldBodySeperator).at(-1)! as Enums.CommandCategory;
-
 		const commandName = values[0];
 
 		const { options, ...data } = CommandUtils.CategoryGroupedData.obj[categoryName].find(
 			({ name }) => name === commandName
 		)!;
 
-		let description = ObjectUtils.entries(data)
+		const description = ObjectUtils.entries(data)
 			.map(([key, value]) => `${bold(StringUtils.capitaliseFirstLetter(key))}: ${value}`)
 			.join(StringUtils.LineBreak);
 
-		const embed = new EmbedBuilder().setTitle(`${interaction.guild.name} | Command Info`).setColor(LIGHT_GOLD);
-
-		if (options.length) {
-			let commandStructure = `${bold("Structure")}:` + StringUtils.LineBreak;
-
-			const countType = (options: DApplicationCommandOption[]): number => {
-				return options.reduce((count, option) => {
-					if (option.options.length === 0) {
-						return count + 1;
-					} else {
-						return count + countType(option.options);
-					}
-				}, 0);
-			};
-
-			options.forEach(({ name }, index, arr) => {
-				const isLast = index === arr.length - 1;
-				const connector = isLast ? "└──" : "├──";
-				commandStructure += ` ${connector} ${bold(name)}` + StringUtils.LineBreak;
-			});
-
-			description += StringUtils.LineBreak + commandStructure;
-		}
-
-		embed.setDescription(description);
+		const embed = new EmbedBuilder()
+			.setTitle(`${interaction.guild.name} | Command Info`)
+			.setColor(LIGHT_GOLD)
+			.setDescription(description);
 
 		return await InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed],
