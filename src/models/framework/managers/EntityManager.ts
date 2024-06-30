@@ -9,14 +9,14 @@ import Discord, {
 
 import type { Typings } from "~/ts/Typings.js";
 
-type GuildEntityType = "member" | "user" | "role" | "channel";
-type EntityType = Exclude<GuildEntityType, "member">;
 type GuildEntityTypeMap = {
 	member: GuildMember;
 	user: User;
 	role: Role;
 	channel: GuildBasedChannel;
 };
+type GuildEntityType = keyof GuildEntityTypeMap;
+type EntityType = Exclude<GuildEntityType, "member">;
 type MentionFunction<T extends EntityType = EntityType> = (typeof Discord)[`${T}Mention`];
 type MentionString<T extends EntityType = EntityType> = ReturnType<MentionFunction<T>>;
 

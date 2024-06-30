@@ -30,7 +30,7 @@ declare global {
 			 * - Resets back to 1 when the next punishment is hit.
 			 *
 			 * @example
-			 * const nextPunishmentDuration = durationMultiplier ** repeitionCount * baseDurationPunishment
+			 * const nextPunishmentDuration = durationMultiplier ** repetitionCount * baseDurationPunishment
 			 * */
 			durationMultiplier: number;
 		}

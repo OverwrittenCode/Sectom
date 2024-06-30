@@ -846,7 +846,7 @@ export abstract class ContentClusterMessageComponentHandler {
 						descriptionInput.setValue(
 							[
 								"If you would like to create a report, please click an appropriate button below.",
-								"**Warning:** False reports will result in punishment!"
+								`${bold("Warning:")} False reports will result in punishment!`
 							].join(StringUtils.LineBreak)
 						);
 					}

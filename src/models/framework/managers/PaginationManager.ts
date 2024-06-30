@@ -77,7 +77,9 @@ export class PaginationManager<T extends PaginationResolver = PaginationResolver
 		config.enableExit ??= !config.ephemeral;
 		config.onTimeout ??= (_, message) => InteractionUtils.disableComponents(message);
 
-		if (!config.filter && "applicationId" in sendTo) {
+		const isRestrictableToController = "applicationId" in sendTo;
+
+		if (!config.filter && isRestrictableToController) {
 			const controllerId = "user" in sendTo ? sendTo.user.id : sendTo.author.id;
 			config.filter = (i) => i.user.id === controllerId;
 		}

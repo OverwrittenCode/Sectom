@@ -120,9 +120,7 @@ export abstract class RedisCacheManager<
 		}
 
 		const orFilterEntriesMap = OR.map((filter) =>
-			ObjectUtils.entries<Omit<Typings.Database.SimpleWhere, "OR">>(filter).filter(
-				([, v]) => typeof v !== "undefined"
-			)
+			ObjectUtils.entries<Omit<Typings.Database.SimpleWhere, "OR">>(filter, { excludeUndefined: true })
 		);
 
 		return expectedCases.filter((data: Record<string, any>) =>

@@ -12,6 +12,7 @@ import {
 	ComponentType,
 	DiscordAPIError,
 	EmbedBuilder,
+	RESTJSONErrorCodes,
 	TextChannel
 } from "discord.js";
 import _ from "lodash";
@@ -410,13 +411,14 @@ export abstract class ActionManager {
 			try {
 				await guildMember.user.send({ embeds: [warnedNoticeEmbed], components: buttonActionRows });
 			} catch (err) {
-				const isUnableToDMUser = err instanceof DiscordAPIError && err.code === 50007;
+				const isUnableToDMUser =
+					err instanceof DiscordAPIError && err.code === RESTJSONErrorCodes.CannotSendMessagesToThisUser;
 
-				if (isUnableToDMUser) {
-					dmFailStatusMessage = "User was unable to be notified.";
-				} else {
+				if (!isUnableToDMUser) {
 					throw err;
 				}
+
+				dmFailStatusMessage = "User was unable to be notified.";
 			}
 		}
 

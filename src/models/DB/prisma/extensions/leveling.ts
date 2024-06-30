@@ -1,6 +1,6 @@
 import { ActionType, EntityType } from "@prisma/client";
 import canvacord from "canvacord";
-import { AttachmentBuilder, ChannelType, type Message, roleMention } from "discord.js";
+import { AttachmentBuilder, ChannelType, type Message, bold, roleMention } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
@@ -150,7 +150,7 @@ export class LevelingInstanceMethods {
 			return;
 		}
 
-		let content = `Congrats ${target.toString()}! You are now level **${levelAfter}**!`;
+		let content = `Congrats ${target.toString()}! You are now level ${bold(levelAfter.toString())}!`;
 
 		if (grantedRoleMention) {
 			content += ` You have earned ${grantedRoleMention}`;
