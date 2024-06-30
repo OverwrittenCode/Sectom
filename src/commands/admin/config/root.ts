@@ -266,10 +266,11 @@ export abstract class Config {
 			type: PaginationType.SelectMenu,
 			pageText: pageTextArray,
 			placeholder: "View a configuration",
+			showStartEnd: false,
 			ephemeral: true
 		});
 
-		return await pagination.init()
+		return await pagination.init();
 	}
 
 	@Slash({ dmPermission: false, description: "Interactive configuration panel" })
