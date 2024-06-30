@@ -195,6 +195,10 @@ export abstract class ActionManager {
 			.setTimestamp()
 			.toJSON();
 
+		const commandInputEmbed = new EmbedBuilder(baseEmbed).setTitle(
+			`${title} | ${!interaction.isChatInputCommand() ? "Partial " : ""}Command Input`
+		);
+
 		if (!isAutoPunishment && commandInteraction && commandInteraction.options.data.length) {
 			let commandString = `/${commandInteraction.commandName}`;
 
@@ -204,6 +208,12 @@ export abstract class ActionManager {
 				commandOption.type === ApplicationCommandOptionType.SubcommandGroup
 			) {
 				commandString += ` ${commandOption.name}`;
+
+				const hasSubCommandOption = commandOption.options?.[0].type === ApplicationCommandOptionType.Subcommand;
+
+				if (hasSubCommandOption) {
+					commandString += ` ${commandOption.options![0].name}`;
+				}
 			}
 
 			const commandMentionArgs = commandString.slice(1).split(" ").concat(commandInteraction.commandId) as [
@@ -222,13 +232,9 @@ export abstract class ActionManager {
 				({ value }) => typeof value !== "undefined"
 			);
 
-			const commandMention = discordBuilders.chatInputApplicationCommandMention(...commandMentionArgs);
+			commandInputEmbed.setDescription(discordBuilders.chatInputApplicationCommandMention(...commandMentionArgs));
 
 			if (givenOptions.length) {
-				const commandInputEmbed = new EmbedBuilder(baseEmbed)
-					.setTitle(`${title} | Command Input`)
-					.setDescription(commandMention);
-
 				commandInputEmbed.addFields(
 					givenOptions.map((option) => {
 						const name = StringUtils.convertToTitleCase(option.name, "_");
@@ -252,17 +258,17 @@ export abstract class ActionManager {
 						return { name, value };
 					})
 				);
-
-				embeds.push(commandInputEmbed);
-			} else {
-				partialCommandString = commandMention;
 			}
+
+			embeds.push(commandInputEmbed);
 		} else if (interaction.isModalSubmit() && interaction.isFromMessage() && interaction.message.interaction) {
 			const { commandName } = interaction.message.interaction;
 
 			const { id } = interaction.guild.commands.cache.find(({ name }) => name === commandName) ?? { id: "???" };
 
-			partialCommandString = discordBuilders.chatInputApplicationCommandMention(commandName, id);
+			commandInputEmbed.setDescription(discordBuilders.chatInputApplicationCommandMention(commandName, id));
+
+			embeds.push(commandInputEmbed);
 		}
 
 		const fields: APIEmbedField[] = [
@@ -300,14 +306,6 @@ export abstract class ActionManager {
 			}
 		];
 
-		if (partialCommandString) {
-			const name = `${!interaction.isChatInputCommand() ? "Partial " : ""}Command Input`;
-			fields.unshift({
-				name,
-				value: StringUtils.TabCharacter + discordBuilders.bold(partialCommandString)
-			});
-		}
-
 		if (verboseDuration) {
 			fields.push({
 				name: "Duration",
@@ -338,7 +336,7 @@ export abstract class ActionManager {
 
 		const formattedEmbeds = EmbedManager.formatEmbeds(embeds);
 
-		const APIEmbeds = formattedEmbeds.map((embed) => embed.toJSON());
+		const apiEmbeds = formattedEmbeds.map((embed) => embed.toJSON());
 
 		let moderativeLogChannel = await _entity.retrieveGivenGuildLogChannel(interaction, actionType);
 		let logMessage: Message<true> | null = null;
@@ -358,7 +356,7 @@ export abstract class ActionManager {
 				reason,
 				action: actionType,
 				type,
-				apiEmbeds: APIEmbeds,
+				apiEmbeds,
 				messageURL,
 				expiryDate,
 				...relationFields
@@ -519,13 +517,15 @@ export abstract class ActionManager {
 
 		const descriptionChunks = _.chunk(descriptionArray, MAX_ELEMENTS_PER_PAGE);
 
+		const addFooter = descriptionChunks.length > 1;
+
 		descriptionChunks.forEach((chunk, index, arr) => {
 			const embedDescription = chunk.join(StringUtils.LineBreak);
-			const embed = new EmbedBuilder()
-				.setTitle(embedTitle)
-				.setColor(LIGHT_GOLD)
-				.setDescription(embedDescription)
-				.setFooter({ text: `Page ${index + 1} / ${arr.length}` });
+			const embed = new EmbedBuilder().setTitle(embedTitle).setColor(LIGHT_GOLD).setDescription(embedDescription);
+
+			if (addFooter) {
+				embed.setFooter({ text: `Page ${index + 1} / ${arr.length}` });
+			}
 
 			const selectMenu = new discordBuilders.StringSelectMenuBuilder()
 				.setCustomId(`string_select_menu_pagination_${index}`)
