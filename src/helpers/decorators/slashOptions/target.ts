@@ -43,11 +43,10 @@ export function TargetSlashOption(args: TargetSlashOptionArguments) {
 					? ApplicationCommandOptionType.Mentionable
 					: ApplicationCommandOptionType[entityTypeSentenceCase],
 			required,
-			channelTypes,
-			transformer: TargetTransformer(flags)
+			channelTypes
 		} as SlashOptionOptions<Lowercase<string>, string>;
 
-		SlashOption(slashOptionObj)(target, propertyKey, parameterIndex);
+		SlashOption(slashOptionObj, TargetTransformer(flags))(target, propertyKey, parameterIndex);
 	};
 }
 

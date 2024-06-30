@@ -24,36 +24,38 @@ export function DurationSlashOption(options: DurationOptions) {
 	} = options;
 
 	return function (target: Record<string, any>, propertyKey: string, parameterIndex: number) {
-		SlashOption({
-			description: `${descriptionPrefix}. Ex: (30m, 1h, 1 day)`,
-			name,
-			type: ApplicationCommandOptionType.String,
-			required,
-			transformer: DurationTransformer(transformerOptions),
-			autocomplete: (interaction: AutocompleteInteraction) => {
-				const autoCompleteData = DurationGenerateAutoComplete(interaction, transformerOptions);
+		SlashOption(
+			{
+				description: `${descriptionPrefix}. Ex: (30m, 1h, 1 day)`,
+				name,
+				type: ApplicationCommandOptionType.String,
+				required,
+				autocomplete: (interaction: AutocompleteInteraction) => {
+					const autoCompleteData = DurationGenerateAutoComplete(interaction, transformerOptions);
 
-				const isOnlyDisabled =
-					autoCompleteData.length === 1 &&
-					autoCompleteData[0].value === CommandUtils.SlashOptions.DisableChoice;
+					const isOnlyDisabled =
+						autoCompleteData.length === 1 &&
+						autoCompleteData[0].value === CommandUtils.SlashOptions.DisableChoice;
 
-				const activeSearch = interaction.options.getFocused();
-				const isZero = activeSearch.startsWith("0");
+					const activeSearch = interaction.options.getFocused();
+					const isZero = activeSearch.startsWith("0");
 
-				if (isOnlyDisabled || isZero) {
-					interaction.respond(
-						autoCompleteData.filter(({ value }) => value === CommandUtils.SlashOptions.DisableChoice)
-					);
-				} else {
-					const wildcardMatch = autoCompleteData.filter(({ name }) =>
-						name.includes(activeSearch.toLowerCase())
-					);
+					if (isOnlyDisabled || isZero) {
+						interaction.respond(
+							autoCompleteData.filter(({ value }) => value === CommandUtils.SlashOptions.DisableChoice)
+						);
+					} else {
+						const wildcardMatch = autoCompleteData.filter(({ name }) =>
+							name.includes(activeSearch.toLowerCase())
+						);
 
-					const responder = wildcardMatch.length ? wildcardMatch : autoCompleteData;
+						const responder = wildcardMatch.length ? wildcardMatch : autoCompleteData;
 
-					interaction.respond(responder.slice(0, MAX_AUTOCOMPLETE_OPTION_LIMIT));
+						interaction.respond(responder.slice(0, MAX_AUTOCOMPLETE_OPTION_LIMIT));
+					}
 				}
-			}
-		})(target, propertyKey, parameterIndex);
+			},
+			DurationTransformer(transformerOptions)
+		)(target, propertyKey, parameterIndex);
 	};
 }
