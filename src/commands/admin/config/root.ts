@@ -1,4 +1,4 @@
-import { bold, channelMention, orderedList, underline } from "@discordjs/builders";
+import { bold, channelMention, orderedList } from "@discordjs/builders";
 import { PaginationType } from "@discordx/pagination";
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
@@ -26,6 +26,13 @@ import { StringUtils } from "~/utils/string.js";
 
 import type { PaginationItem } from "@discordx/pagination";
 import type { ButtonBuilder, ChatInputCommandInteraction } from "discord.js";
+import { NumberUtils } from "~/utils/number.js";
+
+const actionTypePunishmentMap = {
+	[ActionType.TIME_OUT_USER_ADD]: "Time Out",
+	[ActionType.KICK_USER_SET]: "Kick",
+	[ActionType.BAN_USER_ADD]: "Ban"
+};
 
 @Discord()
 @Category(Enums.CommandCategory.Admin)
@@ -157,25 +164,36 @@ export abstract class Config {
 						);
 
 						if (warningConfiguration.thresholds.length) {
-							descriptionArray.push(
-								`${bold(underline("Key:"))} ${inlineCode("Threshold")} ${bold("[PUNISHMENT]")} Duration?` +
-									StringUtils.LineBreak
-							);
+							descriptionArray.push(bold("Punishments:"));
 						}
 
 						warningConfiguration.thresholds.forEach(({ punishment, threshold, duration }) => {
-							const generalisedPunishment = punishment.replace(
-								StringUtils.Regexes.AllActionModifiers,
-								""
-							);
+							const generalisedPunishment =
+								actionTypePunishmentMap[punishment as keyof typeof actionTypePunishmentMap];
 
-							let content = `${inlineCode(threshold.toString())} ${bold(`[${generalisedPunishment}]`)}`;
+							const strikePosition = NumberUtils.getOrdinalSuffix(threshold);
 
-							if (duration) {
-								content += ` ${prettyMilliseconds(duration, { secondsDecimalDigits: 0, millisecondsDecimalDigits: 0 }).replaceAll(" ", "")}`;
+							let durationDescription = "";
+
+							if (punishment !== ActionType.KICK_USER_SET) {
+								if (duration) {
+									durationDescription += StringUtils.convertToTitleCase(
+										prettyMilliseconds(duration, {
+											verbose: true,
+											compact: true,
+											secondsDecimalDigits: 0
+										}).replace(/s$/, "")
+									);
+								} else {
+									durationDescription += "Permanent";
+								}
+
+								durationDescription += " ";
 							}
 
-							descriptionArray.push(content);
+							const description = `- ${strikePosition} Strike: ${bold(durationDescription + generalisedPunishment)}`;
+
+							descriptionArray.push(description);
 						});
 					}
 
