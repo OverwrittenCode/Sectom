@@ -4,15 +4,15 @@ import "reflect-metadata";
 
 import { dirname, importx } from "@discordx/importer";
 import { NotBot } from "@discordx/utilities";
-import { ActivityType, IntentsBitField, Partials } from "discord.js";
+import { ActivityType, Events, IntentsBitField, Partials } from "discord.js";
 import {
-	type ArgsOf,
 	Client,
 	DIService,
 	Discord,
 	MetadataStorage,
 	On,
-	tsyringeDependencyRegistryEngine
+	tsyringeDependencyRegistryEngine,
+	type ArgsOf
 } from "discordx";
 import dotenv from "dotenv";
 import _ from "lodash";
@@ -100,9 +100,9 @@ export abstract class Main {
 	}
 
 	@On({
-		event: "ready"
+		event: Events.ClientReady
 	})
-	private async init([client]: ArgsOf<"ready">): Promise<void> {
+	private async init([client]: ArgsOf<Events.ClientReady>): Promise<void> {
 		try {
 			console.groupEnd();
 

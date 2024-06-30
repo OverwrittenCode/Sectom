@@ -2,17 +2,17 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
 	ApplicationCommandOptionType,
-	type ChatInputCommandInteraction,
-	type GuildMember,
 	PermissionFlagsBits,
-	inlineCode
+	inlineCode,
+	type ChatInputCommandInteraction,
+	type GuildMember
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
+import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -21,7 +21,7 @@ const mutualPermissions = [PermissionFlagsBits.ManageNicknames];
 
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
-@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
+@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
 @SlashGroup({
 	dmPermission: false,
 	description: "Set or reset the nickname of a member in the server",

@@ -1,6 +1,6 @@
 import assert from "assert";
 
-import { AutocompleteInteraction } from "discord.js";
+import { AutocompleteInteraction, Events } from "discord.js";
 import { Discord, On } from "discordx";
 import { container } from "tsyringe";
 
@@ -17,8 +17,8 @@ import type { ArgsOf, Client } from "discordx";
 
 @Discord()
 export abstract class InteractionCreate {
-	@On({ event: "interactionCreate" })
-	async interactionCreate([interaction]: ArgsOf<"interactionCreate">) {
+	@On({ event: Events.InteractionCreate })
+	async interactionCreate([interaction]: ArgsOf<Events.InteractionCreate>) {
 		assert(interaction.inCachedGuild());
 
 		await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId: interaction.guildId });

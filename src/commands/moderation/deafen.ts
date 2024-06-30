@@ -2,12 +2,12 @@ import assert from "assert";
 
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
-import { type ChatInputCommandInteraction, type GuildMember, PermissionFlagsBits } from "discord.js";
+import { PermissionFlagsBits, type ChatInputCommandInteraction, type GuildMember } from "discord.js";
 import { Discord, Guard, Slash } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
-import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
+import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -21,7 +21,7 @@ export abstract class Deafen {
 		description: "Deafen a user in a voice channel on the server",
 		defaultMemberPermissions: mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
 	public async deafen(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -70,7 +70,7 @@ export abstract class Deafen {
 		description: "Undeafen a user in a voice channel on the server",
 		defaultMemberPermissions: mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions([PermissionFlagsBits.MuteMembers]))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions([PermissionFlagsBits.MuteMembers]))
 	public async undeafen(
 		@TargetSlashOption({
 			entityType: EntityType.USER,

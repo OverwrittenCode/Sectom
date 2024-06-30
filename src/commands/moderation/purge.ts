@@ -13,7 +13,7 @@ import { MAX_MESSAGE_FETCH_LIMIT, MAX_PURGE_COUNT_LIMIT } from "~/constants";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { GivenChannelSlashOption, TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
+import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
@@ -44,7 +44,7 @@ interface PurgeHandlerOptions extends Pick<FetchMessagesOptions, "before" | "aft
 const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
-@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
+@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
 @SlashGroup({
 	dmPermission: false,
 	description: "Purge messages in the current or given channel with a filter",

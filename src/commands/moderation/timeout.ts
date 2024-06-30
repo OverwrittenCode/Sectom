@@ -6,7 +6,7 @@ import { Discord, Guard, Slash } from "discordx";
 import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
-import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
+import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
@@ -25,7 +25,7 @@ export abstract class Timeout {
 		description: "Timeout a user on the server",
 		defaultMemberPermissions: mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
 	public async timeout(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -65,7 +65,7 @@ export abstract class Timeout {
 		description: "Remove a timeout a user on the server",
 		defaultMemberPermissions: mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), BotRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
 	public async untimeout(
 		@TargetSlashOption({
 			entityType: EntityType.USER,

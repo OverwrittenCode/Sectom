@@ -4,11 +4,12 @@ import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 
 import type { ArgsOf } from "discordx";
+import { Events } from "discord.js";
 
 @Discord()
 export abstract class MessageCreate {
-	@On({ event: "messageCreate" })
-	async messageCreate([message]: ArgsOf<"messageCreate">) {
+	@On({ event: Events.MessageCreate })
+	async messageCreate([message]: ArgsOf<Events.MessageCreate>) {
 		const { member: target } = message;
 		if (!message.inGuild() || !target) {
 			return;

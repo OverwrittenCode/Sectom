@@ -30,7 +30,7 @@ import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { AtLeastOneSlashOption } from "~/helpers/guards/AtLeastOne.js";
-import { BotRequiredPermissions } from "~/helpers/guards/BotRequiredPermissions.js";
+import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { GuildInstanceMethods } from "~/models/DB/prisma/extensions/guild.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { ContentClusterManager } from "~/models/framework/managers/ContentClusterManager.js";
@@ -374,7 +374,7 @@ export abstract class TicketConfigMessageComponentHandler {
 
 	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_create.regex })
 	@Guard(
-		BotRequiredPermissions<ButtonInteraction>([
+		ClientRequiredPermissions<ButtonInteraction>([
 			PermissionFlagsBits.ManageThreads,
 			PermissionFlagsBits.ManageMessages
 		])
@@ -476,7 +476,7 @@ export abstract class TicketConfigMessageComponentHandler {
 	}
 
 	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_lock.regex })
-	@Guard(BotRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
+	@Guard(ClientRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
 	public async buttonLock(interaction: ButtonInteraction<"cached">) {
 		const { customId, channel, member, guildId } = interaction;
 
@@ -512,7 +512,7 @@ export abstract class TicketConfigMessageComponentHandler {
 	}
 
 	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_close.regex })
-	@Guard(BotRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
+	@Guard(ClientRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
 	public async buttonClose(interaction: ButtonInteraction<"cached">) {
 		const { channelId, channel, customId } = interaction;
 

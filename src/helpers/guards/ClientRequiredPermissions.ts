@@ -8,12 +8,14 @@ import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ButtonInteraction, CommandInteraction, PermissionResolvable } from "discord.js";
 
-export function BotRequiredPermissions<T = CommandInteraction>(permissions: PermissionResolvable[]): GuardFunction<T> {
+export function ClientRequiredPermissions<T = CommandInteraction>(
+	permissions: PermissionResolvable[]
+): GuardFunction<T> {
 	const description = "I cannot perform this action: insufficient permissions.";
 
 	const missingPermissionEmbed = new EmbedBuilder().setColor(Colors.Red).setDescription(description);
 
-	const guard: GuardFunction<CommandInteraction | ButtonInteraction> = async (interaction, client, next) => {
+	const guard: GuardFunction<CommandInteraction | ButtonInteraction> = async (interaction, _client, next) => {
 		assert(
 			interaction.inCachedGuild() &&
 				interaction.channel &&
