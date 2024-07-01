@@ -141,6 +141,9 @@ export abstract class Case {
 		}
 
 		updatedEmbeds.unshift(updatedEmbed);
+
+		const newAPIEmbeds = EmbedManager.formatEmbeds(updatedEmbeds).map((embed) => embed.toJSON());
+
 		if (caseRecordChannel instanceof TextChannel) {
 			const caseRecordLogMessage = await caseRecordChannel.messages
 				.fetch(retrievedMessageId ?? "")
@@ -149,11 +152,11 @@ export abstract class Case {
 			if (caseRecordLogMessage?.editable) {
 				await caseRecordLogMessage
 					.edit({
-						embeds: updatedEmbeds
+						embeds: newAPIEmbeds
 					})
 					.catch(() => {});
 			} else {
-				const message = await caseRecordChannel.send({ embeds: updatedEmbeds });
+				const message = await caseRecordChannel.send({ embeds: newAPIEmbeds });
 				messageURL = messageLink(caseRecordChannel.id, message.id, guildId);
 			}
 
@@ -172,7 +175,7 @@ export abstract class Case {
 			where: { id: caseData.id },
 			data: {
 				messageURL,
-				apiEmbeds: updatedEmbeds,
+				apiEmbeds: newAPIEmbeds,
 				reason: newReason
 			},
 			select: {
