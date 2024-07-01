@@ -117,7 +117,7 @@ export abstract class Case {
 		const entityType = EntityType[sentenceCaseEntityType.toUpperCase() as EntityType];
 		const targetId = hyperlinkedTargetId.split("(")[0].slice(1, -1);
 
-		if (retrievedTimestampFieldIndex) {
+		if (typeof retrievedTimestampFieldIndex === "number") {
 			timestampFieldIndex = retrievedTimestampFieldIndex;
 		}
 
@@ -133,15 +133,14 @@ export abstract class Case {
 			updatedEmbed.fields.push({ name: "Reason", value: newReason });
 		}
 
-		updatedEmbeds.unshift(updatedEmbed);
-
-		if (timestampFieldIndex) {
-			updatedEmbeds[0].fields![timestampFieldIndex] = ActionManager.generateTimestampField({
+		if (typeof timestampFieldIndex === "number") {
+			updatedEmbed.fields[timestampFieldIndex] = ActionManager.generateTimestampField({
 				createdAt: caseData.createdAt,
 				updatedAt: new Date()
 			});
 		}
 
+		updatedEmbeds.unshift(updatedEmbed);
 		if (caseRecordChannel instanceof TextChannel) {
 			const caseRecordLogMessage = await caseRecordChannel.messages
 				.fetch(retrievedMessageId ?? "")
