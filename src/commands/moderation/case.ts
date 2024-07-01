@@ -143,14 +143,16 @@ export abstract class Case {
 		}
 
 		if (caseRecordChannel instanceof TextChannel) {
-			const caseRecordLogMessage = await caseRecordChannel.messages.fetch(retrievedMessageId ?? "").catch();
+			const caseRecordLogMessage = await caseRecordChannel.messages
+				.fetch(retrievedMessageId ?? "")
+				.catch(() => {});
 
 			if (caseRecordLogMessage?.editable) {
 				await caseRecordLogMessage
 					.edit({
 						embeds: updatedEmbeds
 					})
-					.catch();
+					.catch(() => {});
 			} else {
 				const message = await caseRecordChannel.send({ embeds: updatedEmbeds });
 				messageURL = messageLink(caseRecordChannel.id, message.id, guildId);

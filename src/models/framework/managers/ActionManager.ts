@@ -125,7 +125,7 @@ export abstract class ActionManager {
 		let guildMember: GuildMember | void = void 0;
 
 		if (targetType === EntityType.USER) {
-			guildMember = await guild.members.fetch(targetId).catch();
+			guildMember = await guild.members.fetch(targetId).catch(() => {});
 		}
 
 		if (guildMember && actionOptions?.checkPossible && !actionOptions.checkPossible(guildMember)) {

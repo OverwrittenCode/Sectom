@@ -544,7 +544,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			.awaitMessageComponent({
 				filter: (i) => i.customId === confirmButtonId
 			})
-			.catch(() => void interaction.deleteReply().catch());
+			.catch(() => void interaction.deleteReply().catch(() => {}));
 
 		if (confirmInteraction) {
 			await InteractionUtils.replyOrFollowUp(confirmInteraction, {

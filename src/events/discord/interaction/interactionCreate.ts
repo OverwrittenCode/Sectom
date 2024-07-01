@@ -58,7 +58,7 @@ export abstract class InteractionCreate {
 				}
 
 				if (!replied && !deferred) {
-					await interaction.deferUpdate().catch();
+					await interaction.deferUpdate().catch(() => {});
 				}
 
 				if (isCancel || isConfirmAction) {

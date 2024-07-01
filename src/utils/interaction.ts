@@ -97,7 +97,7 @@ export abstract class InteractionUtils {
 
 	public static async deferInteraction(interaction: Typings.DeferrableGuildInteraction, ephemeral: boolean = false) {
 		if (!interaction.replied && !interaction.deferred) {
-			return await interaction.deferReply({ ephemeral }).catch();
+			return await interaction.deferReply({ ephemeral }).catch(() => {});
 		}
 	}
 

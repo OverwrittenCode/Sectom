@@ -442,7 +442,7 @@ export abstract class Purge {
 			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
 		}
 
-		const message = await interaction.channel!.messages.fetch(messageId).catch();
+		const message = await interaction.channel!.messages.fetch(messageId).catch(() => {});
 
 		if (!message) {
 			throw new ValidationError("I cannot perform this action: message not found or is older than 14 days");
@@ -487,7 +487,7 @@ export abstract class Purge {
 			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
 		}
 
-		const message = await interaction.channel!.messages.fetch(messageId).catch();
+		const message = await interaction.channel!.messages.fetch(messageId).catch(() => {});
 
 		if (!message) {
 			throw new ValidationError("I cannot perform this action: message not found or is older than 14 days");
