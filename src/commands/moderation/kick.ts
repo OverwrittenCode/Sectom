@@ -1,6 +1,6 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
-import { PermissionFlagsBits, type ChatInputCommandInteraction, type GuildMember } from "discord.js";
+import { type ChatInputCommandInteraction, type GuildMember, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";

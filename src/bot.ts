@@ -6,13 +6,13 @@ import { dirname, importx } from "@discordx/importer";
 import { NotBot } from "@discordx/utilities";
 import { ActivityType, Events, IntentsBitField, Partials } from "discord.js";
 import {
+	type ArgsOf,
 	Client,
 	DIService,
 	Discord,
 	MetadataStorage,
 	On,
-	tsyringeDependencyRegistryEngine,
-	type ArgsOf
+	tsyringeDependencyRegistryEngine
 } from "discordx";
 import dotenv from "dotenv";
 import _ from "lodash";

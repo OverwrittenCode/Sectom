@@ -21,12 +21,12 @@ import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
 import { PaginationManager } from "~/models/framework/managers/PaginationManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
+import { NumberUtils } from "~/utils/number.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import type { PaginationItem } from "@discordx/pagination";
 import type { ButtonBuilder, ChatInputCommandInteraction } from "discord.js";
-import { NumberUtils } from "~/utils/number.js";
 
 const actionTypePunishmentMap = {
 	[ActionType.TIME_OUT_USER_ADD]: "Time Out",

@@ -1,10 +1,10 @@
+import { Events } from "discord.js";
 import { Discord, On } from "discordx";
 
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 
 import type { ArgsOf } from "discordx";
-import { Events } from "discord.js";
 
 @Discord()
 export abstract class MessageCreate {

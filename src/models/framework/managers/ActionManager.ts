@@ -177,8 +177,6 @@ export abstract class ActionManager {
 			expiryDate
 		});
 
-		let partialCommandString: string | null = null;
-
 		const embeds: EmbedBuilder[] = [];
 
 		let title = isAutoPunishment ? "[AUTO] " : "";
@@ -209,7 +207,8 @@ export abstract class ActionManager {
 			) {
 				commandString += ` ${commandOption.name}`;
 
-				const hasSubCommandOption = commandOption.options?.[0].type === ApplicationCommandOptionType.Subcommand;
+				const hasSubCommandOption =
+					commandOption.options?.[0]?.type === ApplicationCommandOptionType.Subcommand;
 
 				if (hasSubCommandOption) {
 					commandString += ` ${commandOption.options![0].name}`;
