@@ -22,6 +22,11 @@ export abstract class InteractionCreate {
 		assert(interaction.inCachedGuild());
 
 		await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId: interaction.guildId });
+		const hasRecievedTooLate = Date.now() > interaction.createdTimestamp + MAX_DEFER_RESPONSE_WAIT;
+
+		if (hasRecievedTooLate) {
+			return;
+		}
 
 		if (interaction.isButton() || interaction.isStringSelectMenu()) {
 			const messageComponentIds = InteractionUtils.MessageComponentIds;
