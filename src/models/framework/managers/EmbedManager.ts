@@ -1,8 +1,9 @@
 import { type APIEmbedField, bold } from "discord.js";
+import { EmbedBuilder } from "discord.js";
 
 import { StringUtils } from "~/utils/string.js";
 
-import type { EmbedBuilder } from "discord.js";
+import type { APIEmbed } from "discord.js";
 
 interface BaseField extends Omit<APIEmbedField, "inline"> {}
 
@@ -72,16 +73,27 @@ export abstract class EmbedManager {
 		});
 	}
 
-	public static formatEmbeds(embeds: EmbedBuilder[]): EmbedBuilder[] {
-		const formattedEmbeds = embeds.map((embed) => {
-			const jsonFields = embed.toJSON().fields;
+	public static formatEmbeds(embeds: Array<EmbedBuilder | APIEmbed>): EmbedBuilder[] {
+		const formattedEmbeds = embeds.map((embedLike) => {
+			const embed = EmbedBuilder.from(embedLike);
+
+			const { fields: jsonFields } = embed.toJSON();
+
 			if (!jsonFields) {
 				return embed;
 			}
 
 			const fields = jsonFields.map(({ name, value, inline }) => {
+				if (!name.includes(StringUtils.FieldNameSeparator)) {
+					name += StringUtils.FieldNameSeparator;
+				}
+
+				if (!name.startsWith("**")) {
+					name = bold(name);
+				}
+
 				return {
-					name: bold(name + StringUtils.FieldNameSeparator),
+					name,
 					value,
 					inline
 				};
