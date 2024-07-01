@@ -19,6 +19,7 @@ import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
+import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -90,20 +91,19 @@ export abstract class Case {
 			}
 		}
 
-		assert(apiEmbed.fields);
+		const updatedEmbed = ObjectUtils.cloneObject(apiEmbed);
 
-		const fields = apiEmbed.fields;
+		const { fields } = updatedEmbed;
 
-		const [retrievedTimestampFieldIndex, targetInformationFieldIndex, reasonFieldIndex, newReasonFieldIndex] = [
+		assert(fields);
+
+		const [retrievedTimestampFieldIndex, targetInformationFieldIndex, newReasonFieldIndex] = [
 			"timestamps",
 			"target information",
-			"reason",
 			"new reason"
 		]
 			.map((str) => fields.findIndex((field) => field.name.toLowerCase().includes(str)))
 			.filter((index) => index !== -1) as Array<number | undefined>;
-
-		const updatedEmbed = ObjectUtils.cloneObject(apiEmbed);
 
 		assert(updatedEmbed.fields && targetInformationFieldIndex);
 
@@ -123,14 +123,8 @@ export abstract class Case {
 
 		if (newReasonFieldIndex) {
 			updatedEmbed.fields[newReasonFieldIndex].value = newReason;
-		} else if (reasonFieldIndex) {
-			updatedEmbed.fields[reasonFieldIndex].name = "Original Reason";
-			updatedEmbed.fields.splice(reasonFieldIndex + 1, 0, {
-				name: "New Reason",
-				value: newReason
-			});
 		} else {
-			updatedEmbed.fields.push({ name: "Reason", value: newReason });
+			updatedEmbed.fields.push({ name: "New Reason", value: newReason });
 		}
 
 		if (typeof timestampFieldIndex === "number") {
@@ -193,7 +187,7 @@ export abstract class Case {
 			actionOptions: {
 				notifyIfUser: false
 			},
-			successContent: `${reasonFieldIndex === -1 ? "set" : "edited"} the reason for case ${inlineCode(caseData.id)}`,
+			successContent: `edited the reason for case ${inlineCode(caseData.id)}`,
 			buttonActionRows
 		});
 	}
