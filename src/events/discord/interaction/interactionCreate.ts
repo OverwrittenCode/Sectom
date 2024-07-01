@@ -7,7 +7,6 @@ import { container } from "tsyringe";
 import { MAX_DEFER_RESPONSE_WAIT } from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
@@ -21,7 +20,6 @@ export abstract class InteractionCreate {
 	async interactionCreate([interaction]: ArgsOf<Events.InteractionCreate>) {
 		assert(interaction.inCachedGuild());
 
-		await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId: interaction.guildId });
 		const hasRecievedTooLate = Date.now() > interaction.createdTimestamp + MAX_DEFER_RESPONSE_WAIT;
 
 		if (hasRecievedTooLate) {
