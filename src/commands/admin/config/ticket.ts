@@ -571,10 +571,10 @@ export abstract class TicketConfigMessageComponentHandler {
 			});
 
 			const { url } = Array.from(attachments.values())[0];
-			const onlineURL = `https://mahto.id/chat-exporter?url=${url}`;
+			const proxyWorkerURL = `https://discord-cdn-proxy.sectom.workers.dev/?${url}`;
 
 			const transcriptActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-				new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(onlineURL)
+				new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(proxyWorkerURL)
 			);
 
 			const { doc: ticketRecord } = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
