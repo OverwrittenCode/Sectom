@@ -1,3 +1,6 @@
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
 export const GUILD_IDS = ["944311981261881454"];
 export const BOT_ID = "1020681119072518264";
 
@@ -13,4 +16,4 @@ export const MAX_DEFER_RESPONSE_WAIT = 2500;
 
 export const LIGHT_GOLD = 0xe6c866;
 
-export const SRC_PATH = "C:/Users/mthap/Desktop/Folders/Code/Sectom/src";
+export const SRC_PATH = dirname(fileURLToPath(import.meta.url)).replaceAll("\\", "/");

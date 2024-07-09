@@ -65,7 +65,12 @@ export namespace Typings {
 			>["0"]["terms"] &
 				Array<keyof Prisma.RetrieveModelDocument<M>>;
 
-			export type IndexNames<T extends string[]> = `by${Join<T, "And", true>}`;
+			export type IndexNames<T extends string[]> = `by${Join<
+				{
+					[K in keyof T]: T[K] extends string ? SentenceCase<T[K]> : T[K];
+				},
+				"And"
+			>}`;
 
 			export type Indexes<M extends _Prisma.ModelName, T extends TTerms<M>[]> = MergeUnionTransformedTuples<M, T>;
 

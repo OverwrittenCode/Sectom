@@ -57,7 +57,7 @@ export abstract class DBConnectionManager {
 	}
 
 	private static createPrismaClient() {
-		assert(process.env.PULSE_API_KEY);
+		// assert(process.env.PULSE_API_KEY);
 
 		const client = new PrismaClient({ errorFormat: "pretty" });
 
