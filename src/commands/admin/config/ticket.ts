@@ -570,36 +570,30 @@ export abstract class TicketConfigMessageComponentHandler {
 				files: [transcriptAttachment]
 			});
 
-			const { url } = Array.from(attachments.values())[0];
-			const proxyWorkerURL = `https://discord-cdn-proxy.sectom.workers.dev/?${url}`;
+			const proxyWorkerURL = `https://discord-cdn-proxy.sectom.workers.dev/?${attachments.first()!.url}`;
 
 			const transcriptActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(proxyWorkerURL)
 			);
 
-			const { doc: ticketRecord } = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
+			const {
+				doc: { authorId: ticketAuthorId }
+			} = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
 				where: { channelId },
 				select: { authorId: true }
 			});
 
-			const { authorId: ticketAuthorId } = ticketRecord;
+			const ticketAuthor = {
+				username: "",
+				id: ticketAuthorId,
+				...channel.members.cache.find((m) => m.id === ticketAuthorId)
+			};
 
-			const ticketAuthor = channel.members.cache.find((m) => m.id === ticketAuthorId);
+			const reason = `The Ticket Subject Name is called "${subjectName}"`;
 
-			const auditReasonArray = [
-				`The Ticket Subject Name is called "${subjectName}"`,
-				`This was actioned by a user with the username of "${interaction.user.username}" who has the user id of ${interaction.user.id}`
-			];
-
-			let ticketAuthorAuditElement = "The author of this ticket ";
-
-			if (ticketAuthor?.user) {
-				ticketAuthorAuditElement += `has the username "${ticketAuthor.user.username}" and `;
-			}
-
-			ticketAuthorAuditElement += `has the user id ${ticketAuthorId})`;
-
-			auditReasonArray.push(ticketAuthorAuditElement);
+			const auditReason = ActionManager.generateAuditReason(interaction, reason, {
+				author: ticketAuthor
+			});
 
 			await ActionManager.logCase({
 				interaction,
@@ -607,10 +601,10 @@ export abstract class TicketConfigMessageComponentHandler {
 					id: ticketAuthorId,
 					type: EntityType.USER
 				},
-				reason: `Ticket Subject Name: "${subjectName}"`,
+				reason,
 				actionType: ActionType.TICKET_INSTANCE_CLOSE,
 				actionOptions: {
-					pendingExecution: () => channel.delete(auditReasonArray.map((str) => `${str}.`).join(" "))
+					pendingExecution: () => channel.delete(auditReason)
 				},
 				buttonActionRows: [transcriptActionRow]
 			});

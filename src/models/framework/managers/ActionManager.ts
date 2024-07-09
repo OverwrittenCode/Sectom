@@ -32,7 +32,16 @@ import { EntityManager } from "./EntityManager.js";
 
 import type { PaginationItem } from "@discordx/pagination";
 import type { Prisma } from "@prisma/client";
-import type { APIEmbedField, ChatInputCommandInteraction, GuildMember, InteractionResponse, Message } from "discord.js";
+import type {
+	APIEmbedField,
+	ButtonInteraction,
+	Channel,
+	ChatInputCommandInteraction,
+	GuildMember,
+	InteractionResponse,
+	Message,
+	User
+} from "discord.js";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn: infer A) => any
@@ -40,6 +49,10 @@ type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn:
 		? B
 		: never
 	: never;
+type AuditFields = Record<
+	string,
+	string | Typings.SetNullableCase<Typings.ExactlyOneOf<{ name: string; username: string }> & { id: string }, false>
+>;
 
 interface ActionOptions {
 	pastTense?: string;
@@ -73,13 +86,13 @@ interface DeferrableLogCaseOptions extends BaseLogCaseOptions {
 	commandInteraction?: ChatInputCommandInteraction<"cached">;
 }
 
-type LogCaseOptions = CommandLogCaseOptions | DeferrableLogCaseOptions;
-
 interface TimestampFieldOptions {
 	createdAt: Date;
 	updatedAt?: Date | null;
 	expiryDate?: Date | null;
 }
+
+type LogCaseOptions = CommandLogCaseOptions | DeferrableLogCaseOptions;
 
 export abstract class ActionManager {
 	private static getCasesSelect = {
@@ -627,13 +640,35 @@ export abstract class ActionManager {
 		};
 	}
 
-	public static generateAuditReason(interaction: ChatInputCommandInteraction<"cached">, reason: string): string {
-		let auditReason = `[REASON]: ${reason} | [ACTIONED BY]: ${interaction.user.username} (${interaction.user.id})`;
+	public static generateAuditReason(
+		interaction: ChatInputCommandInteraction<"cached"> | ButtonInteraction<"cached">,
+		reason: string,
+		fields: AuditFields = {}
+	): string {
+		const { user: actioned_by, channel } = interaction;
 
-		if (interaction.channel) {
-			auditReason += ` | [CHANNEL]: ${interaction.channel.name} (${interaction.channelId})`;
+		const defaultAuditFields: AuditFields = {
+			reason,
+			channel,
+			actioned_by
+		};
+
+		fields = Object.assign(defaultAuditFields, fields);
+
+		const auditReasonArray: string[] = [];
+
+		for (const [key, value] of ObjectUtils.entries(fields)) {
+			if (!value) {
+				continue;
+			}
+
+			const header = key.split("_").join(" ").toUpperCase();
+
+			const str = typeof value === "string" ? value : `${value.name ?? value.username} (${value.id})`;
+
+			auditReasonArray.push(`[${header}]: ${str}`);
 		}
 
-		return auditReason;
+		return auditReasonArray.join(" | ");
 	}
 }
