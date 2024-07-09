@@ -1,4 +1,5 @@
 import { loadImage } from "canvacord";
+
 import { SRC_PATH } from "~/constants.js";
 
 const imageArr = ["unknownImage", "leaderboardBackground"] as const;

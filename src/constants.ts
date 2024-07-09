@@ -1,5 +1,5 @@
-import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 export const GUILD_IDS = ["944311981261881454"];
 export const BOT_ID = "1020681119072518264";
