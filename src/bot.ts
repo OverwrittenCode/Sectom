@@ -107,7 +107,7 @@ export abstract class Main {
 			console.groupEnd();
 
 			Main.connectionDates.loggedIn = new Date();
-			console.log(`> > Logged in as ${client.user!.tag}`, Main.connectionDates.loggedIn);
+			console.log(`> > Logged in as ${client.user.tag}`, Main.connectionDates.loggedIn);
 			console.groupEnd();
 
 			console.group("[APPLICATION COMMANDS]");

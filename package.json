@@ -64,7 +64,6 @@
 		"@prisma/extension-pulse": "^1.0.2",
 		"@supabase/supabase-js": "^2.42.0",
 		"@types/lodash": "^4.17.0",
-		"@types/winston": "^2.4.4",
 		"@upstash/query": "^0.0.2",
 		"@upstash/redis": "^1.29.0",
 		"ansi-colors": "^4.1.3",
