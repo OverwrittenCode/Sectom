@@ -468,9 +468,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			return interaction.showModal(modal);
 		}
 
-		if (!interaction.replied && !interaction.deferred) {
-			await InteractionUtils.deferInteraction(interaction, true);
-		}
+		await InteractionUtils.deferInteraction(interaction, true);
 
 		return this.createTicket({ interaction, ticketConfiguration });
 	}
@@ -520,95 +518,71 @@ export abstract class TicketConfigMessageComponentHandler {
 
 		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
 
-		const confirmCustomIdGenerator = InteractionUtils.constructCustomIdGenerator({
-			baseID: InteractionUtils.MessageComponentIds.ConfirmAction,
-			messageComponentType: Enums.MessageComponentType.Button
+		const collection = await InteractionUtils.confirmationButton(interaction, {
+			content: "Are you sure you want to close this ticket?"
 		});
 
-		const confirmButtonId = confirmCustomIdGenerator(StringUtils.GenerateID());
+		await InteractionUtils.replyOrFollowUp(collection.first()!, {
+			content: "Please wait: generating transcript."
+		});
 
-		const confirmationActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-			new ButtonBuilder().setLabel("Confirm").setStyle(ButtonStyle.Danger).setCustomId(confirmButtonId),
-			new ButtonBuilder()
-				.setLabel("Cancel")
-				.setStyle(ButtonStyle.Secondary)
-				.setCustomId(InteractionUtils.MessageComponentIds.CancelAction)
+		const cacheChannelId = process.env.DISCORD_CACHE_CHANNEL;
+
+		assert(cacheChannelId);
+
+		const cacheChannel = await interaction.client.channels.fetch(cacheChannelId);
+
+		assert(cacheChannel?.isTextBased());
+
+		const transcriptAttachment = await createTranscript(channel, {
+			poweredBy: false,
+			saveImages: true,
+			hydrate: true,
+			filename: `${channel.name.toLowerCase()}-transcript.html`
+		});
+
+		const { attachments } = await cacheChannel.send({
+			files: [transcriptAttachment]
+		});
+
+		const proxyWorkerURL = `https://discord-cdn-proxy.sectom.workers.dev/?${attachments.first()!.url}`;
+
+		const transcriptActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(proxyWorkerURL)
 		);
 
-		await InteractionUtils.replyOrFollowUp(interaction, {
-			content: "Are you sure you want to close this ticket?",
-			components: [confirmationActionRow]
+		const {
+			doc: { authorId: ticketAuthorId }
+		} = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
+			where: { channelId },
+			select: { authorId: true }
 		});
 
-		const confirmInteraction = await channel
-			.awaitMessageComponent({
-				filter: (i) => i.customId === confirmButtonId
-			})
-			.catch(() => void interaction.deleteReply().catch(() => {}));
+		const ticketAuthor = {
+			username: "",
+			id: ticketAuthorId,
+			...channel.members.cache.find((m) => m.id === ticketAuthorId)
+		};
 
-		if (confirmInteraction) {
-			await InteractionUtils.replyOrFollowUp(confirmInteraction, {
-				content: "Please wait: generating transcript."
-			});
+		const reason = `The Ticket Subject Name is called "${subjectName}"`;
 
-			const cacheChannelId = process.env.DISCORD_CACHE_CHANNEL;
+		const auditReason = ActionManager.generateAuditReason(interaction, reason, {
+			author: ticketAuthor
+		});
 
-			assert(cacheChannelId);
-
-			const cacheChannel = await interaction.client.channels.fetch(cacheChannelId);
-
-			assert(cacheChannel?.isTextBased());
-
-			const transcriptAttachment = await createTranscript(channel, {
-				poweredBy: false,
-				saveImages: true,
-				hydrate: true,
-				filename: `${channel.name.toLowerCase()}-transcript.html`
-			});
-
-			const { attachments } = await cacheChannel.send({
-				files: [transcriptAttachment]
-			});
-
-			const proxyWorkerURL = `https://discord-cdn-proxy.sectom.workers.dev/?${attachments.first()!.url}`;
-
-			const transcriptActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-				new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(proxyWorkerURL)
-			);
-
-			const {
-				doc: { authorId: ticketAuthorId }
-			} = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
-				where: { channelId },
-				select: { authorId: true }
-			});
-
-			const ticketAuthor = {
-				username: "",
+		await ActionManager.logCase({
+			interaction,
+			target: {
 				id: ticketAuthorId,
-				...channel.members.cache.find((m) => m.id === ticketAuthorId)
-			};
-
-			const reason = `The Ticket Subject Name is called "${subjectName}"`;
-
-			const auditReason = ActionManager.generateAuditReason(interaction, reason, {
-				author: ticketAuthor
-			});
-
-			await ActionManager.logCase({
-				interaction,
-				target: {
-					id: ticketAuthorId,
-					type: EntityType.USER
-				},
-				reason,
-				actionType: ActionType.TICKET_INSTANCE_CLOSE,
-				actionOptions: {
-					pendingExecution: () => channel.delete(auditReason)
-				},
-				buttonActionRows: [transcriptActionRow]
-			});
-		}
+				type: EntityType.USER
+			},
+			reason,
+			actionType: ActionType.TICKET_INSTANCE_CLOSE,
+			actionOptions: {
+				pendingExecution: () => channel.delete(auditReason)
+			},
+			buttonActionRows: [transcriptActionRow]
+		});
 	}
 
 	private async createTicket(options: CreateTicketOptions) {

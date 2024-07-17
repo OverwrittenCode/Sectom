@@ -35,8 +35,9 @@ export abstract class ObjectUtils {
 		return d instanceof Date && !isNaN(d.getTime());
 	}
 
-	public static cloneObject<T>(obj: T): WritableDeep<T> {
-		return JSON.parse(JSON.stringify(obj)) as WritableDeep<T>;
+	public static cloneObject<T>(obj: T): T {
+		return JSON.parse(JSON.stringify(obj)) as T;
+	}
 	}
 
 	public static pickKeys<T, U extends Array<keyof T>>(obj: T, properties: U): Typings.Prettify<Pick<T, U[number]>>;

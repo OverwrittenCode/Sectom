@@ -1,24 +1,70 @@
-import { DiscordAPIError, DiscordjsError, DiscordjsErrorCodes, RESTJSONErrorCodes, formatEmoji } from "discord.js";
+import assert from "assert";
 
-import type { Enums } from "~/ts/Enums.js";
+import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	ComponentType,
+	DiscordAPIError,
+	DiscordjsError,
+	DiscordjsErrorCodes,
+	EmbedBuilder,
+	RESTJSONErrorCodes,
+	TimestampStyles,
+	formatEmoji,
+	time
+} from "discord.js";
+import ms from "ms";
+
+import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import type {
+	APIActionRowComponent,
+	APIButtonComponentWithCustomId,
 	APIEmbedField,
 	APIMessageComponentEmoji,
+	ActionRow,
+	ButtonInteraction,
+	CacheType,
 	InteractionReplyOptions,
 	InteractionResponse,
 	Message,
+	MessageActionRowComponent,
 	MessageEditOptions,
-	ModalSubmitInteraction
+	ModalSubmitInteraction,
+	ReadonlyCollection
 } from "discord.js";
 
 interface ConstructCustomIdGeneratorOptions {
 	baseID: string;
 	messageComponentType: Enums.MessageComponentType;
 	messageComponentFlags?: MessageComponentFlags[keyof MessageComponentFlags][];
+}
+
+interface ConfirmationButtonOptions extends ReplyOptions {
+	confirmLabel?: string;
+	cancelLabel?: string;
+	userIDs?: string[];
+	notifyStatus?: boolean;
+	multiplayerWaitingLobbyText?: string;
+	resolveTime?: number;
+	confirmationTimeFooterEmbedIndex?: number | null;
+	confirmationTime?: number;
+	isGame?: boolean;
+}
+
+interface DisableComponentRules {
+	customIds?: string[];
+	delete?: boolean;
+}
+
+interface DisableComponentOptions {
+	messageEditOptions?: Omit<MessageEditOptions, "components">;
+	rules?: DisableComponentRules;
 }
 
 type ReplyOptions = InteractionReplyOptions & { ephemeral?: boolean };
@@ -51,6 +97,7 @@ export abstract class InteractionUtils {
 		CancelAction: "cancel_action",
 		ConfirmAction: "confirm_action",
 		OneTimeUse: "one_time_use",
+		Multiplayer: "multiplayer",
 		Managed: ["pagination"]
 	} as const;
 
@@ -61,8 +108,16 @@ export abstract class InteractionUtils {
 
 	public static async replyOrFollowUp(
 		interaction: Typings.DeferrableGuildInteraction,
+		replyOptions: ReplyOptions & { fetchReply: true }
+	): Promise<Message>;
+	public static async replyOrFollowUp(
+		interaction: Typings.DeferrableGuildInteraction,
 		replyOptions: ReplyOptions
-	): Promise<null | Message<boolean> | InteractionResponse<boolean>> {
+	): Promise<Message | InteractionResponse>;
+	public static async replyOrFollowUp(
+		interaction: Typings.DeferrableGuildInteraction,
+		replyOptions: ReplyOptions
+	): Promise<Message | InteractionResponse> {
 		try {
 			if (interaction.replied) {
 				return await interaction.followUp(replyOptions);
@@ -81,7 +136,9 @@ export abstract class InteractionUtils {
 				(err.code === RESTJSONErrorCodes.UnknownInteraction || err.code === RESTJSONErrorCodes.UnknownMessage);
 
 			if (this.isDeferRaceCondition(err) || unknownInteractionOrMessage) {
-				return await this.replyOrFollowUp(interaction, replyOptions).catch(() => null);
+				return await this.replyOrFollowUp(interaction, replyOptions).catch(() => {
+					throw new ValidationError("Something went wrong.");
+				});
 			}
 
 			throw err;
@@ -95,9 +152,128 @@ export abstract class InteractionUtils {
 		});
 	}
 
-	public static async deferInteraction(interaction: Typings.DeferrableGuildInteraction, ephemeral: boolean = false) {
+	public static async deferInteraction(
+		interaction: Typings.DeferrableGuildInteraction,
+		ephemeralOrUpdate: boolean = false
+	) {
 		if (!interaction.replied && !interaction.deferred) {
-			return await interaction.deferReply({ ephemeral }).catch(() => {});
+			if (interaction.isButton() && ephemeralOrUpdate) {
+				return await interaction.deferUpdate();
+			}
+
+			return await interaction.deferReply({ ephemeral: ephemeralOrUpdate }).catch(() => {});
+		}
+	}
+
+	public static async confirmationButton(
+		interaction: Typings.DeferrableGuildInteraction,
+		options: ConfirmationButtonOptions = {}
+	): Promise<ReadonlyCollection<string, ButtonInteraction<CacheType>>> {
+		assert(interaction.channel);
+
+		const {
+			confirmLabel = "Confirm",
+			cancelLabel = "Cancel",
+			userIDs = [interaction.user.id],
+			multiplayerWaitingLobbyText,
+			confirmationTime = ms("10s"),
+			confirmationTimeFooterEmbedIndex = 0,
+			resolveTime,
+			isGame = false,
+			...replyOptions
+		} = options;
+
+		if (userIDs.length && replyOptions.ephemeral) {
+			assert(!interaction.ephemeral);
+			delete replyOptions.ephemeral;
+		}
+
+		const [confirmButtonId, cancelButtonId] = [
+			this.MessageComponentIds.ConfirmAction,
+			this.MessageComponentIds.CancelAction
+		].map((baseID) => {
+			const fn = this.constructCustomIdGenerator({
+				baseID,
+				messageComponentType: Enums.MessageComponentType.Button
+			});
+
+			return multiplayerWaitingLobbyText ? fn(this.MessageComponentIds.Multiplayer) : fn();
+		});
+
+		const confirmationActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder().setLabel(confirmLabel).setStyle(ButtonStyle.Danger).setCustomId(confirmButtonId),
+			new ButtonBuilder().setLabel(cancelLabel).setStyle(ButtonStyle.Secondary).setCustomId(cancelButtonId)
+		);
+
+		if (confirmationTimeFooterEmbedIndex !== null && replyOptions.embeds) {
+			EmbedBuilder.from(replyOptions.embeds[confirmationTimeFooterEmbedIndex]).setFooter({
+				text: `Ready up: ${time(new Date(Date.now() + confirmationTime), TimestampStyles.RelativeTime)}`
+			});
+		}
+
+		const confirmMessage = await this.replyOrFollowUp(interaction, {
+			...replyOptions,
+			components: [confirmationActionRow],
+			fetchReply: true
+		});
+
+		try {
+			return await new Promise((resolve, reject) => {
+				const collector = confirmMessage.createMessageComponentCollector({
+					componentType: ComponentType.Button,
+					time: confirmationTime,
+					maxUsers: userIDs.length,
+					filter: (i) => userIDs.includes(i.user.id)
+				});
+
+				let count = 0;
+
+				collector.on("collect", async (i) => {
+					if (i.customId === cancelButtonId) {
+						reject(ValidationError.MessageTemplates.ActionCancelled);
+					}
+
+					if (multiplayerWaitingLobbyText) {
+						const embed = i.message.embeds[0].toJSON();
+						const waitingLobbyFieldIndex = embed.fields!.findIndex(
+							(v) => v.name === multiplayerWaitingLobbyText
+						);
+
+						assert(waitingLobbyFieldIndex !== -1);
+
+						const value = i.user.toString();
+
+						if (embed.fields![waitingLobbyFieldIndex].value === StringUtils.TabCharacter) {
+							embed.fields![waitingLobbyFieldIndex].value = `${++count}. ${value}`;
+						} else {
+							embed.fields![waitingLobbyFieldIndex].value +=
+								StringUtils.LineBreak + `${++count}. ${value}`;
+						}
+
+						await interaction.editReply({ embeds: [embed] });
+					}
+				});
+
+				collector.on("end", async (collection) => {
+					if (collection.size !== userIDs.length) {
+						const content = ValidationError.MessageTemplates.Timeout;
+
+						await this.disableComponents(confirmMessage, { messageEditOptions: { content, embeds: [] } });
+
+						reject(content);
+					}
+
+					await this.disableComponents(confirmMessage);
+
+					if (resolveTime) {
+						await ObjectUtils.sleep(resolveTime);
+					}
+
+					resolve(collection);
+				});
+			});
+		} catch (err) {
+			throw new ValidationError(err);
 		}
 	}
 
@@ -148,19 +324,33 @@ export abstract class InteractionUtils {
 
 	public static async disableComponents(
 		message: Message,
-		options: Omit<MessageEditOptions, "components"> = {}
+		options: DisableComponentOptions = {}
 	): Promise<InteractionResponse<boolean> | Message<boolean> | null> {
-		const disabledComponents = ObjectUtils.cloneObject(message.components).map((data) => ({
-			...data,
-			components: data.components.map((c) => ({ ...c, disabled: true }))
-		}));
+		const { rules, messageEditOptions } = options;
 
 		return await message
 			.edit({
-				...options,
-				components: disabledComponents
+				...messageEditOptions,
+				components: this.toDisabledComponents(message.components, rules)
 			})
 			.catch(() => null);
+	}
+
+	public static toDisabledComponents<
+		const T extends ActionRow<MessageActionRowComponent>[] | APIActionRowComponent<APIButtonComponentWithCustomId>[]
+	>(components: T, rules: DisableComponentRules = {}): T {
+		return ObjectUtils.cloneObject(components).map((data) => ({
+			...data,
+			components: data.components.map((c) => {
+				const customId = "customId" in c ? c.customId : c.custom_id;
+
+				if (!rules.customIds || (customId && rules.customIds.includes(customId) === rules.delete)) {
+					Object.assign(c, { disabled: true });
+				}
+
+				return c;
+			})
+		})) as T;
 	}
 
 	public static emojiMention(emoji: APIMessageComponentEmoji): string {

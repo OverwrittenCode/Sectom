@@ -410,7 +410,9 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			apiEmbed.color = Colors[statusType === StatusType.Approve ? "Green" : "Red"];
 			apiEmbed.fields[statusFieldIndex].value = statusType === StatusType.Approve ? "✅ Approved" : "❌ Rejected";
 
-			await InteractionUtils.disableComponents(interaction.message, { embeds: [apiEmbed] });
+			await InteractionUtils.disableComponents(interaction.message, {
+				messageEditOptions: { embeds: [apiEmbed] }
+			});
 
 			return await InteractionUtils.replyOrFollowUp(interaction, {
 				content: `Suggestion ${suggestionId} ${StringUtils.capitaliseFirstLetter(status.toLowerCase())}!`,

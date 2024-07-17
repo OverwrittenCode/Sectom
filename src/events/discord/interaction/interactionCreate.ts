@@ -10,6 +10,7 @@ import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
+import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
 
 import type { ArgsOf, Client } from "discordx";
@@ -37,37 +38,42 @@ export abstract class InteractionCreate {
 				return;
 			}
 
-			const disableOnClickButtonArray = [
+			const disableOnClickButtonArr = [
 				messageComponentIds.CancelAction,
 				messageComponentIds.ConfirmAction,
 				messageComponentIds.OneTimeUse
 			];
 
 			const customIDFields = interaction.customId.split(StringUtils.CustomIDFIeldBodySeperator);
-			const disableOnClick = customIDFields.some((str) => disableOnClickButtonArray.includes(str));
+			const disableOnClick = customIDFields.some((str) => disableOnClickButtonArr.includes(str));
 
 			if (disableOnClick) {
-				const { customId, message, replied, deferred } = interaction;
+				const isCancelAction = interaction.customId.startsWith(messageComponentIds.CancelAction);
 
-				const isCancel = customId === messageComponentIds.CancelAction;
-				const isConfirmAction = customId === messageComponentIds.ConfirmAction;
+				if (isCancelAction) {
+					await InteractionUtils.disableComponents(interaction.message, {
+						messageEditOptions: {
+							embeds: [],
+							content: ValidationError.MessageTemplates.ActionCancelled
+						}
+					});
 
-				const options = isCancel ? { content: "Action cancelled.", embeds: [] } : {};
-
-				if (message.editable) {
-					await InteractionUtils.disableComponents(message, options);
-				} else {
-					await InteractionUtils.replyOrFollowUp(interaction, options);
+					return await InteractionUtils.deferInteraction(interaction, true);
 				}
 
-				if (!replied && !deferred) {
-					await interaction.deferUpdate().catch(() => {});
-				}
-
-				if (isCancel || isConfirmAction) {
-					return;
+				if (
+					!interaction.ephemeral &&
+					!interaction.customId.includes(InteractionUtils.MessageComponentIds.Multiplayer)
+				) {
+					await InteractionUtils.disableComponents(interaction.message, {
+						rules: {
+							customIds: disableOnClickButtonArr
+						}
+					});
 				}
 			}
+
+			await this.autoDeferInteraction(interaction, Date.now() - interaction.createdTimestamp);
 		}
 
 		const bot = container.resolve<Client>(Beans.ISectomToken);
@@ -79,6 +85,13 @@ export abstract class InteractionCreate {
 			]);
 		} catch (err) {
 			if (err instanceof ValidationError && !(interaction instanceof AutocompleteInteraction)) {
+				if (
+					err.message === ValidationError.MessageTemplates.ActionCancelled ||
+					err.message === ValidationError.MessageTemplates.Timeout
+				) {
+					return;
+				}
+
 				return await InteractionUtils.replyOrFollowUp(interaction, {
 					content: err.message,
 					ephemeral: true
@@ -90,7 +103,9 @@ export abstract class InteractionCreate {
 	}
 
 	private async autoDeferInteraction(interaction: Typings.CachedGuildInteraction, timeElapsed: number) {
-		if (interaction.isModalSubmit()) {
+		const setTimeoutDelay = MAX_DEFER_RESPONSE_WAIT - timeElapsed;
+
+		if (interaction.isModalSubmit() || interaction.isButton()) {
 			return await InteractionUtils.deferInteraction(interaction, true);
 		}
 
@@ -102,9 +117,7 @@ export abstract class InteractionCreate {
 			return null;
 		}
 
-		const setTimeoutDelay = MAX_DEFER_RESPONSE_WAIT - timeElapsed;
-
-		await new Promise((resolve) => setTimeout(resolve, setTimeoutDelay));
+		await ObjectUtils.sleep(setTimeoutDelay);
 
 		return await InteractionUtils.deferInteraction(interaction);
 	}
