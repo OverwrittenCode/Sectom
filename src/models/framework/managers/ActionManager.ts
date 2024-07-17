@@ -18,7 +18,7 @@ import {
 import _ from "lodash";
 import prettyMilliseconds from "pretty-ms";
 
-import { LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
+import { BOT_ID, LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
 import { PaginationManager } from "~/models/framework/managers/PaginationManager.js";
 import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
@@ -132,7 +132,7 @@ export abstract class ActionManager {
 		const isAutoPunishment = type === CaseType.AUTO;
 
 		if (isAutoPunishment) {
-			perpetratorId = interaction.client.user.id;
+			perpetratorId = BOT_ID;
 		}
 
 		let guildMember: GuildMember | void = void 0;

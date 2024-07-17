@@ -130,8 +130,8 @@ export function DurationGenerateAutoComplete(
 	let autoCompleteDataArray: ApplicationCommandOptionChoiceData<string>[] = [];
 
 	if (max < unitToIncrementByMap[IncrementTimeUnits.minutes]) {
-		autoCompleteDataArray = Array.from({ length: max / 1000 }, (_, index) => {
-			const v = ms(`${index}s`);
+		autoCompleteDataArray = Array.from({ length: max / 1000 }, (_, i) => {
+			const v = ms(`${i}s`);
 			return {
 				name: prettyMilliseconds(v, { verbose: true }),
 				value: v.toString()

@@ -1,5 +1,3 @@
-import assert from "assert";
-
 import { PrismaClient } from "@prisma/client";
 import { Redis as RedisClient } from "@upstash/redis";
 
