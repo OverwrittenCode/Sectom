@@ -67,7 +67,7 @@ export namespace Typings {
 
 			export type IndexNames<T extends string[]> = `by${Join<
 				{
-					[K in keyof T]: T[K] extends string ? SentenceCase<T[K]> : T[K];
+					[K in keyof T]: T[K] extends string ? Capitalize<T[K]> : T[K];
 				},
 				"And"
 			>}`;
@@ -210,10 +210,6 @@ export namespace Typings {
 	export type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (x: infer I) => void
 		? I
 		: never;
-
-	export type SentenceCase<T extends string> = T extends `${infer First}${infer Rest}`
-		? `${Uppercase<First>}${Rest}`
-		: T;
 
 	export type Concatenate<T extends any[], Seperator extends string = ""> = T extends []
 		? ""

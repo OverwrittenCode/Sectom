@@ -43,13 +43,13 @@ export interface $NameCTX<M extends Prisma.ModelName = Prisma.ModelName> {
 
 export type ClientCTX<M extends Prisma.ModelName = Prisma.ModelName, Inner extends boolean = false> = {
 	[K in Lowercase<M>]: Typings.DisplaceObjects<
-		PrismaClient[K] & $NameCTX<Typings.SentenceCase<K>>,
+		PrismaClient[K] & $NameCTX<Capitalize<K>>,
 		{
 			/**
 			 * for some reason Prisma converts fields to an empty object for extension context
 			 */
 			fields: {};
-			$parent: ClientCTX<Typings.SentenceCase<K>, true>;
+			$parent: ClientCTX<Capitalize<K>, true>;
 		}
 	>;
 } extends infer R

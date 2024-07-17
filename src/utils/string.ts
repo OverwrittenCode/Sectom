@@ -39,9 +39,9 @@ export abstract class StringUtils {
 		return !!str && typeof str === "string";
 	}
 
-	public static capitaliseFirstLetter<const T extends string>(str: T): Typings.SentenceCase<T> {
+	public static capitaliseFirstLetter<const T extends string>(str: T): Capitalize<T> {
 		const value = str.charAt(0).toUpperCase() + str.slice(1);
-		return value as Typings.SentenceCase<T>;
+		return value as Capitalize<T>;
 	}
 	public static convertToTitleCase<const T extends string, const S extends string = " ">(
 		str: T,
