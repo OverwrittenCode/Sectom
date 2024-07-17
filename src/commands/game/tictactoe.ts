@@ -349,6 +349,7 @@ export abstract class TicTacToe {
 						}
 
 						transpositionTable.set(boardHash, bestMove);
+
 						return bestMove;
 					};
 
@@ -363,7 +364,11 @@ export abstract class TicTacToe {
 
 						for (let depth = 1; depth <= maxDepth; depth++) {
 							const result = minimax(buttons, depth, player, MIN, MAX, true);
-							if (Date.now() - startTime > timeLimit) break;
+
+							if (Date.now() - startTime > timeLimit) {
+								break;
+							}
+
 							bestMove = result;
 						}
 
@@ -469,10 +474,15 @@ export abstract class TicTacToe {
 									];
 
 									for (const [dx, dy] of directions) {
-										if (checkWinningMove(buttons, i, j, dx, dy, team)) winningMoves++;
+										if (checkWinningMove(buttons, i, j, dx, dy, team)) {
+											winningMoves++;
+										}
 									}
 
-									if (winningMoves >= 2) twoWayWins++;
+									if (winningMoves >= 2) {
+										twoWayWins++;
+									}
+
 									buttons[i * N + j].label = StringUtils.TabCharacter;
 								}
 							}

@@ -3,37 +3,46 @@ module.exports = {
 		browser: true,
 		es2021: true
 	},
-	extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended", "prettier"],
+	extends: [ "plugin:prettier/recommended", "prettier"],
+	plugins: ["@stylistic", "@stylistic/migrate", "import", "prettier", "@typescript-eslint"],
 	parser: "@typescript-eslint/parser",
+	root: true,
 	parserOptions: {
 		ecmaVersion: "latest",
 		sourceType: "module"
 	},
-	plugins: ["@typescript-eslint", "import", "prettier"],
 	rules: {
+		"@typescript-eslint/no-unused-vars": 2,
 		"@typescript-eslint/consistent-type-imports": "error",
-		"@typescript-eslint/ban-types": "off",
+		"@typescript-eslint/no-dupe-class-members": "off",
 		"@typescript-eslint/no-unused-vars": "off",
-		"@typescript-eslint/no-explicit-any": "off",
-		"@typescript-eslint/no-duplicate-enum-values": "off",
-		"@typescript-eslint/no-namespace": "off",
+
+		"@stylistic/brace-style": ["error", "1tbs", { allowSingleLine: false }],
+		"@stylistic/object-curly-spacing": ["error", "always"],
+		"@stylistic/linebreak-style": ["error", "unix"],
+		"@stylistic/ban-types": "off",
+		"@stylistic/no-unused-vars": "off",
+		"@stylistic/no-explicit-any": "off",
+		"@stylistic/no-duplicate-enum-values": "off",
+		"@stylistic/comma-dangle": "off",
+		"@stylistic/no-namespace": "off",
+		"@stylistic/indent": "off",
+		"@stylistic/quotes": ["error", "double"],
+		"@stylistic/semi": ["error", "always"],
+
+		"no-unused-vars": "off",
+		"no-dupe-class-members": "off",
+		"curly": ["error", "all"],
 		"prettier/prettier": "off",
-		"object-curly-spacing": ["error", "always"],
-		"comma-dangle": "off",
-		"brace-style": ["error", "1tbs", { allowSingleLine: true }],
-		"linebreak-style": ["error", "unix"],
 		"arrow-body-style": "off",
 		"prefer-arrow-callback": "off",
+
 		"no-constant-condition": [
 			"error",
 			{
 				checkLoops: false
 			}
 		],
-		indent: "off",
-		quotes: ["error", "double"],
-		curly: ["error", "multi-line"],
-		semi: ["error", "always"],
 
 		"import/order": [
 			"error",
@@ -53,12 +62,14 @@ module.exports = {
 				}
 			}
 		],
+
 		"sort-imports": [
 			"error",
 			{
 				ignoreDeclarationSort: true
 			}
 		],
+
 		"import/first": ["error"]
 	}
 };
