@@ -124,6 +124,10 @@ export abstract class InteractionUtils {
 			}
 
 			if (interaction.deferred) {
+				if (!interaction.ephemeral && replyOptions.ephemeral) {
+					return await interaction.followUp(replyOptions);
+				}
+
 				const { ephemeral, ...editReplyOptions } = replyOptions;
 
 				return await interaction.editReply(editReplyOptions);
@@ -205,10 +209,21 @@ export abstract class InteractionUtils {
 			new ButtonBuilder().setLabel(cancelLabel).setStyle(ButtonStyle.Secondary).setCustomId(cancelButtonId)
 		);
 
-		if (confirmationTimeFooterEmbedIndex !== null && replyOptions.embeds) {
-			EmbedBuilder.from(replyOptions.embeds[confirmationTimeFooterEmbedIndex]).setFooter({
-				text: `Ready up: ${time(new Date(Date.now() + confirmationTime), TimestampStyles.RelativeTime)}`
-			});
+		console.log({ confirmationTimeFooterEmbedIndex, replyOptions });
+
+		if (confirmationTimeFooterEmbedIndex !== null && replyOptions.embeds?.length) {
+			const embed = EmbedBuilder.from(replyOptions.embeds[confirmationTimeFooterEmbedIndex]);
+
+			embed.setDescription(
+				[
+					`Timeout: ${time(new Date(Date.now() + confirmationTime), TimestampStyles.RelativeTime)}`,
+					embed.data.description ?? ""
+				].join(StringUtils.LineBreak.repeat(2))
+			);
+
+			Object.assign(replyOptions.embeds[confirmationTimeFooterEmbedIndex], embed);
+
+			console.log(replyOptions.embeds[0]);
 		}
 
 		const confirmMessage = await this.replyOrFollowUp(interaction, {
