@@ -105,13 +105,15 @@ export abstract class InteractionCreate {
 	private async autoDeferInteraction(interaction: Typings.CachedGuildInteraction, timeElapsed: number) {
 		const setTimeoutDelay = MAX_DEFER_RESPONSE_WAIT - timeElapsed;
 
-		if (interaction.isModalSubmit() || interaction.isButton()) {
+		const isUpdatable = interaction.isMessageComponent();
+
+		const isSafeComponent = isUpdatable && !interaction.customId.includes(Enums.MessageComponentType.Modal);
+
+		if (interaction.isModalSubmit() || isSafeComponent) {
 			return await InteractionUtils.deferInteraction(interaction, true);
 		}
 
-		const isDeferrableInteraction =
-			interaction.isChatInputCommand() ||
-			(interaction.isMessageComponent() && !interaction.customId.includes(Enums.MessageComponentType.Modal));
+		const isDeferrableInteraction = interaction.isChatInputCommand() || isUpdatable;
 
 		if (!isDeferrableInteraction) {
 			return null;
@@ -119,6 +121,6 @@ export abstract class InteractionCreate {
 
 		await ObjectUtils.sleep(setTimeoutDelay);
 
-		return await InteractionUtils.deferInteraction(interaction);
+		return await InteractionUtils.deferInteraction(interaction, isUpdatable);
 	}
 }

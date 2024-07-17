@@ -67,7 +67,7 @@ interface DisableComponentOptions {
 	rules?: DisableComponentRules;
 }
 
-type ReplyOptions = InteractionReplyOptions & { ephemeral?: boolean };
+type ReplyOptions = Typings.DisplaceObjects<InteractionReplyOptions, { ephemeral?: boolean | null }>;
 type MessageComponentFlags = Omit<typeof InteractionUtils.MessageComponentIds, "Managed">;
 
 type ConstructCustomIdGeneratorOutput<
@@ -119,21 +119,27 @@ export abstract class InteractionUtils {
 		replyOptions: ReplyOptions
 	): Promise<Message | InteractionResponse> {
 		try {
+			if (replyOptions.ephemeral === null) {
+				replyOptions.ephemeral = interaction.ephemeral;
+			}
+
+			const options = replyOptions as InteractionReplyOptions;
+
 			if (interaction.replied) {
-				return await interaction.followUp(replyOptions);
+				return await interaction.followUp(options);
 			}
 
 			if (interaction.deferred) {
 				if (!interaction.ephemeral && replyOptions.ephemeral) {
-					return await interaction.followUp(replyOptions);
+					return await interaction.followUp(options);
 				}
 
-				const { ephemeral, ...editReplyOptions } = replyOptions;
+				const { ephemeral, ...editReplyOptions } = options;
 
 				return await interaction.editReply(editReplyOptions);
 			}
 
-			return await interaction.reply(replyOptions);
+			return await interaction.reply(options);
 		} catch (err) {
 			const unknownInteractionOrMessage =
 				err instanceof DiscordAPIError &&
