@@ -11,6 +11,8 @@ export const MAX_MESSAGE_FETCH_LIMIT = 100;
 export const MAX_PURGE_COUNT_LIMIT = 1000;
 export const MAX_AUTOCOMPLETE_OPTION_LIMIT = 25;
 export const MAX_ACTIVE_THREAD_LIMIT = 1000;
+export const MAX_COMPONENT_GRID_SIZE = 5;
+export const MAX_BEST_OF_ROUNDS_LIMIT = 7;
 export const MAX_ELEMENTS_PER_PAGE = 10;
 export const MAX_DEFER_RESPONSE_WAIT = 2500;
 

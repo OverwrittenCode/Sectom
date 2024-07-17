@@ -24,6 +24,12 @@ module.exports = {
 		"linebreak-style": ["error", "unix"],
 		"arrow-body-style": "off",
 		"prefer-arrow-callback": "off",
+		"no-constant-condition": [
+			"error",
+			{
+				checkLoops: false
+			}
+		],
 		indent: "off",
 		quotes: ["error", "double"],
 		curly: ["error", "multi-line"],
@@ -32,19 +38,20 @@ module.exports = {
 		"import/order": [
 			"error",
 			{
-				pathGroups: [{
-					"pattern": "~/**",
-					"group": "internal",
-					"position": "after"
-				}],
+				pathGroups: [
+					{
+						pattern: "~/**",
+						group: "internal",
+						position: "after"
+					}
+				],
 				groups: ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
 				"newlines-between": "always",
 				alphabetize: {
 					order: "asc",
 					caseInsensitive: true
 				}
-			},
-
+			}
 		],
 		"sort-imports": [
 			"error",

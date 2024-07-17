@@ -38,6 +38,13 @@ export abstract class ObjectUtils {
 	public static cloneObject<T>(obj: T): T {
 		return JSON.parse(JSON.stringify(obj)) as T;
 	}
+
+	public static async sleep(duration: number) {
+		return await new Promise((resolve) => setTimeout(resolve, duration));
+	}
+
+	public static randomElement<T>(array: T[]): T {
+		return array[Math.floor(Math.random() * array.length)];
 	}
 
 	public static pickKeys<T, U extends Array<keyof T>>(obj: T, properties: U): Typings.Prettify<Pick<T, U[number]>>;

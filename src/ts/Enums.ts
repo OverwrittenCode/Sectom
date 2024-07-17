@@ -1,8 +1,9 @@
 export namespace Enums {
 	export enum CommandCategory {
+		Admin = "Admin",
 		Moderation = "Moderation",
 		Misc = "Misc",
-		Admin = "Admin"
+		Game = "Game"
 	}
 
 	export enum CommandSlashOptionTargetFlags {
@@ -30,5 +31,22 @@ export namespace Enums {
 		Button = "button",
 		Modal = "modal",
 		SelectMenu = "select_menu"
+	}
+
+	export enum GameMode {
+		/** Normal game, no special rules applied */
+		Classic = "Classic",
+		/** All special rules applied */
+		Chaos = "Chaos",
+		/**
+		 * - Game Master can allow a player to replace any button on the board
+		 * - Very overpowered, has a reduced chance of occuring
+		 * */
+		Overrule = "Overrule",
+		/** Game Master can readjust the whole board */
+		Jumble = "Jumble",
+		"Swap Move" = "Swap Move",
+		"Swap Teams" = "Swap Teams",
+		"Skip Turn" = "Skip Turn"
 	}
 }
