@@ -205,7 +205,7 @@ export abstract class InteractionUtils {
 			new ButtonBuilder().setLabel(cancelLabel).setStyle(ButtonStyle.Secondary).setCustomId(cancelButtonId)
 		);
 
-		if (isGame && confirmationTimeFooterEmbedIndex !== null && replyOptions.embeds) {
+		if (confirmationTimeFooterEmbedIndex !== null && replyOptions.embeds) {
 			EmbedBuilder.from(replyOptions.embeds[confirmationTimeFooterEmbedIndex]).setFooter({
 				text: `Ready up: ${time(new Date(Date.now() + confirmationTime), TimestampStyles.RelativeTime)}`
 			});
