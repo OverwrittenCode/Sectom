@@ -25,23 +25,6 @@ interface MoveScore {
 	score: number;
 }
 
-enum Teams {
-	Naughts = "X",
-	Crosses = "O"
-}
-
-enum Difficulty {
-	Easy = "Easy",
-	Medium = "Medium",
-	Hard = "Hard",
-	"Impossible (When Classic Mode is on)" = "Impossible",
-	"Computer Biased Game Matster (Not Allowed For Classic)" = "Computer Biased Game Master"
-}
-
-const minGridSize = 3;
-
-const gridSizeChoices = Array.from({ length: MAX_COMPONENT_GRID_SIZE - minGridSize + 1 }, (_, i) => i + minGridSize);
-
 @Discord()
 @Category(Enums.CommandCategory.Game)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
@@ -245,8 +228,10 @@ export abstract class TicTacToe {
 						}
 
 						const availableMoves = checkAvailableMoves(buttons);
+
 						for (const move of availableMoves) {
 							const [row, column] = getMatrixLocation(move);
+
 							buttons[row * N + column].label = player;
 
 							const score = -quiescenceSearch(
@@ -279,6 +264,7 @@ export abstract class TicTacToe {
 						isMaximizing: boolean
 					): MoveScore => {
 						const boardHash = hashBoard(buttons);
+
 						if (transpositionTable.has(boardHash)) {
 							return transpositionTable.get(boardHash)!;
 						}
@@ -305,6 +291,7 @@ export abstract class TicTacToe {
 							const center = Math.floor(N / 2);
 							const distA = Math.abs(rowA - center) + Math.abs(colA - center);
 							const distB = Math.abs(rowB - center) + Math.abs(colB - center);
+
 							return distA - distB;
 						});
 
@@ -391,6 +378,7 @@ export abstract class TicTacToe {
 						return winningCombinations.some((combination) =>
 							combination.every((pos) => {
 								const [row, column] = pos.split("_").map(Number);
+
 								return buttons[row * N + column].label === team;
 							})
 						);
@@ -464,6 +452,7 @@ export abstract class TicTacToe {
 							for (let j = 0; j < N; j++) {
 								if (buttons[i * N + j].label === StringUtils.TabCharacter) {
 									buttons[i * N + j].label = team;
+
 									let winningMoves = 0;
 
 									const directions = [
@@ -562,6 +551,7 @@ export abstract class TicTacToe {
 						finalMove = winningMove;
 					} else {
 						const { index: bestMove } = iterativeDeepening(allButtons, currentComputerTeam, 10, 1000);
+
 						finalMove = bestMove;
 
 						const randomness =
@@ -572,6 +562,7 @@ export abstract class TicTacToe {
 							Math.random() <= randomness
 						) {
 							const availableMoves = checkAvailableMoves(allButtons);
+
 							finalMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
 						}
 					}
@@ -645,3 +636,19 @@ export abstract class TicTacToe {
 		return await game.init();
 	}
 }
+
+enum Difficulty {
+	Easy = "Easy",
+	Medium = "Medium",
+	Hard = "Hard",
+	"Impossible (When Classic Mode is on)" = "Impossible",
+	"Computer Biased Game Matster (Not Allowed For Classic)" = "Computer Biased Game Master"
+}
+
+enum Teams {
+	Naughts = "X",
+	Crosses = "O"
+}
+
+const minGridSize = 3;
+const gridSizeChoices = Array.from({ length: MAX_COMPONENT_GRID_SIZE - minGridSize + 1 }, (_, i) => i + minGridSize);

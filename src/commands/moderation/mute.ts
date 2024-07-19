@@ -13,6 +13,7 @@ import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 const mutualPermissions = [PermissionFlagsBits.MuteMembers];
+
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Mute {
@@ -49,6 +50,7 @@ export abstract class Mute {
 		assert(voice.channel);
 
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);
+
 		return ActionManager.logCase({
 			interaction,
 			target: {

@@ -37,12 +37,15 @@ export function TargetTransformer(flags: Enums.CommandSlashOptionTargetFlags[] =
 			switch (target.id) {
 				case member.id:
 					punishmentReflexivePronoun = "yourself";
+
 					break;
 				case guild.ownerId:
 					punishmentReflexivePronoun = "the server owner";
+
 					break;
 				case client.user.id:
 					punishmentReflexivePronoun = "me";
+
 					break;
 			}
 

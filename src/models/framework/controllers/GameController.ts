@@ -29,196 +29,93 @@ import type {
 	UserMention
 } from "discord.js";
 
-interface FactorOptions {
-	type: OperationType;
-	value: number | (() => number);
-	or?: boolean | number | (() => number);
-}
-
-interface Factor {
-	status: boolean | number | undefined;
-	options: FactorOptions;
-}
-
-enum OperationType {
-	Multiplier,
-	Increment
-}
-
-export type GameControllerComponent = APIActionRowComponent<APIButtonComponentWithCustomId>;
-
-const SpecialRuleDescriptionMap = {
-	[Enums.GameMode.Overrule]: [
-		"All buttons are yours! You can overrule any button. Go wild!",
-		"Feeling powerful? Every button is at your command. Overrule away!",
-		"Ha! Now you can overrule any button. Use your power wisely!",
-		"It's your lucky day! All buttons are enabled. Overrule them all!",
-		"Absolute power! You may overrule any button you wish. Enjoy!",
-		"Every button bows to you! Overrule at will. The game is yours!",
-		"Command central! You have the power to overrule any button!",
-		"Mwahaha! All buttons are active. Overrule to your heart's content!",
-		"No restrictions! Every button is yours to overrule. Have fun!",
-		"Unlimited power! You can overrule any button. Go ahead, play master!"
-	],
-	[Enums.GameMode.Jumble]: [
-		"Time for some chaos! We're jumbling things around. Good luck!",
-		"Things are about to get interesting! We're mixing it all up!",
-		"Hold tight! We're jumbling the components. Try to keep track!",
-		"Ready for a shake-up? Things are moving around. Stay sharp!",
-		"Let's make it fun! We're jumbling everything. Keep an eye out!",
-		"Chaos is here! We're moving things around. Good luck finding your way!",
-		"Jumble time! Everything's on the move. Can you keep up?",
-		"Mix and match! We're jumbling things up. Let's see how you handle it!",
-		"Expect the unexpected! Things are getting jumbled. Stay alert!",
-		"Mwahaha! We're moving things around. Let's see if you can keep track!"
-	],
-	[Enums.GameMode["Swap Move"]]: [
-		"Gotcha! Didn't see that coming, did you?",
-		"Surprise! Bet you didn't plan for this!",
-		"Ha! Just when you thought you had it figured out.",
-		"Think you were clever? Think again!",
-		"Oops! Hope you're ready for a change!",
-		"Caught you off guard, didn't I?",
-		"Bet you didn't expect this!",
-		"Mwahaha! Let's see how well you adapt now!",
-		"Thought you had the perfect move? Think again!",
-		"Just when you had it all planned out..."
-	],
-	[Enums.GameMode["Swap Teams"]]: [
-		"Let's spice things up! Time for a team swap! Who's ready for a twist?",
-		"Surprise, surprise! Teams are switching sides this round. Enjoy the chaos!",
-		"Ha! Didn't see this coming, did you? Teams will swap places. Have fun!",
-		"Guess what? It's swap time! Teams will trade sides. Let's see how you handle it!",
-		"Feeling dizzy yet? Teams will switch sides this round. Good luck keeping up!",
-		"Oh, the fun we'll have! Teams are swapping sides. Try not to get too confused!",
-		"Plot twist! Teams will change places this round. Who's up for a challenge?",
-		"I've got a trick up my sleeve! Teams are switching sides. Let the games continue!",
-		"Hold onto your hats! Teams are swapping places this round. Enjoy the ride!",
-		"Mwahaha! Teams will swap sides this round. Let's see how well you adapt!"
-	],
-	[Enums.GameMode["Skip Turn"]]: [
-		"Life's unfair, isn't it? Skip your turn and let the others play!",
-		"Tough luck! You have to skip your turn. Better luck next time!",
-		"Ha! You're sitting this one out. Skip your turn and watch the fun!",
-		"Oops! Looks like you have to skip your turn. Enjoy the break!",
-		"No turn for you! Skip this round and let the others have a go!",
-		"Sorry, not sorry! You have to skip your turn. Watch and learn!",
-		"Better luck next time! You're skipping this turn. Sit tight!",
-		"Oh no! You've got to skip your turn. Cheer on your teammates!",
-		"Tough break! Skip your turn and see how the others do!",
-		"Mwahaha! You have to skip your turn. Let's see what happens next!"
-	]
-};
-
-const postNoticeSpecialRules = [Enums.GameMode["Swap Move"]];
-
 /**
  * How the computer player responds every update
  * @returns {string} - The button customId to select
  */
 export type ComputerPlayerFn = (controller: GameController, enabledButtonIDArr: string[]) => string;
+export type GameControllerComponent = APIActionRowComponent<APIButtonComponentWithCustomId>;
 export type Opponent = GuildMember | ComputerPlayerFn;
+
 type PlayerMention = UserMention | "I" | "You";
+
 type SpecialRule = keyof typeof SpecialRuleDescriptionMap;
 
-interface PlayerAction {
-	readonly customId: string;
-	profile: Player;
+interface Factor {
+	options: FactorOptions;
+	status: boolean | number | undefined;
+}
+
+interface FactorOptions {
+	or?: boolean | number | (() => number);
+	type: OperationType;
+	value: number | (() => number);
 }
 
 interface GameControllerOptions {
-	readonly title: string;
-	readonly rounds: number;
-	readonly gameMode: Enums.GameMode;
-	readonly deuce?: boolean;
-	readonly maxDecisionTime?: number;
-	readonly disableOnClick?: boolean;
 	readonly clearBoardOnPoint?: boolean;
-	readonly turnBased?: boolean;
-	readonly teams?: Record<string, string>;
-	readonly onActionCollect: (controller: GameController, playerActions: Collection<string, PlayerAction>) => unknown;
 	readonly computerBiasedGameMaster?: boolean;
-	opponent?: Opponent;
+	readonly deuce?: boolean;
+	readonly disableOnClick?: boolean;
+	readonly gameMode: Enums.GameMode;
+	readonly maxDecisionTime?: number;
+	readonly onActionCollect: (controller: GameController, playerActions: Collection<string, PlayerAction>) => unknown;
+	readonly rounds: number;
+	readonly teams?: Record<string, string>;
+	readonly title: string;
+	readonly turnBased?: boolean;
+
 	modifiers?: APIEmbedField[];
+	opponent?: Opponent;
+}
+
+interface PlayerAction {
+	readonly customId: string;
+
+	profile: Player;
 }
 
 interface PlayerOptions {
+	computerFn?: ComputerPlayerFn;
 	member: GuildMember;
+	onChange: (player: Player) => void;
 	score: number;
 	team?: string;
-	onChange: (player: Player) => void;
-	computerFn?: ComputerPlayerFn;
-}
-
-class Player {
-	private readonly _originalTeam?: string;
-
-	public readonly id: string;
-	public readonly member: GuildMember;
-	public readonly onChange: (player: Player) => void;
-
-	public score: number;
-	public team?: string;
-	public computerFn?: ComputerPlayerFn;
-
-	constructor(options: Omit<PlayerOptions, "score">) {
-		this.id = StringUtils.GenerateID();
-		this.member = options.member;
-		this.score = 0;
-		this.team = options.team;
-		this._originalTeam = this.team;
-		this.onChange = options.onChange;
-		this.computerFn = options.computerFn;
-	}
-
-	public setTeam(newTeam: string): this {
-		this.team = newTeam;
-		this.onChange(this);
-
-		return this;
-	}
-
-	public resetTeam(): this {
-		this.team = this._originalTeam;
-		this.onChange(this);
-
-		return this;
-	}
 }
 
 export class GameController {
-	public static readonly NOTICE_PROCESSING_TIME = 1_000;
-	public static readonly MAX_SPECIAL_RULE_THRESHOLD = 75;
-	public static readonly BASE_RANGE_SPECIAL_RULE_THRESHOLD = {
-		min: 12,
-		max: 15
-	};
-	public static readonly bestOfChoices = Array.from(
-		{ length: Math.floor((MAX_BEST_OF_ROUNDS_LIMIT + 1) / 2) },
-		(_, i) => 2 * i + 1
-	);
-
 	private readonly baseEmbed: APIEmbed;
 	private readonly collectorPlayerIDs: string[];
 
 	private specialRuleCounter: number;
 	private teamList: string[];
 
+	public static readonly BASE_RANGE_SPECIAL_RULE_THRESHOLD = {
+		min: 12,
+		max: 15
+	};
+	public static readonly MAX_SPECIAL_RULE_THRESHOLD = 75;
+	public static readonly NOTICE_PROCESSING_TIME = 1_000;
+	public static readonly bestOfChoices = Array.from(
+		{ length: Math.floor((MAX_BEST_OF_ROUNDS_LIMIT + 1) / 2) },
+		(_, i) => 2 * i + 1
+	);
+
+	public readonly blankBoard: GameControllerComponent[];
 	public readonly interaction: ChatInputCommandInteraction<"cached">;
 	public readonly settings: Omit<GameControllerOptions, "opponent">;
-	public readonly blankBoard: GameControllerComponent[];
 
-	public players: Player[];
-	public playerActionsPerGame: Collection<string, PlayerAction>;
-	public playerActionsPerRound: Collection<string, PlayerAction>;
 	public components: GameControllerComponent[];
-	public winThreshold: number;
-	public previousWinThreshold?: number | undefined;
-	public gameStatus: string | null;
-	public specialRule: SpecialRule | null;
-	public previousSpecialRule: SpecialRule | null;
 	public currentPlayerIndex: number;
 	public enabledButtonIDs: Set<string>;
+	public gameStatus: string | null;
+	public playerActionsPerGame: Collection<string, PlayerAction>;
+	public playerActionsPerRound: Collection<string, PlayerAction>;
+	public players: Player[];
+	public previousSpecialRule: SpecialRule | null;
+	public previousWinThreshold?: number | undefined;
+	public specialRule: SpecialRule | null;
+	public winThreshold: number;
 
 	constructor(
 		interaction: ChatInputCommandInteraction<"cached">,
@@ -280,6 +177,40 @@ export class GameController {
 		});
 	}
 
+	private get computerPlayer(): Player | undefined {
+		return this.players.find((player) => player.member.id === BOT_ID);
+	}
+
+	private get highestScore(): number {
+		return Math.max(...this.scores);
+	}
+
+	private get isMatchPoint(): boolean {
+		return this.highestScore === this.winThreshold - 1;
+	}
+
+	private get scores(): number[] {
+		return this.players.map((player) => player.score);
+	}
+
+	private get specialRuleNotice() {
+		if (!this.specialRule) {
+			return null;
+		}
+
+		const specialRuleDescription = this.specialRule
+			? ObjectUtils.randomElement(SpecialRuleDescriptionMap[this.specialRule])
+			: null;
+
+		let innerText = "GAME MASTER";
+
+		if (this.settings.gameMode === Enums.GameMode.Chaos) {
+			innerText += ` (${this.specialRule})`;
+		}
+
+		return bold(`[${innerText}]: ${specialRuleDescription}`);
+	}
+
 	public async init() {
 		const { deuce = true, title, rounds, maxDecisionTime, modifiers = [], gameMode } = this.settings;
 
@@ -334,7 +265,6 @@ export class GameController {
 			userIDs: this.collectorPlayerIDs,
 			multiplayerWaitingLobbyText,
 			resolveTime,
-			isGame: true,
 			embeds: [confirmationEmbed]
 		});
 
@@ -476,6 +406,65 @@ export class GameController {
 		return this.gameStatus;
 	}
 
+	private onPlayerChange(player: Player): void {
+		this.playerActionsPerGame.forEach((action) => {
+			if (action.profile.id === player.id) {
+				action.profile = player;
+			}
+		});
+	}
+
+	private async recordComputerAction(): Promise<Collection<string, PlayerAction>> {
+		const enabledButtonIDArr = Array.from(this.enabledButtonIDs);
+
+		const profile = this.computerPlayer!;
+
+		await ObjectUtils.sleep(200);
+
+		const customId =
+			typeof profile.computerFn === "function"
+				? profile.computerFn(this, enabledButtonIDArr)
+				: ObjectUtils.randomElement(enabledButtonIDArr);
+
+		return this.recordPlayerAction({ customId, profile });
+	}
+
+	private recordPlayerAction(action: PlayerAction): Collection<string, PlayerAction> {
+		if (this.settings.disableOnClick) {
+			if (this.specialRule !== Enums.GameMode.Overrule) {
+				this.enabledButtonIDs.delete(action.customId);
+			}
+
+			this.components = InteractionUtils.toDisabledComponents(this.components, {
+				customIds: Array.from(this.enabledButtonIDs.values()),
+				delete: false
+			});
+		}
+
+		if (this.specialRule === Enums.GameMode["Swap Move"]) {
+			const playerIndex = this.players.findIndex((player) => player.member.id === action.profile.member.id);
+			const nextIndex = (playerIndex + 1) % this.players.length;
+
+			action.profile = this.players[nextIndex];
+		}
+
+		this.playerActionsPerGame.set(action.customId, action);
+		this.playerActionsPerRound.set(action.customId, action);
+
+		console.log(
+			[
+				"[PLAYER RECORD]",
+				` > [BUTTON PRESSED] > ${action.customId}`,
+				` > [ACTION BY] > ${action.profile.member.displayName}`,
+				` > [TEAM / LABEL DISPLAY] > ${action.profile.team}`,
+				` > [MOVE#] > ${this.playerActionsPerGame.size}`,
+				` > [SPECIAL RULE] > ${this.specialRule}`
+			].join(StringUtils.LineBreak)
+		);
+
+		return this.playerActionsPerRound;
+	}
+
 	private async requestPlayerActions(): Promise<Collection<string, PlayerAction> | void> {
 		const { turnBased, maxDecisionTime } = this.settings;
 		const isOffline = !!this.computerPlayer;
@@ -606,6 +595,7 @@ export class GameController {
 
 			for (let i = allButtons.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
+
 				[allButtons[i], allButtons[j]] = [allButtons[j], allButtons[i]];
 			}
 
@@ -851,96 +841,109 @@ export class GameController {
 	private resetEnabledButtons(components: GameControllerComponent[] = this.components): Set<string> {
 		return new Set(components.flatMap(({ components }) => components.map((c) => c.custom_id)));
 	}
+}
 
-	private onPlayerChange(player: Player): void {
-		this.playerActionsPerGame.forEach((action) => {
-			if (action.profile.id === player.id) {
-				action.profile = player;
-			}
-		});
+class Player {
+	private readonly _originalTeam?: string;
+
+	public readonly id: string;
+	public readonly member: GuildMember;
+	public readonly onChange: (player: Player) => void;
+
+	public computerFn?: ComputerPlayerFn;
+	public score: number;
+	public team?: string;
+
+	constructor(options: Omit<PlayerOptions, "score">) {
+		this.id = StringUtils.GenerateID();
+		this.member = options.member;
+		this.score = 0;
+		this.team = options.team;
+		this._originalTeam = this.team;
+		this.onChange = options.onChange;
+		this.computerFn = options.computerFn;
 	}
 
-	private recordPlayerAction(action: PlayerAction): Collection<string, PlayerAction> {
-		if (this.settings.disableOnClick) {
-			if (this.specialRule !== Enums.GameMode.Overrule) {
-				this.enabledButtonIDs.delete(action.customId);
-			}
+	public resetTeam(): this {
+		this.team = this._originalTeam;
+		this.onChange(this);
 
-			this.components = InteractionUtils.toDisabledComponents(this.components, {
-				customIds: Array.from(this.enabledButtonIDs.values()),
-				delete: false
-			});
-		}
-
-		if (this.specialRule === Enums.GameMode["Swap Move"]) {
-			const playerIndex = this.players.findIndex((player) => player.member.id === action.profile.member.id);
-			const nextIndex = (playerIndex + 1) % this.players.length;
-			action.profile = this.players[nextIndex];
-		}
-
-		this.playerActionsPerGame.set(action.customId, action);
-		this.playerActionsPerRound.set(action.customId, action);
-
-		console.log(
-			[
-				"[PLAYER RECORD]",
-				` > [BUTTON PRESSED] > ${action.customId}`,
-				` > [ACTION BY] > ${action.profile.member.displayName}`,
-				` > [TEAM / LABEL DISPLAY] > ${action.profile.team}`,
-				` > [MOVE#] > ${this.playerActionsPerGame.size}`,
-				` > [SPECIAL RULE] > ${this.specialRule}`
-			].join(StringUtils.LineBreak)
-		);
-
-		return this.playerActionsPerRound;
+		return this;
 	}
 
-	private async recordComputerAction(): Promise<Collection<string, PlayerAction>> {
-		const enabledButtonIDArr = Array.from(this.enabledButtonIDs);
+	public setTeam(newTeam: string): this {
+		this.team = newTeam;
+		this.onChange(this);
 
-		const profile = this.computerPlayer!;
-
-		await ObjectUtils.sleep(200);
-
-		const customId =
-			typeof profile.computerFn === "function"
-				? profile.computerFn(this, enabledButtonIDArr)
-				: ObjectUtils.randomElement(enabledButtonIDArr);
-
-		return this.recordPlayerAction({ customId, profile });
-	}
-
-	private get specialRuleNotice() {
-		if (!this.specialRule) {
-			return null;
-		}
-
-		const specialRuleDescription = this.specialRule
-			? ObjectUtils.randomElement(SpecialRuleDescriptionMap[this.specialRule])
-			: null;
-
-		let innerText = "GAME MASTER";
-
-		if (this.settings.gameMode === Enums.GameMode.Chaos) {
-			innerText += ` (${this.specialRule})`;
-		}
-
-		return bold(`[${innerText}]: ${specialRuleDescription}`);
-	}
-
-	private get computerPlayer(): Player | undefined {
-		return this.players.find((player) => player.member.id === BOT_ID);
-	}
-
-	private get scores(): number[] {
-		return this.players.map((player) => player.score);
-	}
-
-	private get highestScore(): number {
-		return Math.max(...this.scores);
-	}
-
-	private get isMatchPoint(): boolean {
-		return this.highestScore === this.winThreshold - 1;
+		return this;
 	}
 }
+
+enum OperationType {
+	Multiplier,
+	Increment
+}
+
+const SpecialRuleDescriptionMap = {
+	[Enums.GameMode.Overrule]: [
+		"All buttons are yours! You can overrule any button. Go wild!",
+		"Feeling powerful? Every button is at your command. Overrule away!",
+		"Ha! Now you can overrule any button. Use your power wisely!",
+		"It's your lucky day! All buttons are enabled. Overrule them all!",
+		"Absolute power! You may overrule any button you wish. Enjoy!",
+		"Every button bows to you! Overrule at will. The game is yours!",
+		"Command central! You have the power to overrule any button!",
+		"Mwahaha! All buttons are active. Overrule to your heart's content!",
+		"No restrictions! Every button is yours to overrule. Have fun!",
+		"Unlimited power! You can overrule any button. Go ahead, play master!"
+	],
+	[Enums.GameMode.Jumble]: [
+		"Time for some chaos! We're jumbling things around. Good luck!",
+		"Things are about to get interesting! We're mixing it all up!",
+		"Hold tight! We're jumbling the components. Try to keep track!",
+		"Ready for a shake-up? Things are moving around. Stay sharp!",
+		"Let's make it fun! We're jumbling everything. Keep an eye out!",
+		"Chaos is here! We're moving things around. Good luck finding your way!",
+		"Jumble time! Everything's on the move. Can you keep up?",
+		"Mix and match! We're jumbling things up. Let's see how you handle it!",
+		"Expect the unexpected! Things are getting jumbled. Stay alert!",
+		"Mwahaha! We're moving things around. Let's see if you can keep track!"
+	],
+	[Enums.GameMode["Swap Move"]]: [
+		"Gotcha! Didn't see that coming, did you?",
+		"Surprise! Bet you didn't plan for this!",
+		"Ha! Just when you thought you had it figured out.",
+		"Think you were clever? Think again!",
+		"Oops! Hope you're ready for a change!",
+		"Caught you off guard, didn't I?",
+		"Bet you didn't expect this!",
+		"Mwahaha! Let's see how well you adapt now!",
+		"Thought you had the perfect move? Think again!",
+		"Just when you had it all planned out..."
+	],
+	[Enums.GameMode["Swap Teams"]]: [
+		"Let's spice things up! Time for a team swap! Who's ready for a twist?",
+		"Surprise, surprise! Teams are switching sides this round. Enjoy the chaos!",
+		"Ha! Didn't see this coming, did you? Teams will swap places. Have fun!",
+		"Guess what? It's swap time! Teams will trade sides. Let's see how you handle it!",
+		"Feeling dizzy yet? Teams will switch sides this round. Good luck keeping up!",
+		"Oh, the fun we'll have! Teams are swapping sides. Try not to get too confused!",
+		"Plot twist! Teams will change places this round. Who's up for a challenge?",
+		"I've got a trick up my sleeve! Teams are switching sides. Let the games continue!",
+		"Hold onto your hats! Teams are swapping places this round. Enjoy the ride!",
+		"Mwahaha! Teams will swap sides this round. Let's see how well you adapt!"
+	],
+	[Enums.GameMode["Skip Turn"]]: [
+		"Life's unfair, isn't it? Skip your turn and let the others play!",
+		"Tough luck! You have to skip your turn. Better luck next time!",
+		"Ha! You're sitting this one out. Skip your turn and watch the fun!",
+		"Oops! Looks like you have to skip your turn. Enjoy the break!",
+		"No turn for you! Skip this round and let the others have a go!",
+		"Sorry, not sorry! You have to skip your turn. Watch and learn!",
+		"Better luck next time! You're skipping this turn. Sit tight!",
+		"Oh no! You've got to skip your turn. Cheer on your teammates!",
+		"Tough break! Skip your turn and see how the others do!",
+		"Mwahaha! You have to skip your turn. Let's see what happens next!"
+	]
+};
+const postNoticeSpecialRules = [Enums.GameMode["Swap Move"]];

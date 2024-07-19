@@ -24,17 +24,6 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 		assert(this.idFields.every((idField) => idField in scalarFieldEnum));
 	}
 
-	public encode<T = unknown>(record: T): string {
-		const redisRecord = ObjectUtils.cloneObject(record) as Typings.Database.Redis.RetrieveRecord<M>;
-
-		if (ObjectUtils.isValidObject(redisRecord) && "data" in redisRecord && redisRecord.data) {
-			const { data } = redisRecord;
-			redisRecord.data = this.withIDField(data);
-		}
-
-		return JSON.stringify(redisRecord, null, 2);
-	}
-
 	public decode<T = unknown>(str: string): T {
 		const redisRecord = JSON.parse(str) as Typings.Database.Redis.RetrieveRecord<M>;
 		const { data } = redisRecord;
@@ -58,6 +47,18 @@ export class RedisDataService<const M extends Prisma.ModelName> {
 		redisRecord.data = transformedData;
 
 		return redisRecord as T;
+	}
+
+	public encode<T = unknown>(record: T): string {
+		const redisRecord = ObjectUtils.cloneObject(record) as Typings.Database.Redis.RetrieveRecord<M>;
+
+		if (ObjectUtils.isValidObject(redisRecord) && "data" in redisRecord && redisRecord.data) {
+			const { data } = redisRecord;
+
+			redisRecord.data = this.withIDField(data);
+		}
+
+		return JSON.stringify(redisRecord, null, 2);
 	}
 
 	public pickIDFields(

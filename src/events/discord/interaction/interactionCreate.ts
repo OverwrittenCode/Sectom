@@ -18,7 +18,7 @@ import type { ArgsOf, Client } from "discordx";
 @Discord()
 export abstract class InteractionCreate {
 	@On({ event: Events.InteractionCreate })
-	async interactionCreate([interaction]: ArgsOf<Events.InteractionCreate>) {
+	public async interactionCreate([interaction]: ArgsOf<Events.InteractionCreate>) {
 		assert(interaction.inCachedGuild());
 
 		const hasRecievedTooLate = Date.now() > interaction.createdTimestamp + MAX_DEFER_RESPONSE_WAIT;

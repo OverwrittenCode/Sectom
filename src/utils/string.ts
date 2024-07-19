@@ -8,12 +8,10 @@ import type { PascalCase, Split } from "type-fest";
 import type { SplitWords } from "type-fest/source/split-words.js";
 
 export abstract class StringUtils {
-	public static LineBreak = "\n" as const;
-	public static FieldNameSeparator = ":" as const;
 	public static CustomIDFIeldBodySeperator = "." as const;
 	public static CustomIDFieldPrefixSeperator = "_" as const;
-	public static TabCharacter = "⠀" as const;
-
+	public static FieldNameSeparator = ":" as const;
+	public static LineBreak = "\n" as const;
 	public static Regexes = {
 		Snowflake: /^\d{17,20}$/,
 		HexCode: /^[0-9A-F]{6}$/i,
@@ -34,15 +32,46 @@ export abstract class StringUtils {
 		),
 		CreateBasedActionModifiers: /_(ADD|CREATE|SET)$/g
 	} as const;
+	public static TabCharacter = "⠀" as const;
 
-	public static isValidString(str: any): str is string {
-		return !!str && typeof str === "string";
+	public static GenerateID(len: number | Buffer = 6, buf?: Buffer): string {
+		if (Buffer.isBuffer(len)) {
+			buf = len;
+			len = 0;
+		}
+
+		if (!Buffer.isBuffer(buf)) {
+			const numBytes = Math.ceil(Math.log(Math.pow(64, len)) / Math.log(2) / 8);
+
+			buf = crypto.randomBytes(numBytes);
+		}
+
+		return buf.toString("hex").slice(0, len);
 	}
 
 	public static capitaliseFirstLetter<const T extends string>(str: T): Capitalize<T> {
 		const value = str.charAt(0).toUpperCase() + str.slice(1);
+
 		return value as Capitalize<T>;
 	}
+
+	public static concatenate<const Seperator extends string, const T extends string[]>(
+		seperator: Seperator,
+		...strs: T
+	): Typings.Concatenate<T, Seperator> {
+		let result = "";
+
+		for (let i = 0; i < strs.length; i++) {
+			result += strs[i];
+
+			if (i < strs.length - 1 && strs[i] !== "") {
+				result += seperator;
+			}
+		}
+
+		return result as Typings.Concatenate<T, Seperator>;
+	}
+
 	public static convertToTitleCase<const T extends string, const S extends string = " ">(
 		str: T,
 		splitBy?: S
@@ -55,31 +84,7 @@ export abstract class StringUtils {
 			.join(" ") as Typings.Concatenate<SplitWords<PascalCase<Lowercase<T>>>, " ">;
 	}
 
-	public static concatenate<const Seperator extends string, const T extends string[]>(
-		seperator: Seperator,
-		...strs: T
-	): Typings.Concatenate<T, Seperator> {
-		let result = "";
-		for (let i = 0; i < strs.length; i++) {
-			result += strs[i];
-			if (i < strs.length - 1 && strs[i] !== "") {
-				result += seperator;
-			}
-		}
-		return result as Typings.Concatenate<T, Seperator>;
-	}
-
-	public static GenerateID(len: number | Buffer = 6, buf?: Buffer): string {
-		if (Buffer.isBuffer(len)) {
-			buf = len;
-			len = 0;
-		}
-
-		if (!Buffer.isBuffer(buf)) {
-			const numBytes = Math.ceil(Math.log(Math.pow(64, len)) / Math.log(2) / 8);
-			buf = crypto.randomBytes(numBytes);
-		}
-
-		return buf.toString("hex").slice(0, len);
+	public static isValidString(str: any): str is string {
+		return !!str && typeof str === "string";
 	}
 }

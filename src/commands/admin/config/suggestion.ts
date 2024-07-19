@@ -283,6 +283,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 		if (modalSubmitInteraction) {
 			const { fields } = modalSubmitInteraction;
+
 			assert(fields);
 
 			const content = fields.getTextInputValue(contentId);
@@ -470,6 +471,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			(filledSquares === progressBarLength ? this.progressBar.rightFull : this.progressBar.rightEmpty);
 
 		const results = [];
+
 		results.push(
 			`👍 ${upvotes.length} upvotes (${upPercentage.toFixed(1)}%) • 👎 ${
 				downvotes.length

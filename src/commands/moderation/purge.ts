@@ -33,15 +33,16 @@ import type {
 } from "discord.js";
 
 interface PurgeHandlerOptions extends Pick<FetchMessagesOptions, "before" | "after"> {
-	count: number;
-	reason: string;
 	channel?: GuildTextBasedChannel;
+	count: number;
 	inverse?: boolean;
-	target?: User | GuildMember | Role | Channel;
 	messageFilter?: (msg: Message<true>) => boolean;
+	reason: string;
+	target?: User | GuildMember | Role | Channel;
 }
 
 const mutualPermissions = [PermissionFlagsBits.ManageMessages];
+
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 @Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
@@ -55,26 +56,49 @@ const mutualPermissions = [PermissionFlagsBits.ManageMessages];
 export abstract class Purge {
 	private static DefaultMessageFetchLimit = 50;
 
-	private static CountSlashOption() {
-		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
-			SlashOption({
-				description: `The number of messages to purge from 3 to ${MAX_PURGE_COUNT_LIMIT} inclusive. Default is ${Purge.DefaultMessageFetchLimit}`,
-				name: "count",
-				type: ApplicationCommandOptionType.Integer,
-				minValue: 3,
-				maxValue: MAX_PURGE_COUNT_LIMIT
-			})(target, propertyKey, parameterIndex);
-		};
-	}
+	@Slash({ description: "Purge all messages after a given messageId in the current or given channel" })
+	public async after(
+		@SlashOption({
+			description: "The messageId to match",
+			name: "message_id",
+			type: ApplicationCommandOptionType.String,
+			required: true
+		})
+		messageId: string,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		if (!StringUtils.Regexes.Snowflake.test(messageId)) {
+			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
+		}
 
-	private static InverseFilterSlashOption() {
-		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
-			SlashOption({
-				description: "If the filter should be inversed",
-				name: "with_inverse_filter",
-				type: ApplicationCommandOptionType.Boolean
-			})(target, propertyKey, parameterIndex);
-		};
+		const message = await interaction.channel!.messages.fetch(messageId).catch(() => {});
+
+		if (!message) {
+			throw new ValidationError("I cannot perform this action: message not found or is older than 14 days");
+		}
+
+		const twoWeeksAgo = Date.now() - Constants.MaxBulkDeletableMessageAge;
+		const isOlderThanTwoWeeksAgo = message.createdTimestamp < twoWeeksAgo;
+
+		if (isOlderThanTwoWeeksAgo) {
+			throw new ValidationError("I cannot perform this action: message is older than 14 days");
+		}
+
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			after: messageId
+		});
 	}
 
 	@Slash({ description: "Purge all messages in the current or given channel" })
@@ -91,224 +115,6 @@ export abstract class Purge {
 			channel,
 			count,
 			reason
-		});
-	}
-
-	@Slash({ description: "Purge all or specific snowflake mention messages in the current or given channel" })
-	public mentions(
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.SNOWFLAKE,
-			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
-			required: false
-		})
-		target: User | GuildMember | Role | Channel | undefined,
-		@SlashOption({
-			description: "If everyone and here mentions should be considered",
-			name: "with_everyone_and_here_mentions",
-			type: ApplicationCommandOptionType.Boolean
-		})
-		considerEveryoneHere: boolean = false,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		const messageMentionRegexArray: RegExp[] = [
-			MessageMentions.UsersPattern,
-			MessageMentions.ChannelsPattern,
-			MessageMentions.RolesPattern
-		];
-
-		if (considerEveryoneHere) {
-			messageMentionRegexArray.push(MessageMentions.EveryonePattern);
-		}
-
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) =>
-				target ? msg.mentions.has(target) : messageMentionRegexArray.some((regex) => regex.test(msg.content))
-		});
-	}
-
-	@Slash({ description: "Purge all or a specific user's messages in the current or given channel" })
-	public users(
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
-			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
-			required: false
-		})
-		target: User | GuildMember | undefined,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => (target ? msg.author.id === target.id : !msg.author.bot)
-		});
-	}
-
-	@Slash({ description: "Purge all or a specific bot's messages in the current or given channel" })
-	public bots(
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
-			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
-			required: false
-		})
-		target: User | GuildMember | undefined,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => msg.author.bot && (!target || msg.author.id === target.id)
-		});
-	}
-
-	@Slash({ description: "Purge all messages of users with a given role in the current or given channel" })
-	public role(
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.ROLE,
-			flags: [Enums.CommandSlashOptionTargetFlags.Passive]
-		})
-		target: Role,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => !!msg.member?.roles.cache.has(target.id)
-		});
-	}
-
-	@Slash({
-		description: "Purge all messages containing a given text (case insensitive) in the current or given channel"
-	})
-	public wildcard(
-		@SlashOption({
-			description: "The text to match",
-			name: "text",
-			type: ApplicationCommandOptionType.String,
-			minLength: 3,
-			required: true
-		})
-		content: string,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => msg.content.toLowerCase().includes(content)
-		});
-	}
-
-	@Slash({
-		description:
-			"purge all messages that start with a given text (case insensitive) in the current or given channel"
-	})
-	public startswith(
-		@SlashOption({
-			description: "The text to match",
-			name: "text",
-			type: ApplicationCommandOptionType.String,
-			minLength: 3,
-			required: true
-		})
-		content: string,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => msg.content.toLowerCase().startsWith(content)
-		});
-	}
-
-	@Slash({
-		description: "Purge all messages that ends with a given text (case insensitive) in the current or given channel"
-	})
-	public endswith(
-		@SlashOption({
-			description: "The text to match",
-			name: "text",
-			type: ApplicationCommandOptionType.String,
-			minLength: 3,
-			required: true
-		})
-		content: string,
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => msg.content.toLowerCase().endsWith(content)
 		});
 	}
 
@@ -330,92 +136,6 @@ export abstract class Purge {
 			channel,
 			inverse,
 			messageFilter: (msg) => !!msg.attachments.size
-		});
-	}
-
-	@Slash({ description: "Purge all messages containing embeds in the current or given channel" })
-	public embeds(
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => !!msg.embeds.length
-		});
-	}
-
-	@Slash({ description: "Purge all messages containing links in the current or given channel" })
-	public links(
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) => StringUtils.Regexes.Link.test(msg.content)
-		});
-	}
-
-	@Slash({ description: "Purge all messages containing discord invites in the current or given channel" })
-	public invites(
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) =>
-				[StringUtils.Regexes.Invite, StringUtils.Regexes.BotInvite].some((regex) => regex.test(msg.content))
-		});
-	}
-
-	@Slash({ description: "Purge all messages containing discord emojis in the current or given channel" })
-	public emojis(
-		@GivenChannelSlashOption()
-		channel: GuildTextBasedChannel | undefined,
-		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
-		@Purge.InverseFilterSlashOption()
-		inverse: boolean = false,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.handler(interaction, {
-			count,
-			reason,
-			channel,
-			inverse,
-			messageFilter: (msg) =>
-				[FormattingPatterns.Emoji, StringUtils.Regexes.UnicodeEmoji].some((regex) => regex.test(msg.content))
 		});
 	}
 
@@ -464,15 +184,14 @@ export abstract class Purge {
 		});
 	}
 
-	@Slash({ description: "Purge all messages after a given messageId in the current or given channel" })
-	public async after(
-		@SlashOption({
-			description: "The messageId to match",
-			name: "message_id",
-			type: ApplicationCommandOptionType.String,
-			required: true
+	@Slash({ description: "Purge all or a specific bot's messages in the current or given channel" })
+	public bots(
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
+			required: false
 		})
-		messageId: string,
+		target: User | GuildMember | undefined,
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
@@ -483,21 +202,164 @@ export abstract class Purge {
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		if (!StringUtils.Regexes.Snowflake.test(messageId)) {
-			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
-		}
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => msg.author.bot && (!target || msg.author.id === target.id)
+		});
+	}
 
-		const message = await interaction.channel!.messages.fetch(messageId).catch(() => {});
+	@Slash({ description: "Purge all messages containing embeds in the current or given channel" })
+	public embeds(
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => !!msg.embeds.length
+		});
+	}
 
-		if (!message) {
-			throw new ValidationError("I cannot perform this action: message not found or is older than 14 days");
-		}
+	@Slash({ description: "Purge all messages containing discord emojis in the current or given channel" })
+	public emojis(
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) =>
+				[FormattingPatterns.Emoji, StringUtils.Regexes.UnicodeEmoji].some((regex) => regex.test(msg.content))
+		});
+	}
 
-		const twoWeeksAgo = Date.now() - Constants.MaxBulkDeletableMessageAge;
-		const isOlderThanTwoWeeksAgo = message.createdTimestamp < twoWeeksAgo;
+	@Slash({
+		description: "Purge all messages that ends with a given text (case insensitive) in the current or given channel"
+	})
+	public endswith(
+		@SlashOption({
+			description: "The text to match",
+			name: "text",
+			type: ApplicationCommandOptionType.String,
+			minLength: 3,
+			required: true
+		})
+		content: string,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => msg.content.toLowerCase().endsWith(content)
+		});
+	}
 
-		if (isOlderThanTwoWeeksAgo) {
-			throw new ValidationError("I cannot perform this action: message is older than 14 days");
+	@Slash({ description: "Purge all messages containing discord invites in the current or given channel" })
+	public invites(
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) =>
+				[StringUtils.Regexes.Invite, StringUtils.Regexes.BotInvite].some((regex) => regex.test(msg.content))
+		});
+	}
+
+	@Slash({ description: "Purge all messages containing links in the current or given channel" })
+	public links(
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => StringUtils.Regexes.Link.test(msg.content)
+		});
+	}
+
+	@Slash({ description: "Purge all or specific snowflake mention messages in the current or given channel" })
+	public mentions(
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.SNOWFLAKE,
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
+			required: false
+		})
+		target: User | GuildMember | Role | Channel | undefined,
+		@SlashOption({
+			description: "If everyone and here mentions should be considered",
+			name: "with_everyone_and_here_mentions",
+			type: ApplicationCommandOptionType.Boolean
+		})
+		considerEveryoneHere: boolean = false,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		const messageMentionRegexArray: RegExp[] = [
+			MessageMentions.UsersPattern,
+			MessageMentions.ChannelsPattern,
+			MessageMentions.RolesPattern
+		];
+
+		if (considerEveryoneHere) {
+			messageMentionRegexArray.push(MessageMentions.EveryonePattern);
 		}
 
 		return this.handler(interaction, {
@@ -505,8 +367,147 @@ export abstract class Purge {
 			reason,
 			channel,
 			inverse,
-			after: messageId
+			messageFilter: (msg) =>
+				target ? msg.mentions.has(target) : messageMentionRegexArray.some((regex) => regex.test(msg.content))
 		});
+	}
+
+	@Slash({ description: "Purge all messages of users with a given role in the current or given channel" })
+	public role(
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.ROLE,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive]
+		})
+		target: Role,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => !!msg.member?.roles.cache.has(target.id)
+		});
+	}
+
+	@Slash({
+		description:
+			"purge all messages that start with a given text (case insensitive) in the current or given channel"
+	})
+	public startswith(
+		@SlashOption({
+			description: "The text to match",
+			name: "text",
+			type: ApplicationCommandOptionType.String,
+			minLength: 3,
+			required: true
+		})
+		content: string,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => msg.content.toLowerCase().startsWith(content)
+		});
+	}
+
+	@Slash({ description: "Purge all or a specific user's messages in the current or given channel" })
+	public users(
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
+			required: false
+		})
+		target: User | GuildMember | undefined,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => (target ? msg.author.id === target.id : !msg.author.bot)
+		});
+	}
+
+	@Slash({
+		description: "Purge all messages containing a given text (case insensitive) in the current or given channel"
+	})
+	public wildcard(
+		@SlashOption({
+			description: "The text to match",
+			name: "text",
+			type: ApplicationCommandOptionType.String,
+			minLength: 3,
+			required: true
+		})
+		content: string,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.DefaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			messageFilter: (msg) => msg.content.toLowerCase().includes(content)
+		});
+	}
+
+	private static CountSlashOption() {
+		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
+			SlashOption({
+				description: `The number of messages to purge from 3 to ${MAX_PURGE_COUNT_LIMIT} inclusive. Default is ${Purge.DefaultMessageFetchLimit}`,
+				name: "count",
+				type: ApplicationCommandOptionType.Integer,
+				minValue: 3,
+				maxValue: MAX_PURGE_COUNT_LIMIT
+			})(target, propertyKey, parameterIndex);
+		};
+	}
+
+	private static InverseFilterSlashOption() {
+		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
+			SlashOption({
+				description: "If the filter should be inversed",
+				name: "with_inverse_filter",
+				type: ApplicationCommandOptionType.Boolean
+			})(target, propertyKey, parameterIndex);
+		};
 	}
 
 	private async handler(interaction: ChatInputCommandInteraction<"cached">, options: PurgeHandlerOptions) {
@@ -566,6 +567,7 @@ export abstract class Purge {
 
 				if (bulkDeleteMessages.size) {
 					const deleted = await purgeChannel.bulkDelete(bulkDeleteMessages, true);
+
 					deletedSuccessCount += deleted.size;
 				}
 			} catch (err) {

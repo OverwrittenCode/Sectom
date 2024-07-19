@@ -108,10 +108,12 @@ export abstract class Warn {
 								checkPossible = (guildMember: GuildMember) => guildMember.bannable;
 								pendingExecution = () =>
 									interaction.guild.members.ban(target.id, { reason: auditReason });
+
 								break;
 							case ActionType.KICK_USER_SET:
 								checkPossible = (guildMember: GuildMember) => guildMember.kickable;
 								pendingExecution = () => target.kick(auditReason);
+
 								break;
 							case ActionType.TIME_OUT_USER_ADD:
 								actionType = target.isCommunicationDisabled()
@@ -150,6 +152,21 @@ export abstract class Warn {
 
 			throw err;
 		}
+	}
+
+	@Slash({ description: "Lists the warnings of a user" })
+	public list(
+		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
+		target: User | GuildMember,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		const { guildId } = interaction;
+
+		return ActionManager.listCases(interaction, {
+			guildId,
+			targetId: target.id,
+			action: ActionType.WARN_USER_ADD
+		});
 	}
 
 	@Slash({ description: "Remove a warn from a user" })
@@ -191,20 +208,6 @@ export abstract class Warn {
 					});
 				}
 			}
-		});
-	}
-
-	@Slash({ description: "Lists the warnings of a user" })
-	public list(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
-		target: User | GuildMember,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		const { guildId } = interaction;
-		return ActionManager.listCases(interaction, {
-			guildId,
-			targetId: target.id,
-			action: ActionType.WARN_USER_ADD
 		});
 	}
 }

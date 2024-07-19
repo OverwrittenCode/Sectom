@@ -13,26 +13,26 @@ import { EntityInstanceMethods } from "./entity.js";
 import type { ActionType, Prisma } from "@prisma/client";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
+
 type RelationFields = Pick<Prisma.CaseCreateInput, "channel" | "perpetrator" | "target" | "guild">;
 
 interface RelationFieldOptions {
-	guildId: string;
 	channelId: string;
+	guildId: string;
 	perpetratorId: string;
 	targetId: string;
 }
 
 interface RetrieveCaseOptions {
-	interaction: Typings.CachedGuildInteraction;
 	allowedActions?: ActionType[];
 	caseID?: string;
+	interaction: Typings.CachedGuildInteraction;
 	targetId?: string;
 }
 
 @singleton()
 export class CaseInstanceMethods {
 	private client: FetchExtendedClient;
-
 	private retrieveCaseSelect = {
 		id: true,
 		perpetratorId: true,
@@ -48,26 +48,6 @@ export class CaseInstanceMethods {
 		_client: FetchExtendedClient
 	) {
 		this.client = _client;
-	}
-
-	public retrieveRelationFields<T>(this: T, options: RelationFieldOptions): RelationFields {
-		const { guildId, channelId, perpetratorId, targetId } = options;
-		const entityInstanceMethods = container.resolve(EntityInstanceMethods);
-
-		const connectGuild: Pick<Prisma.CaseCreateInput, "guild"> = {
-			guild: {
-				connect: {
-					id: guildId
-				}
-			}
-		};
-
-		return {
-			channel: entityInstanceMethods.connectOrCreateHelper(channelId, connectGuild, EntityType.CHANNEL),
-			perpetrator: entityInstanceMethods.connectOrCreateHelper(perpetratorId, connectGuild, EntityType.USER),
-			target: entityInstanceMethods.connectOrCreateHelper(targetId, connectGuild, EntityType.USER),
-			...connectGuild
-		};
 	}
 
 	public async retrieveCase<T>(
@@ -116,6 +96,26 @@ export class CaseInstanceMethods {
 		}
 
 		return caseDoc;
+	}
+
+	public retrieveRelationFields<T>(this: T, options: RelationFieldOptions): RelationFields {
+		const { guildId, channelId, perpetratorId, targetId } = options;
+		const entityInstanceMethods = container.resolve(EntityInstanceMethods);
+
+		const connectGuild: Pick<Prisma.CaseCreateInput, "guild"> = {
+			guild: {
+				connect: {
+					id: guildId
+				}
+			}
+		};
+
+		return {
+			channel: entityInstanceMethods.connectOrCreateHelper(channelId, connectGuild, EntityType.CHANNEL),
+			perpetrator: entityInstanceMethods.connectOrCreateHelper(perpetratorId, connectGuild, EntityType.USER),
+			target: entityInstanceMethods.connectOrCreateHelper(targetId, connectGuild, EntityType.USER),
+			...connectGuild
+		};
 	}
 
 	public unixTimestampHelper<T>(this: T, timestamp: Date): string {

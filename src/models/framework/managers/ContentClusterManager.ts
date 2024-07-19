@@ -42,6 +42,40 @@ import type {
 } from "discord.js";
 import type { SetRequired } from "type-fest";
 
+interface BaseOptions extends Pick<CustomIdFieldOptions, "componentType"> {
+	interaction: ChatInputCommandInteraction<"cached">;
+}
+
+interface CustomIdFieldOptions {
+	componentType: Enums.ContentClusterComponentType;
+	modifierType: Enums.ModifierType;
+	propertyType: Enums.ContentClusterPropertyType;
+}
+
+interface ModalPropertyHandlerOptions extends CustomIdFieldOptions {
+	data?: Typings.Prettify<
+		SetRequired<
+			{
+				[K in
+					| `${SubjectTextInputField}`
+					| `${PanelTextInputField}`]?: K extends `${PanelTextInputField.LinkedSubjects}`
+					? string[]
+					: K extends `${PanelTextInputField.Colour}`
+						? number
+						: string;
+			},
+			BaseTextInputField.Name
+		> & { configuration: PrismaJson.Configuration }
+	>;
+	interaction: ButtonInteraction<"cached"> | StringSelectMenuInteraction<"cached">;
+}
+
+interface ModifyFieldOptions extends BaseOptions, Omit<CustomIdFieldOptions, "propertyType"> {}
+
+interface SendOptions extends BaseOptions {
+	channel: GuildTextBasedChannel;
+}
+
 enum BaseTextInputField {
 	Name = "name",
 	Description = "description",
@@ -63,46 +97,12 @@ enum SubjectTextInputField {
 	Emoji = "emoji"
 }
 
-interface CustomIdFieldOptions {
-	componentType: Enums.ContentClusterComponentType;
-	propertyType: Enums.ContentClusterPropertyType;
-	modifierType: Enums.ModifierType;
-}
-
-interface BaseOptions extends Pick<CustomIdFieldOptions, "componentType"> {
-	interaction: ChatInputCommandInteraction<"cached">;
-}
-
-interface SendOptions extends BaseOptions {
-	channel: GuildTextBasedChannel;
-}
-
-interface ModifyFieldOptions extends BaseOptions, Omit<CustomIdFieldOptions, "propertyType"> {}
-
-interface ModalPropertyHandlerOptions extends CustomIdFieldOptions {
-	interaction: ButtonInteraction<"cached"> | StringSelectMenuInteraction<"cached">;
-	data?: Typings.Prettify<
-		SetRequired<
-			{
-				[K in
-					| `${SubjectTextInputField}`
-					| `${PanelTextInputField}`]?: K extends `${PanelTextInputField.LinkedSubjects}`
-					? string[]
-					: K extends `${PanelTextInputField.Colour}`
-						? number
-						: string;
-			},
-			BaseTextInputField.Name
-		> & { configuration: PrismaJson.Configuration }
-	>;
-}
-
 const baseCustomIds = ["setup", "view", "channel", "send", "create"] as const;
 const componentTypePrefixMatch = `(${Object.values(Enums.ContentClusterComponentType).join("|")})`;
 
 export abstract class ContentClusterManager {
-	public static readonly properties = Object.values(Enums.ContentClusterPropertyType);
 	public static readonly modifiers = Object.values(Enums.ModifierType);
+	public static readonly properties = Object.values(Enums.ContentClusterPropertyType);
 
 	public static constructCustomIdRecords<
 		const ComponentType extends Enums.ContentClusterComponentType,
@@ -136,6 +136,7 @@ export abstract class ContentClusterManager {
 
 	public static async send(options: SendOptions) {
 		const { interaction, channel, componentType } = options;
+
 		assert(interaction.channel);
 
 		const customIdRecords = this.constructCustomIdRecords(componentType);
@@ -310,6 +311,26 @@ export abstract class ContentClusterMessageComponentHandler {
 		{} as Record<(typeof baseCustomIds)[number], RegExp>
 	);
 
+	@ButtonComponent({ id: ContentClusterMessageComponentHandler.propertyRegexes.setup })
+	public async buttonPropertySetup(interaction: ButtonInteraction<"cached">) {
+		const { interaction: originalInteraction } = interaction.message;
+
+		assert(originalInteraction);
+
+		const isNotSpecifiedUser = originalInteraction.user.id !== interaction.user.id;
+
+		if (isNotSpecifiedUser) {
+			return;
+		}
+
+		const customIdFields = ContentClusterManager.retrieveCustomIdFields(interaction.customId);
+
+		return this.modalPropertySetupHandler({
+			interaction,
+			...customIdFields
+		});
+	}
+
 	@ModalComponent({ id: ContentClusterMessageComponentHandler.propertyRegexes.setup })
 	public async modalPropertySetup(interaction: ModalSubmitInteraction<"cached">) {
 		const {
@@ -318,6 +339,7 @@ export abstract class ContentClusterMessageComponentHandler {
 			channelId,
 			fields: { fields }
 		} = interaction;
+
 		assert(channelId && interaction.isFromMessage());
 
 		await InteractionUtils.disableComponents(interaction.message);
@@ -467,21 +489,98 @@ export abstract class ContentClusterMessageComponentHandler {
 		});
 	}
 
-	@ButtonComponent({ id: ContentClusterMessageComponentHandler.propertyRegexes.setup })
-	public async buttonPropertySetup(interaction: ButtonInteraction<"cached">) {
-		const { interaction: originalInteraction } = interaction.message;
-		assert(originalInteraction);
+	@SelectMenuComponent({ id: ContentClusterMessageComponentHandler.propertyRegexes.send })
+	public async selectMenuPropertySend(interaction: StringSelectMenuInteraction<"cached">) {
+		const { customId, guildId, guild, values } = interaction;
 
-		const isNotSpecifiedUser = originalInteraction.user.id !== interaction.user.id;
-		if (isNotSpecifiedUser) {
-			return;
+		const channelId = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+
+		const channel = await guild.channels.fetch(channelId);
+
+		if (!channel) {
+			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall("Channel"));
 		}
 
-		const customIdFields = ContentClusterManager.retrieveCustomIdFields(interaction.customId);
+		if (!(channel instanceof TextChannel)) {
+			throw new ValidationError(
+				ValidationError.MessageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
+			);
+		}
 
-		return this.modalPropertySetupHandler({
-			interaction,
-			...customIdFields
+		const { componentType } = ContentClusterManager.retrieveCustomIdFields(customId);
+
+		const customIdRecords = ContentClusterManager.constructCustomIdRecords(componentType);
+
+		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: componentType
+		});
+
+		const componentConfiguration = configuration[componentType];
+
+		const panelName = values[0];
+		const panel = componentConfiguration.panels.find(({ name }) => name === panelName);
+
+		if (!panel) {
+			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall(`${panelName} Panel`));
+		}
+
+		panel.apiEmbed.description ??= "";
+
+		const subjectDescriptionInfoArray: string[] = [];
+
+		const linkedSubjects = panel.subjectNames.map(
+			(subjectName) => componentConfiguration.subjects.find((subject) => subject.name === subjectName)!
+		);
+
+		const linkedSubjectActionRow = new ActionRowBuilder<ButtonBuilder>();
+		const linkedSubjectCustomIdGenerator = InteractionUtils.constructCustomIdGenerator(
+			{
+				baseID: customIdRecords[`${componentType}_create`].id,
+				messageComponentType: Enums.MessageComponentType.Button
+			},
+			Enums.MessageComponentType.Modal
+		);
+
+		linkedSubjects.forEach((subject) => {
+			const button = new ButtonBuilder()
+				.setCustomId(linkedSubjectCustomIdGenerator(subject.name))
+				.setLabel(subject.name)
+				.setStyle(ButtonStyle.Primary);
+
+			let description = "";
+
+			if (subject.emoji && InteractionUtils.isValidEmoji(interaction, subject.emoji)) {
+				description += `${subject.emoji} `;
+				button.setEmoji(subject.emoji);
+			}
+
+			description += `${bold(subject.name)}`;
+
+			if (subject.description) {
+				description += ` - ${subject.description}`;
+			}
+
+			subjectDescriptionInfoArray.push(description);
+			linkedSubjectActionRow.addComponents(button);
+		});
+
+		panel.apiEmbed.description +=
+			StringUtils.LineBreak.repeat(2) + subjectDescriptionInfoArray.join(StringUtils.LineBreak);
+
+		const { url } = await channel.send({ embeds: [panel.apiEmbed], components: [linkedSubjectActionRow] });
+
+		const viewMessageEmbed = new EmbedBuilder()
+			.setColor(LIGHT_GOLD)
+			.setDescription(`Successfully sent panel in ${channelMention(channel.id)}`);
+
+		const viewMessageActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("View Message").setURL(url)
+		);
+
+		return await InteractionUtils.replyOrFollowUp(interaction, {
+			embeds: [viewMessageEmbed],
+			components: [viewMessageActionRow]
 		});
 	}
 
@@ -567,6 +666,7 @@ export abstract class ContentClusterMessageComponentHandler {
 
 		if (emoji) {
 			const emojiMention = InteractionUtils.emojiMention(emoji);
+
 			descriptionArray.push(`${bold("Emoji:")} ${emojiMention}`);
 		}
 
@@ -588,100 +688,6 @@ export abstract class ContentClusterMessageComponentHandler {
 		}
 
 		return await InteractionUtils.replyOrFollowUp(interaction, { embeds, ephemeral: true });
-	}
-
-	@SelectMenuComponent({ id: ContentClusterMessageComponentHandler.propertyRegexes.send })
-	public async selectMenuPropertySend(interaction: StringSelectMenuInteraction<"cached">) {
-		const { customId, guildId, guild, values } = interaction;
-
-		const channelId = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
-
-		const channel = await guild.channels.fetch(channelId);
-
-		if (!channel) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall("Channel"));
-		}
-
-		if (!(channel instanceof TextChannel)) {
-			throw new ValidationError(
-				ValidationError.MessageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
-			);
-		}
-
-		const { componentType } = ContentClusterManager.retrieveCustomIdFields(customId);
-
-		const customIdRecords = ContentClusterManager.constructCustomIdRecords(componentType);
-
-		const { configuration } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-			guildId,
-			check: componentType
-		});
-
-		const componentConfiguration = configuration[componentType];
-
-		const panelName = values[0];
-		const panel = componentConfiguration.panels.find(({ name }) => name === panelName);
-
-		if (!panel) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall(`${panelName} Panel`));
-		}
-
-		panel.apiEmbed.description ??= "";
-		const subjectDescriptionInfoArray: string[] = [];
-
-		const linkedSubjects = panel.subjectNames.map(
-			(subjectName) => componentConfiguration.subjects.find((subject) => subject.name === subjectName)!
-		);
-
-		const linkedSubjectActionRow = new ActionRowBuilder<ButtonBuilder>();
-		const linkedSubjectCustomIdGenerator = InteractionUtils.constructCustomIdGenerator(
-			{
-				baseID: customIdRecords[`${componentType}_create`].id,
-				messageComponentType: Enums.MessageComponentType.Button
-			},
-			Enums.MessageComponentType.Modal
-		);
-
-		linkedSubjects.forEach((subject) => {
-			const button = new ButtonBuilder()
-				.setCustomId(linkedSubjectCustomIdGenerator(subject.name))
-				.setLabel(subject.name)
-				.setStyle(ButtonStyle.Primary);
-
-			let description = "";
-
-			if (subject.emoji && InteractionUtils.isValidEmoji(interaction, subject.emoji)) {
-				description += `${subject.emoji} `;
-				button.setEmoji(subject.emoji);
-			}
-
-			description += `${bold(subject.name)}`;
-
-			if (subject.description) {
-				description += ` - ${subject.description}`;
-			}
-
-			subjectDescriptionInfoArray.push(description);
-			linkedSubjectActionRow.addComponents(button);
-		});
-
-		panel.apiEmbed.description +=
-			StringUtils.LineBreak.repeat(2) + subjectDescriptionInfoArray.join(StringUtils.LineBreak);
-
-		const { url } = await channel.send({ embeds: [panel.apiEmbed], components: [linkedSubjectActionRow] });
-
-		const viewMessageEmbed = new EmbedBuilder()
-			.setColor(LIGHT_GOLD)
-			.setDescription(`Successfully sent panel in ${channelMention(channel.id)}`);
-
-		const viewMessageActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-			new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("View Message").setURL(url)
-		);
-
-		return await InteractionUtils.replyOrFollowUp(interaction, {
-			embeds: [viewMessageEmbed],
-			components: [viewMessageActionRow]
-		});
 	}
 
 	private async modalPropertySetupHandler(options: ModalPropertyHandlerOptions) {

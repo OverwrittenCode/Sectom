@@ -9,12 +9,28 @@ import { StringUtils } from "~/utils/string.js";
 import type { SlashOptionOptions } from "discordx";
 
 interface TargetSlashOptionArguments {
+	channelTypes?: ChannelType[];
+	descriptionNote?: string;
 	entityType: keyof typeof CommandUtils.EntityType;
 	flags?: Enums.CommandSlashOptionTargetFlags[];
-	required?: boolean;
 	name?: Lowercase<string>;
-	descriptionNote?: string;
-	channelTypes?: ChannelType[];
+	required?: boolean;
+}
+
+export function GivenChannelSlashOption(
+	options: Omit<TargetSlashOptionArguments, "entityType" | "flags" | "name"> = {}
+) {
+	const { channelTypes, descriptionNote, required = false } = options;
+
+	return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
+		TargetSlashOption({
+			entityType: CommandUtils.EntityType.CHANNEL,
+			name: CommandUtils.SlashOptions.ChannelPermissionName,
+			descriptionNote,
+			required,
+			channelTypes
+		})(target, propertyKey, parameterIndex);
+	};
 }
 
 export function TargetSlashOption(args: TargetSlashOptionArguments) {
@@ -47,21 +63,5 @@ export function TargetSlashOption(args: TargetSlashOptionArguments) {
 		} as SlashOptionOptions<Lowercase<string>, string>;
 
 		SlashOption(slashOptionObj, TargetTransformer(flags))(target, propertyKey, parameterIndex);
-	};
-}
-
-export function GivenChannelSlashOption(
-	options: Omit<TargetSlashOptionArguments, "entityType" | "flags" | "name"> = {}
-) {
-	const { channelTypes, descriptionNote, required = false } = options;
-
-	return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
-		TargetSlashOption({
-			entityType: CommandUtils.EntityType.CHANNEL,
-			name: CommandUtils.SlashOptions.ChannelPermissionName,
-			descriptionNote,
-			required,
-			channelTypes
-		})(target, propertyKey, parameterIndex);
 	};
 }

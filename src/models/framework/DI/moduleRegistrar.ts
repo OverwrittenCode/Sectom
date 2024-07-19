@@ -8,6 +8,7 @@ export function getInstanceCashingSingletonFactory<T>(clazz: InjectionToken<T>):
 		if (!c.isRegistered(clazz)) {
 			c.registerSingleton(clazz as constructor<T>);
 		}
+
 		return c.resolve(clazz);
 	});
 }

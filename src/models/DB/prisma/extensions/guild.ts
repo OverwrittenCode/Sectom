@@ -5,8 +5,8 @@ import type { FetchExtendedClient } from "~/models/DB/prisma/extensions/types/in
 import { Beans } from "~/models/framework/DI/Beans.js";
 
 interface FetchValidConfigurationOptions {
-	guildId: string;
 	check?: keyof PrismaJson.Configuration;
+	guildId: string;
 }
 
 @singleton()
@@ -15,6 +15,8 @@ export class GuildInstanceMethods {
 		panels: [],
 		subjects: []
 	};
+
+	private client: FetchExtendedClient;
 
 	public static defaultConfiguration: PrismaJson.Configuration = {
 		warning: {
@@ -35,8 +37,6 @@ export class GuildInstanceMethods {
 			overrides: []
 		}
 	};
-
-	private client: FetchExtendedClient;
 
 	constructor(
 		@inject(Beans.IPrismaFetchClientToken)

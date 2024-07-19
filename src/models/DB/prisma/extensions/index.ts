@@ -35,6 +35,38 @@ import type {
 type Doc<M extends Prisma.ModelName = Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 
 export abstract class PrismaExtensions {
+	public static clientMethods = Prisma.defineExtension((client) => {
+		return client.$extends({
+			name: "client-methods-extension",
+			client: {
+				async $flushdb<T>(this: T) {
+					const ctx = Prisma.getExtensionContext(this) as unknown as ClientCTX;
+					const modelNames = Object.values(Prisma.ModelName).map(
+						(str) => str.toLowerCase() as Lowercase<Prisma.ModelName>
+					);
+
+					const pendingBatchPayloads = modelNames.map((modelName) => {
+						const v = ctx[modelName as "case"];
+
+						return v.deleteMany();
+					});
+
+					const batchPayloads = await client.$transaction(pendingBatchPayloads);
+
+					const result = batchPayloads.reduce(
+						(acc, { count }, index) => {
+							acc._totalCount += count;
+							acc[modelNames[index]] = count;
+							return acc;
+						},
+						{ _totalCount: 0 } as FlushDBResult
+					);
+
+					return result;
+				}
+			}
+		});
+	});
 	public static modelMethods = Prisma.defineExtension((client) => {
 		const fetchOperations = [
 			"fetchFirst",
@@ -125,6 +157,7 @@ export abstract class PrismaExtensions {
 
 							if ("id" in options) {
 								const shadowId = options.id as Typings.Database.SimpleUniqueWhereId;
+
 								shadowWhere = typeof shadowId === "string" ? { id: shadowId } : shadowId;
 
 								const shadowCacheRecordId = Object.values(
@@ -173,6 +206,7 @@ export abstract class PrismaExtensions {
 													return -output;
 												}
 											}
+
 											return 0;
 										});
 									}
@@ -252,39 +286,6 @@ export abstract class PrismaExtensions {
 		});
 	});
 
-	public static clientMethods = Prisma.defineExtension((client) => {
-		return client.$extends({
-			name: "client-methods-extension",
-			client: {
-				async $flushdb<T>(this: T) {
-					const ctx = Prisma.getExtensionContext(this) as unknown as ClientCTX;
-					const modelNames = Object.values(Prisma.ModelName).map(
-						(str) => str.toLowerCase() as Lowercase<Prisma.ModelName>
-					);
-
-					const pendingBatchPayloads = modelNames.map((modelName) => {
-						const v = ctx[modelName as "case"];
-
-						return v.deleteMany();
-					});
-
-					const batchPayloads = await client.$transaction(pendingBatchPayloads);
-
-					const result = batchPayloads.reduce(
-						(acc, { count }, index) => {
-							acc._totalCount += count;
-							acc[modelNames[index]] = count;
-							return acc;
-						},
-						{ _totalCount: 0 } as FlushDBResult
-					);
-
-					return result;
-				}
-			}
-		});
-	});
-
 	private static createBoundModel<T>(instance: T): { [K: symbol]: any } & T {
 		const model = {} as T;
 		const methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(instance)) as (keyof T)[];
@@ -302,13 +303,13 @@ export abstract class PrismaExtensions {
 }
 
 class WithSave<TModel> implements IWithSave<TModel> {
-	private shadowCtx: ModelCTX<any, true>;
 	private idFields: PrismaJson.IDLink;
 	/**
 	 * - If the model has relations, Prisma will throw an error if id fields are provided in update#data
 	 * - and we don't want to modify the createdAt/updatedAt information, let the database handle that
 	 */
 	private nonUpdatedFields: PrismaJson.IDLink & Pick<Doc, "createdAt" | "updatedAt">;
+	private shadowCtx: ModelCTX<any, true>;
 
 	public doc: Doc<RetrieveModelName<TModel>>;
 

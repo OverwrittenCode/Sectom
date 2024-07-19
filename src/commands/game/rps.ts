@@ -19,8 +19,9 @@ import { ObjectUtils } from "~/utils/object.js";
 
 import type { GuildMember } from "discord.js";
 
-type RPSKey = keyof typeof RPS;
 type Outcomes = Record<RPS, Array<[defeatedObject: string, reason: string]>>;
+
+type RPSKey = keyof typeof RPS;
 
 enum RPS {
 	Rock = "Rock",
@@ -59,7 +60,6 @@ const weapons = Object.keys(RPS) as RPSKey[];
 @Category(Enums.CommandCategory.Game)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Rps {
-	private static maxDecisionTime = ms("10s");
 	private static actionRow = new ActionRowBuilder<ButtonBuilder>()
 		.addComponents(
 			Object.values(RPS).map((customId) =>
@@ -67,6 +67,7 @@ export abstract class Rps {
 			)
 		)
 		.toJSON() as GameControllerComponent;
+	private static maxDecisionTime = ms("10s");
 
 	@Slash({ dmPermission: false, description: `Play ${weapons.join(", ")}` })
 	public async rps(

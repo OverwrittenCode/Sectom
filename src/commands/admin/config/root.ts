@@ -47,6 +47,36 @@ const actionTypePunishmentMap = {
 export abstract class Config {
 	public static LevelingCustomIDRecords = InteractionUtils.customIdPrefixRecords("leveling_view");
 
+	public static async togglestate(
+		key: keyof PrismaJson.Configuration,
+		reason: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		const { guildId, channelId } = interaction;
+
+		const { configuration, save } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId });
+
+		configuration[key].disabled = !configuration[key].disabled;
+
+		return await ActionManager.logCase({
+			interaction,
+			target: {
+				id: channelId,
+				type: EntityType.CHANNEL
+			},
+			reason,
+			actionType: ActionType.CONFIG_LEVEL_SETTINGS_UPDATE,
+			actionOptions: {
+				pastTense: "updated the leveling configuration",
+				pendingExecution: save
+			},
+			successContent: `${configuration[key].disabled ? "disabled" : "enabled"} the ${key} configuration`
+		});
+	}
+
+	@Slash({ dmPermission: false, description: "Interactive configuration panel" })
+	public async panel(_interaction: ChatInputCommandInteraction<"cached">) {}
+
 	@Slash({ dmPermission: false, description: "View all configurations" })
 	public async view(interaction: ChatInputCommandInteraction<"cached">) {
 		const { guild, guildId } = interaction;
@@ -72,6 +102,7 @@ export abstract class Config {
 		if (logChannelConfigurations.length) {
 			const configurationValue = "Log Channel";
 			const pageText = `${configurationValue} Configuration`;
+
 			pageTextArray.push(pageText);
 			configurationValues.push(configurationValue);
 
@@ -154,6 +185,7 @@ export abstract class Config {
 							);
 						}
 					}
+
 					break;
 				case "warning":
 					{
@@ -289,35 +321,5 @@ export abstract class Config {
 		});
 
 		return await pagination.init();
-	}
-
-	@Slash({ dmPermission: false, description: "Interactive configuration panel" })
-	public async panel(interaction: ChatInputCommandInteraction<"cached">) {}
-
-	public static async togglestate(
-		key: keyof PrismaJson.Configuration,
-		reason: string,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		const { guildId, channelId } = interaction;
-
-		const { configuration, save } = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId });
-
-		configuration[key].disabled = !configuration[key].disabled;
-
-		return await ActionManager.logCase({
-			interaction,
-			target: {
-				id: channelId,
-				type: EntityType.CHANNEL
-			},
-			reason,
-			actionType: ActionType.CONFIG_LEVEL_SETTINGS_UPDATE,
-			actionOptions: {
-				pastTense: "updated the leveling configuration",
-				pendingExecution: save
-			},
-			successContent: `${configuration[key].disabled ? "disabled" : "enabled"} the ${key} configuration`
-		});
 	}
 }

@@ -83,6 +83,7 @@ export abstract class Case {
 
 		if (caseData.messageURL) {
 			const [, channelId, messageId] = caseData.messageURL.split("channels/")[1].split("/");
+
 			retrievedMessageId = messageId;
 			caseRecordChannel = interaction.guild.channels.resolve(channelId);
 
@@ -151,6 +152,7 @@ export abstract class Case {
 					.catch(() => {});
 			} else {
 				const message = await caseRecordChannel.send({ embeds: newAPIEmbeds });
+
 				messageURL = messageLink(caseRecordChannel.id, message.id, guildId);
 			}
 
@@ -162,6 +164,7 @@ export abstract class Case {
 				.setURL(messageURL);
 
 			const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
+
 			buttonActionRows.push(buttonActionRow);
 		}
 

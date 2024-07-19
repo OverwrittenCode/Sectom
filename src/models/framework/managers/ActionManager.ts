@@ -35,45 +35,42 @@ import type { Prisma } from "@prisma/client";
 import type {
 	APIEmbedField,
 	ButtonInteraction,
-	Channel,
 	ChatInputCommandInteraction,
 	GuildMember,
 	InteractionResponse,
-	Message,
-	User
+	Message
 } from "discord.js";
 
-type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
-type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn: infer A) => any
-	? A extends (client: infer B) => Promise<any>
-		? B
-		: never
-	: never;
 type AuditFields = Record<
 	string,
 	string | Typings.SetNullableCase<Typings.ExactlyOneOf<{ name: string; username: string }> & { id: string }, false>
 >;
 
+type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
+
+type LogCaseOptions = CommandLogCaseOptions | DeferrableLogCaseOptions;
+
+type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn: infer A) => any
+	? A extends (client: infer B) => Promise<any>
+		? B
+		: never
+	: never;
+
 interface ActionOptions {
-	pastTense?: string;
-	notifyIfUser?: boolean;
 	checkPossible?: (guildMember: GuildMember) => boolean;
+	notifyIfUser?: boolean;
+	pastTense?: string;
 	pendingExecution?: () => Promise<any>;
 }
 
-interface ModerationUserTargetOptions {
-	id: string;
-	type: EntityType;
-}
-
 interface BaseLogCaseOptions {
-	target: ModerationUserTargetOptions;
-	actionType: ActionType;
-	reason?: string;
-	caseType?: CaseType;
 	actionOptions?: ActionOptions;
-	successContent?: string;
+	actionType: ActionType;
 	buttonActionRows?: ActionRowBuilder<ButtonBuilder>[];
+	caseType?: CaseType;
+	reason?: string;
+	successContent?: string;
+	target: ModerationUserTargetOptions;
 	tx?: PrismaTX;
 }
 
@@ -82,17 +79,20 @@ interface CommandLogCaseOptions extends BaseLogCaseOptions {
 }
 
 interface DeferrableLogCaseOptions extends BaseLogCaseOptions {
-	interaction: Typings.CachedDeferrableGuildInteraction;
 	commandInteraction?: ChatInputCommandInteraction<"cached">;
+	interaction: Typings.CachedDeferrableGuildInteraction;
+}
+
+interface ModerationUserTargetOptions {
+	id: string;
+	type: EntityType;
 }
 
 interface TimestampFieldOptions {
 	createdAt: Date;
-	updatedAt?: Date | null;
 	expiryDate?: Date | null;
+	updatedAt?: Date | null;
 }
-
-type LogCaseOptions = CommandLogCaseOptions | DeferrableLogCaseOptions;
 
 export abstract class ActionManager {
 	private static getCasesSelect = {
@@ -106,6 +106,191 @@ export abstract class ActionManager {
 	public static CreateBasedTypes = Object.values(ActionType).filter((caseActionType) =>
 		StringUtils.Regexes.CreateBasedActionModifiers.test(caseActionType)
 	);
+
+	public static generateAuditReason(
+		interaction: ChatInputCommandInteraction<"cached"> | ButtonInteraction<"cached">,
+		reason: string,
+		fields: AuditFields = {}
+	): string {
+		const { user: actioned_by, channel } = interaction;
+
+		const defaultAuditFields: AuditFields = {
+			reason,
+			channel,
+			actioned_by
+		};
+
+		fields = Object.assign(defaultAuditFields, fields);
+
+		const auditReasonArray: string[] = [];
+
+		for (const [key, value] of ObjectUtils.entries(fields)) {
+			if (!value) {
+				continue;
+			}
+
+			const header = key.split("_").join(" ").toUpperCase();
+
+			const str = typeof value === "string" ? value : `${value.name ?? value.username} (${value.id})`;
+
+			auditReasonArray.push(`[${header}]: ${str}`);
+		}
+
+		return auditReasonArray.join(" | ");
+	}
+
+	public static generateTimestampField(options: TimestampFieldOptions) {
+		const { createdAt, updatedAt, expiryDate } = options;
+		const _case = DBConnectionManager.Prisma.case;
+
+		const createdCaseEmbedTimestampFieldValue = [
+			{
+				name: "Created At",
+				value: _case.unixTimestampHelper(createdAt)
+			}
+		];
+
+		if (updatedAt) {
+			createdCaseEmbedTimestampFieldValue.push({
+				name: "Last Updated At",
+				value: _case.unixTimestampHelper(updatedAt)
+			});
+		}
+
+		if (expiryDate) {
+			createdCaseEmbedTimestampFieldValue.push({
+				name: "Expires At",
+				value: _case.unixTimestampHelper(expiryDate)
+			});
+		}
+
+		return {
+			name: "Timestamps",
+			value: EmbedManager.indentFieldValues(createdCaseEmbedTimestampFieldValue)
+		};
+	}
+
+	public static async getCases(
+		interaction: ChatInputCommandInteraction<"cached">,
+		simpleFilter?: Typings.Database.SimpleFilter<"Case">
+	): Promise<Typings.Prettify<Pick<Doc, keyof typeof this.getCasesSelect>>[]> {
+		const { guildId } = interaction;
+
+		return await DBConnectionManager.Prisma.case.fetchMany({
+			where: { guildId, ...simpleFilter },
+			select: this.getCasesSelect
+		});
+	}
+
+	public static async listCases(
+		interaction: ChatInputCommandInteraction<"cached">,
+		simpleFilter?: Typings.Database.SimpleFilter<"Case">
+	) {
+		const { guild, guildId } = interaction;
+		const rawDocuments = await DBConnectionManager.Prisma.case.fetchMany({
+			where: { guildId, ...simpleFilter },
+			select: this.getCasesSelect
+		});
+
+		const validDocuments = rawDocuments.filter((doc) => doc.apiEmbeds.length);
+
+		if (!validDocuments.length) {
+			return await InteractionUtils.replyNoData(interaction);
+		}
+
+		const paginationPages: Array<Pick<PaginationItem, "embeds" | "components">> = [];
+		const embedTitle = `${guild.name} Cases (${validDocuments.length})`;
+
+		const descriptionArray = validDocuments
+			.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+			.map(
+				({ id, action, createdAt }) =>
+					`${discordBuilders.inlineCode(id)} ${discordBuilders.bold(`[${action}]`)} ${discordBuilders.time(createdAt, discordBuilders.TimestampStyles.RelativeTime)}`
+			);
+
+		const descriptionChunks = _.chunk(descriptionArray, MAX_ELEMENTS_PER_PAGE);
+
+		const addFooter = descriptionChunks.length > 1;
+
+		descriptionChunks.forEach((chunk, index, arr) => {
+			const embedDescription = chunk.join(StringUtils.LineBreak);
+			const embed = new EmbedBuilder().setTitle(embedTitle).setColor(LIGHT_GOLD).setDescription(embedDescription);
+
+			if (addFooter) {
+				embed.setFooter({ text: `Page ${index + 1} / ${arr.length}` });
+			}
+
+			const selectMenu = new discordBuilders.StringSelectMenuBuilder()
+				.setCustomId(`string_select_menu_pagination_${index}`)
+				.setPlaceholder("View a case");
+
+			const caseIDArray = chunk.map((str) => str.match(/`([^`]+)`/)![1]);
+
+			const selectMenuOptions = caseIDArray.map((caseID) =>
+				new discordBuilders.StringSelectMenuOptionBuilder().setLabel(caseID).setValue(caseID)
+			);
+
+			selectMenu.addOptions(selectMenuOptions);
+
+			const actionRow = new ActionRowBuilder<discordBuilders.StringSelectMenuBuilder>().addComponents(selectMenu);
+
+			paginationPages.push({ embeds: [embed], components: [actionRow] });
+		});
+
+		let collectorTarget: Message | InteractionResponse | null = null;
+
+		if (paginationPages.length === 1) {
+			collectorTarget = await InteractionUtils.replyOrFollowUp(interaction, paginationPages[0]);
+		} else {
+			const pagination = new PaginationManager(interaction, paginationPages, {
+				type: PaginationType.Button
+			});
+
+			const paginationObject = await pagination.init();
+
+			collectorTarget = paginationObject.message;
+		}
+
+		if (!collectorTarget) {
+			return;
+		}
+
+		const collector = collectorTarget.createMessageComponentCollector({
+			componentType: ComponentType.StringSelect,
+			filter: (v) => v.user.id === interaction.user.id
+		});
+
+		collector.on("collect", async (i) => {
+			const caseID = i.values[0];
+
+			const { apiEmbeds, messageURL } = validDocuments.find((doc) => doc.id === caseID)!;
+
+			if (!apiEmbeds.length) {
+				return void (await InteractionUtils.replyNoData(i));
+			}
+
+			const components: ActionRowBuilder<ButtonBuilder>[] = [];
+
+			if (messageURL) {
+				const messageURLButton = new ButtonBuilder()
+					.setLabel("View Log Message")
+					.setStyle(ButtonStyle.Link)
+					.setURL(messageURL);
+
+				const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
+
+				components.push(buttonActionRow);
+			}
+
+			await InteractionUtils.replyOrFollowUp(i, {
+				embeds: apiEmbeds,
+				components,
+				ephemeral: true
+			});
+
+			return;
+		});
+	}
 
 	public static async logCase(options: LogCaseOptions) {
 		const { interaction, target, reason, actionType, caseType, actionOptions, successContent, tx } = options;
@@ -143,6 +328,7 @@ export abstract class ActionManager {
 
 		if (guildMember && actionOptions?.checkPossible && !actionOptions.checkPossible(guildMember)) {
 			let failTitle = isAutoPunishment ? `[AUTO] ${reason} but ` : "";
+
 			failTitle += "I cannot perform this action";
 
 			const content = `${failTitle}: insufficient permissions against the target.`;
@@ -193,6 +379,7 @@ export abstract class ActionManager {
 		const embeds: EmbedBuilder[] = [];
 
 		let title = isAutoPunishment ? "[AUTO] " : "";
+
 		title += `CASE ${id}`;
 
 		const colour = isAutoPunishment ? Colors.Purple : Colors.Red;
@@ -214,6 +401,7 @@ export abstract class ActionManager {
 			let commandString = `/${commandInteraction.commandName}`;
 
 			const commandOption = commandInteraction.options.data[0];
+
 			if (
 				commandOption.type === ApplicationCommandOptionType.Subcommand ||
 				commandOption.type === ApplicationCommandOptionType.SubcommandGroup
@@ -236,6 +424,7 @@ export abstract class ActionManager {
 			];
 
 			const nestedCommandOption = commandOption.options?.[0];
+
 			if (nestedCommandOption && nestedCommandOption.type === ApplicationCommandOptionType.Subcommand) {
 				commandString += ` ${nestedCommandOption.name}`;
 			}
@@ -353,6 +542,7 @@ export abstract class ActionManager {
 		let moderativeLogChannel = await _entity.retrieveGivenGuildLogChannel(interaction, actionType);
 		let logMessage: Message<true> | null = null;
 		let messageURL: string | null = null;
+
 		if (!moderativeLogChannel && interaction.channel instanceof TextChannel) {
 			moderativeLogChannel = interaction.channel;
 		}
@@ -382,6 +572,7 @@ export abstract class ActionManager {
 
 		if (guildMember && actionOptions && actionOptions.notifyIfUser !== false) {
 			let noticeName = isAutoPunishment ? "[AUTO] " : "";
+
 			noticeName += "Notice";
 
 			const fields: APIEmbedField[] = [
@@ -444,6 +635,7 @@ export abstract class ActionManager {
 			const successColour = isAutoPunishment ? Colors.Purple : Colors.Green;
 
 			let successTitle = isAutoPunishment ? "[AUTO] " : "";
+
 			successTitle += "Success";
 
 			const successEmbed = new EmbedBuilder().setColor(successColour).addFields({
@@ -465,6 +657,7 @@ export abstract class ActionManager {
 					.setURL(messageURL);
 
 				const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
+
 				buttonActionRows.push(buttonActionRow);
 			}
 
@@ -487,188 +680,5 @@ export abstract class ActionManager {
 		}
 
 		return returnMessage;
-	}
-
-	public static async getCases(
-		interaction: ChatInputCommandInteraction<"cached">,
-		simpleFilter?: Typings.Database.SimpleFilter<"Case">
-	): Promise<Typings.Prettify<Pick<Doc, keyof typeof this.getCasesSelect>>[]> {
-		const { guildId } = interaction;
-
-		return await DBConnectionManager.Prisma.case.fetchMany({
-			where: { guildId, ...simpleFilter },
-			select: this.getCasesSelect
-		});
-	}
-
-	public static async listCases(
-		interaction: ChatInputCommandInteraction<"cached">,
-		simpleFilter?: Typings.Database.SimpleFilter<"Case">
-	) {
-		const { guild, guildId } = interaction;
-		const rawDocuments = await DBConnectionManager.Prisma.case.fetchMany({
-			where: { guildId, ...simpleFilter },
-			select: this.getCasesSelect
-		});
-
-		const validDocuments = rawDocuments.filter((doc) => doc.apiEmbeds.length);
-
-		if (!validDocuments.length) {
-			return await InteractionUtils.replyNoData(interaction);
-		}
-
-		const paginationPages: Array<Pick<PaginationItem, "embeds" | "components">> = [];
-		const embedTitle = `${guild.name} Cases (${validDocuments.length})`;
-
-		const descriptionArray = validDocuments
-			.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-			.map(
-				({ id, action, createdAt }) =>
-					`${discordBuilders.inlineCode(id)} ${discordBuilders.bold(`[${action}]`)} ${discordBuilders.time(createdAt, discordBuilders.TimestampStyles.RelativeTime)}`
-			);
-
-		const descriptionChunks = _.chunk(descriptionArray, MAX_ELEMENTS_PER_PAGE);
-
-		const addFooter = descriptionChunks.length > 1;
-
-		descriptionChunks.forEach((chunk, index, arr) => {
-			const embedDescription = chunk.join(StringUtils.LineBreak);
-			const embed = new EmbedBuilder().setTitle(embedTitle).setColor(LIGHT_GOLD).setDescription(embedDescription);
-
-			if (addFooter) {
-				embed.setFooter({ text: `Page ${index + 1} / ${arr.length}` });
-			}
-
-			const selectMenu = new discordBuilders.StringSelectMenuBuilder()
-				.setCustomId(`string_select_menu_pagination_${index}`)
-				.setPlaceholder("View a case");
-
-			const caseIDArray = chunk.map((str) => str.match(/`([^`]+)`/)![1]);
-
-			const selectMenuOptions = caseIDArray.map((caseID) =>
-				new discordBuilders.StringSelectMenuOptionBuilder().setLabel(caseID).setValue(caseID)
-			);
-
-			selectMenu.addOptions(selectMenuOptions);
-
-			const actionRow = new ActionRowBuilder<discordBuilders.StringSelectMenuBuilder>().addComponents(selectMenu);
-
-			paginationPages.push({ embeds: [embed], components: [actionRow] });
-		});
-
-		let collectorTarget: Message | InteractionResponse | null = null;
-
-		if (paginationPages.length === 1) {
-			collectorTarget = await InteractionUtils.replyOrFollowUp(interaction, paginationPages[0]);
-		} else {
-			const pagination = new PaginationManager(interaction, paginationPages, {
-				type: PaginationType.Button
-			});
-
-			const paginationObject = await pagination.init();
-			collectorTarget = paginationObject.message;
-		}
-
-		if (!collectorTarget) {
-			return;
-		}
-
-		const collector = collectorTarget.createMessageComponentCollector({
-			componentType: ComponentType.StringSelect,
-			filter: (v) => v.user.id === interaction.user.id
-		});
-
-		collector.on("collect", async (i) => {
-			const caseID = i.values[0];
-
-			const { apiEmbeds, messageURL } = validDocuments.find((doc) => doc.id === caseID)!;
-			if (!apiEmbeds.length) {
-				return void (await InteractionUtils.replyNoData(i));
-			}
-
-			const components: ActionRowBuilder<ButtonBuilder>[] = [];
-
-			if (messageURL) {
-				const messageURLButton = new ButtonBuilder()
-					.setLabel("View Log Message")
-					.setStyle(ButtonStyle.Link)
-					.setURL(messageURL);
-
-				const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
-
-				components.push(buttonActionRow);
-			}
-
-			await InteractionUtils.replyOrFollowUp(i, {
-				embeds: apiEmbeds,
-				components,
-				ephemeral: true
-			});
-
-			return;
-		});
-	}
-
-	public static generateTimestampField(options: TimestampFieldOptions) {
-		const { createdAt, updatedAt, expiryDate } = options;
-		const _case = DBConnectionManager.Prisma.case;
-
-		const createdCaseEmbedTimestampFieldValue = [
-			{
-				name: "Created At",
-				value: _case.unixTimestampHelper(createdAt)
-			}
-		];
-
-		if (updatedAt) {
-			createdCaseEmbedTimestampFieldValue.push({
-				name: "Last Updated At",
-				value: _case.unixTimestampHelper(updatedAt)
-			});
-		}
-
-		if (expiryDate) {
-			createdCaseEmbedTimestampFieldValue.push({
-				name: "Expires At",
-				value: _case.unixTimestampHelper(expiryDate)
-			});
-		}
-
-		return {
-			name: "Timestamps",
-			value: EmbedManager.indentFieldValues(createdCaseEmbedTimestampFieldValue)
-		};
-	}
-
-	public static generateAuditReason(
-		interaction: ChatInputCommandInteraction<"cached"> | ButtonInteraction<"cached">,
-		reason: string,
-		fields: AuditFields = {}
-	): string {
-		const { user: actioned_by, channel } = interaction;
-
-		const defaultAuditFields: AuditFields = {
-			reason,
-			channel,
-			actioned_by
-		};
-
-		fields = Object.assign(defaultAuditFields, fields);
-
-		const auditReasonArray: string[] = [];
-
-		for (const [key, value] of ObjectUtils.entries(fields)) {
-			if (!value) {
-				continue;
-			}
-
-			const header = key.split("_").join(" ").toUpperCase();
-
-			const str = typeof value === "string" ? value : `${value.name ?? value.username} (${value.id})`;
-
-			auditReasonArray.push(`[${header}]: ${str}`);
-		}
-
-		return auditReasonArray.join(" | ");
 	}
 }

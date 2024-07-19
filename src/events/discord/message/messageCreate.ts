@@ -9,8 +9,9 @@ import type { ArgsOf } from "discordx";
 @Discord()
 export abstract class MessageCreate {
 	@On({ event: Events.MessageCreate })
-	async messageCreate([message]: ArgsOf<Events.MessageCreate>) {
+	public async messageCreate([message]: ArgsOf<Events.MessageCreate>) {
 		const { member: target } = message;
+
 		if (!message.inGuild() || !target) {
 			return;
 		}

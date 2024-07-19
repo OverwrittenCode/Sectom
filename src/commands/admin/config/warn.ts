@@ -20,27 +20,11 @@ import type { ChatInputCommandInteraction } from "discord.js";
 
 type ThresholdPunishmentType = (typeof ThresholdPunishmentOption)[keyof typeof ThresholdPunishmentOption];
 
-const ThresholdPunishmentOption = {
-	disable: "disable",
-	timeout: ActionType.TIME_OUT_USER_ADD,
-	kick: ActionType.KICK_USER_SET,
-	ban: ActionType.BAN_USER_ADD
-} as const;
-
 @Discord()
 @Category(Enums.CommandCategory.Admin)
 @SlashGroup({ description: "Warning configuration", name: "warn", root: "config" })
 @SlashGroup("warn", "config")
 export abstract class WarnConfig {
-	@Slash({ description: "Enables/disables this configuration " })
-	public toggle(
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return Config.togglestate("warning", reason, interaction);
-	}
-
 	@Slash({
 		description:
 			"Configures the duration multilpier for repeated automated offences. I.e. for 2 => 3m, 6m, 12m, 24m"
@@ -233,4 +217,20 @@ export abstract class WarnConfig {
 			successContent: `${pastTenseAction} threshold for ${inlineCode(threshold.toString())} warnings`
 		});
 	}
+
+	@Slash({ description: "Enables/disables this configuration " })
+	public toggle(
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Config.togglestate("warning", reason, interaction);
+	}
 }
+
+const ThresholdPunishmentOption = {
+	disable: "disable",
+	timeout: ActionType.TIME_OUT_USER_ADD,
+	kick: ActionType.KICK_USER_SET,
+	ban: ActionType.BAN_USER_ADD
+} as const;

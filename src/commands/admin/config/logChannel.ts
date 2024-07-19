@@ -43,6 +43,60 @@ const LogChannelChoices = ActionManager.CreateBasedTypes.reduce(
 })
 @SlashGroup("logchannel", "config")
 export abstract class LogChannelConfig {
+	@Slash({ description: "Removes a log channel" })
+	public async remove(
+		@SlashChoice({ name: "Default", value: "DEFAULT" })
+		@SlashChoice(...EnumChoice(LogChannelChoices))
+		@SlashOption({
+			description: "The action type group",
+			name: "action_type",
+			type: ApplicationCommandOptionType.String,
+			required: true
+		})
+		actionTypeChoice: ActionType | "DEFAULT",
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		const actionTypeGroup = actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
+
+		const retrievedGuildLogChannel = await DBConnectionManager.Prisma.entity.retrieveGivenGuildLogChannel(
+			interaction,
+			actionTypeGroup
+		);
+
+		const currentCorrespondingLogChannelId = retrievedGuildLogChannel?.id;
+
+		if (!currentCorrespondingLogChannelId) {
+			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("given log channel"));
+		}
+
+		return await ActionManager.logCase({
+			interaction,
+			target: {
+				id: currentCorrespondingLogChannelId,
+				type: EntityType.CHANNEL
+			},
+			reason,
+			actionType: ActionType.CONFIG_LOG_CHANNEL_REMOVE,
+			actionOptions: {
+				pastTense: "removed the log channel",
+				pendingExecution: () =>
+					DBConnectionManager.Prisma.entity.update({
+						where: {
+							id: currentCorrespondingLogChannelId
+						},
+						data: {
+							logChannelType: null,
+							logChannelGuild: {
+								disconnect: true
+							}
+						}
+					})
+			}
+		});
+	}
+
 	@Slash({ description: "Sets the log channel for an action type group" })
 	public async set(
 		@TargetSlashOption({
@@ -139,60 +193,6 @@ export abstract class LogChannelConfig {
 			actionOptions: {
 				pastTense: `${actionStr} the ${inlineCode(actionTypeChoice ?? "default")} log channel`,
 				pendingExecution: () => DBConnectionManager.Prisma.$transaction(prismaTransaction)
-			}
-		});
-	}
-
-	@Slash({ description: "Removes a log channel" })
-	public async remove(
-		@SlashChoice({ name: "Default", value: "DEFAULT" })
-		@SlashChoice(...EnumChoice(LogChannelChoices))
-		@SlashOption({
-			description: "The action type group",
-			name: "action_type",
-			type: ApplicationCommandOptionType.String,
-			required: true
-		})
-		actionTypeChoice: ActionType | "DEFAULT",
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		const actionTypeGroup = actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
-
-		const retrievedGuildLogChannel = await DBConnectionManager.Prisma.entity.retrieveGivenGuildLogChannel(
-			interaction,
-			actionTypeGroup
-		);
-
-		const currentCorrespondingLogChannelId = retrievedGuildLogChannel?.id;
-
-		if (!currentCorrespondingLogChannelId) {
-			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("given log channel"));
-		}
-
-		return await ActionManager.logCase({
-			interaction,
-			target: {
-				id: currentCorrespondingLogChannelId,
-				type: EntityType.CHANNEL
-			},
-			reason,
-			actionType: ActionType.CONFIG_LOG_CHANNEL_REMOVE,
-			actionOptions: {
-				pastTense: "removed the log channel",
-				pendingExecution: () =>
-					DBConnectionManager.Prisma.entity.update({
-						where: {
-							id: currentCorrespondingLogChannelId
-						},
-						data: {
-							logChannelType: null,
-							logChannelGuild: {
-								disconnect: true
-							}
-						}
-					})
 			}
 		});
 	}

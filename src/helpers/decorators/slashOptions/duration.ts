@@ -9,10 +9,10 @@ import { CommandUtils } from "~/utils/command.js";
 import type { AutocompleteInteraction } from "discord.js";
 
 interface DurationOptions {
-	transformerOptions: DurationMSValidateOptions;
-	name?: Lowercase<string>;
 	descriptionPrefix?: string;
+	name?: Lowercase<string>;
 	required?: boolean;
+	transformerOptions: DurationMSValidateOptions;
 }
 
 export function DurationSlashOption(options: DurationOptions) {

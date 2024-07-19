@@ -67,6 +67,7 @@ export class LeaderboardBuilder extends Builder<LeaderboardProps> {
 
 	public setPlayers(players: LeaderboardPlayer[]) {
 		const items = players.slice(0, 10);
+
 		this.options.set("players", items);
 
 		return this;

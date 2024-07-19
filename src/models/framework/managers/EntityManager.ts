@@ -9,28 +9,22 @@ import Discord, {
 
 import type { Typings } from "~/ts/Typings.js";
 
+type EntityType = Exclude<GuildEntityType, "member">;
+
+type GuildEntityType = keyof GuildEntityTypeMap;
+
 type GuildEntityTypeMap = {
 	member: GuildMember;
 	user: User;
 	role: Role;
 	channel: GuildBasedChannel;
 };
-type GuildEntityType = keyof GuildEntityTypeMap;
-type EntityType = Exclude<GuildEntityType, "member">;
+
 type MentionFunction<T extends EntityType = EntityType> = (typeof Discord)[`${T}Mention`];
+
 type MentionString<T extends EntityType = EntityType> = ReturnType<MentionFunction<T>>;
 
 export abstract class EntityManager {
-	public static getUserHyperlink(userId: string, withContent: boolean = true): string {
-		const url = `https://discordapp.com/users/${userId}`;
-
-		if (!withContent) {
-			return url;
-		}
-
-		return hyperlink(userId, url);
-	}
-
 	public static getChannelHyperlink(channelId: string, guildId: string, withContent: boolean = true): string {
 		const url = channelLink(channelId, guildId);
 
@@ -41,12 +35,12 @@ export abstract class EntityManager {
 		return hyperlink(channelId, url);
 	}
 
-	public static getEntityType(entity: Typings.EntityObjectType): EntityType {
-		return "avatarURL" in entity ? "user" : "color" in entity ? "role" : "channel";
-	}
-
 	public static getEntityName(entity: Typings.EntityObjectType): string {
 		return "username" in entity ? entity.username : "user" in entity ? entity.user.username : entity.name;
+	}
+
+	public static getEntityType(entity: Typings.EntityObjectType): EntityType {
+		return "avatarURL" in entity ? "user" : "color" in entity ? "role" : "channel";
 	}
 
 	public static getMentionStringFromEntity(entity: Typings.EntityObjectType): MentionString;
@@ -57,6 +51,7 @@ export abstract class EntityManager {
 	): MentionString {
 		let entityType: EntityType;
 		let entityId: string;
+
 		if (typeof entity === "string") {
 			entityType = type!;
 			entityId = entity;
@@ -64,9 +59,20 @@ export abstract class EntityManager {
 			entityType = this.getEntityType(entity);
 			entityId = entity.id;
 		}
+
 		const entityMention = Discord[`${entityType}Mention`];
 
 		return entityMention(entityId);
+	}
+
+	public static getUserHyperlink(userId: string, withContent: boolean = true): string {
+		const url = `https://discordapp.com/users/${userId}`;
+
+		if (!withContent) {
+			return url;
+		}
+
+		return hyperlink(userId, url);
 	}
 
 	public static isEntityType<const T extends GuildEntityType>(

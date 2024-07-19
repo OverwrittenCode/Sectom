@@ -30,6 +30,38 @@ const mutualPermissions = [PermissionFlagsBits.ManageNicknames];
 })
 @SlashGroup("nick")
 export abstract class Nick {
+	@Slash({ dmPermission: false, description: "Reset the nickname of a member in the server" })
+	public reset(
+		@TargetSlashOption({
+			entityType: EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
+		})
+		target: GuildMember,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		if (!target.nickname) {
+			throw new ValidationError("I cannot perform this action: that user does not have a nickname set.");
+		}
+
+		const auditReason = ActionManager.generateAuditReason(interaction, reason);
+
+		return ActionManager.logCase({
+			interaction,
+			target: {
+				id: target.id,
+				type: EntityType.USER
+			},
+			reason,
+			actionType: ActionType.NICK_USER_RESET,
+			actionOptions: {
+				pastTense: "reset the nickname of",
+				pendingExecution: () => target.setNickname(null, auditReason)
+			}
+		});
+	}
+
 	@Slash({ dmPermission: false, description: "Set the nickname of a member in the server" })
 	public set(
 		@TargetSlashOption({
@@ -61,38 +93,6 @@ export abstract class Nick {
 			successContent: `nicknamed ${target.toString()} as ${inlineCode(nickname)}`,
 			actionOptions: {
 				pendingExecution: () => target.setNickname(nickname, auditReason)
-			}
-		});
-	}
-
-	@Slash({ dmPermission: false, description: "Reset the nickname of a member in the server" })
-	public reset(
-		@TargetSlashOption({
-			entityType: EntityType.USER,
-			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
-		})
-		target: GuildMember,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		if (!target.nickname) {
-			throw new ValidationError("I cannot perform this action: that user does not have a nickname set.");
-		}
-
-		const auditReason = ActionManager.generateAuditReason(interaction, reason);
-
-		return ActionManager.logCase({
-			interaction,
-			target: {
-				id: target.id,
-				type: EntityType.USER
-			},
-			reason,
-			actionType: ActionType.NICK_USER_RESET,
-			actionOptions: {
-				pastTense: "reset the nickname of",
-				pendingExecution: () => target.setNickname(null, auditReason)
 			}
 		});
 	}

@@ -39,37 +39,6 @@ import type {
 	ReadonlyCollection
 } from "discord.js";
 
-interface ConstructCustomIdGeneratorOptions {
-	baseID: string;
-	messageComponentType: Enums.MessageComponentType;
-	messageComponentFlags?: MessageComponentFlags[keyof MessageComponentFlags][];
-}
-
-interface ConfirmationButtonOptions extends ReplyOptions {
-	confirmLabel?: string;
-	cancelLabel?: string;
-	userIDs?: string[];
-	notifyStatus?: boolean;
-	multiplayerWaitingLobbyText?: string;
-	resolveTime?: number;
-	confirmationTimeFooterEmbedIndex?: number | null;
-	confirmationTime?: number;
-	isGame?: boolean;
-}
-
-interface DisableComponentRules {
-	customIds?: string[];
-	delete?: boolean;
-}
-
-interface DisableComponentOptions {
-	messageEditOptions?: Omit<MessageEditOptions, "components">;
-	rules?: DisableComponentRules;
-}
-
-type ReplyOptions = Typings.DisplaceObjects<InteractionReplyOptions, { ephemeral?: boolean | null }>;
-type MessageComponentFlags = Omit<typeof InteractionUtils.MessageComponentIds, "Managed">;
-
 type ConstructCustomIdGeneratorOutput<
 	Prefix extends string[],
 	Suffix extends string[],
@@ -92,6 +61,37 @@ type CustomIdPrefixRecordOutput<T extends string> = {
 	};
 };
 
+type MessageComponentFlags = Omit<typeof InteractionUtils.MessageComponentIds, "Managed">;
+
+type ReplyOptions = Typings.DisplaceObjects<InteractionReplyOptions, { ephemeral?: boolean | null }>;
+
+interface ConfirmationButtonOptions extends ReplyOptions {
+	cancelLabel?: string;
+	confirmLabel?: string;
+	confirmationTime?: number;
+	confirmationTimeFooterEmbedIndex?: number | null;
+	multiplayerWaitingLobbyText?: string;
+	notifyStatus?: boolean;
+	resolveTime?: number;
+	userIDs?: string[];
+}
+
+interface ConstructCustomIdGeneratorOptions {
+	baseID: string;
+	messageComponentFlags?: MessageComponentFlags[keyof MessageComponentFlags][];
+	messageComponentType: Enums.MessageComponentType;
+}
+
+interface DisableComponentOptions {
+	messageEditOptions?: Omit<MessageEditOptions, "components">;
+	rules?: DisableComponentRules;
+}
+
+interface DisableComponentRules {
+	customIds?: string[];
+	delete?: boolean;
+}
+
 export abstract class InteractionUtils {
 	public static MessageComponentIds = {
 		CancelAction: "cancel_action",
@@ -100,80 +100,10 @@ export abstract class InteractionUtils {
 		Multiplayer: "multiplayer",
 		Managed: ["pagination"]
 	} as const;
-
 	public static Messages = {
 		NoData: "Nothing to view yet in this query selection.",
 		NoReason: "No reason provided."
 	} as const;
-
-	public static async replyOrFollowUp(
-		interaction: Typings.DeferrableGuildInteraction,
-		replyOptions: ReplyOptions & { fetchReply: true }
-	): Promise<Message>;
-	public static async replyOrFollowUp(
-		interaction: Typings.DeferrableGuildInteraction,
-		replyOptions: ReplyOptions
-	): Promise<Message | InteractionResponse>;
-	public static async replyOrFollowUp(
-		interaction: Typings.DeferrableGuildInteraction,
-		replyOptions: ReplyOptions
-	): Promise<Message | InteractionResponse> {
-		try {
-			if (replyOptions.ephemeral === null) {
-				replyOptions.ephemeral = interaction.ephemeral;
-			}
-
-			const options = replyOptions as InteractionReplyOptions;
-
-			if (interaction.replied) {
-				return await interaction.followUp(options);
-			}
-
-			if (interaction.deferred) {
-				if (!interaction.ephemeral && replyOptions.ephemeral) {
-					return await interaction.followUp(options);
-				}
-
-				const { ephemeral, ...editReplyOptions } = options;
-
-				return await interaction.editReply(editReplyOptions);
-			}
-
-			return await interaction.reply(options);
-		} catch (err) {
-			const unknownInteractionOrMessage =
-				err instanceof DiscordAPIError &&
-				(err.code === RESTJSONErrorCodes.UnknownInteraction || err.code === RESTJSONErrorCodes.UnknownMessage);
-
-			if (this.isDeferRaceCondition(err) || unknownInteractionOrMessage) {
-				return await this.replyOrFollowUp(interaction, replyOptions).catch(() => {
-					throw new ValidationError("Something went wrong.");
-				});
-			}
-
-			throw err;
-		}
-	}
-
-	public static async replyNoData(interaction: Typings.DeferrableGuildInteraction, ephemeral: boolean = true) {
-		return await this.replyOrFollowUp(interaction, {
-			content: this.Messages.NoData,
-			ephemeral
-		});
-	}
-
-	public static async deferInteraction(
-		interaction: Typings.DeferrableGuildInteraction,
-		ephemeralOrUpdate: boolean = false
-	) {
-		if (!interaction.replied && !interaction.deferred) {
-			if (interaction.isButton() && ephemeralOrUpdate) {
-				return await interaction.deferUpdate();
-			}
-
-			return await interaction.deferReply({ ephemeral: ephemeralOrUpdate }).catch(() => {});
-		}
-	}
 
 	public static async confirmationButton(
 		interaction: Typings.DeferrableGuildInteraction,
@@ -189,7 +119,6 @@ export abstract class InteractionUtils {
 			confirmationTime = ms("10s"),
 			confirmationTimeFooterEmbedIndex = 0,
 			resolveTime,
-			isGame = false,
 			...replyOptions
 		} = options;
 
@@ -298,18 +227,6 @@ export abstract class InteractionUtils {
 		}
 	}
 
-	public static customIdPrefixRecords<const T extends string>(
-		...customIds: T[]
-	): Typings.Prettify<CustomIdPrefixRecordOutput<T>> {
-		return customIds.reduce((acc, id) => {
-			acc[id] = {
-				id,
-				regex: new RegExp(`^${id}`)
-			};
-			return acc;
-		}, {} as CustomIdPrefixRecordOutput<T>);
-	}
-
 	public static constructCustomIdGenerator<
 		const Options extends ConstructCustomIdGeneratorOptions,
 		const Prefix extends string[]
@@ -332,15 +249,29 @@ export abstract class InteractionUtils {
 		};
 	}
 
-	public static modalSubmitToEmbedFIelds(interaction: ModalSubmitInteraction<"cached">): APIEmbedField[] {
-		const textInputComponents = [...interaction.fields.fields.toJSON().values()].filter(({ value }) => !!value);
+	public static customIdPrefixRecords<const T extends string>(
+		...customIds: T[]
+	): Typings.Prettify<CustomIdPrefixRecordOutput<T>> {
+		return customIds.reduce((acc, id) => {
+			acc[id] = {
+				id,
+				regex: new RegExp(`^${id}`)
+			};
+			return acc;
+		}, {} as CustomIdPrefixRecordOutput<T>);
+	}
 
-		const fields: APIEmbedField[] = textInputComponents.map(({ customId, value }) => ({
-			name: customId.replaceAll("_", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()),
-			value
-		}));
+	public static async deferInteraction(
+		interaction: Typings.DeferrableGuildInteraction,
+		ephemeralOrUpdate: boolean = false
+	) {
+		if (!interaction.replied && !interaction.deferred) {
+			if (interaction.isButton() && ephemeralOrUpdate) {
+				return await interaction.deferUpdate();
+			}
 
-		return fields;
+			return await interaction.deferReply({ ephemeral: ephemeralOrUpdate }).catch(() => {});
+		}
 	}
 
 	public static async disableComponents(
@@ -355,6 +286,90 @@ export abstract class InteractionUtils {
 				components: this.toDisabledComponents(message.components, rules)
 			})
 			.catch(() => null);
+	}
+
+	public static emojiMention(emoji: APIMessageComponentEmoji): string {
+		return emoji.id ? formatEmoji(emoji.id, emoji.animated) : emoji.name!;
+	}
+
+	public static isDeferRaceCondition(err: unknown): err is DiscordjsError | DiscordAPIError {
+		return (
+			(err instanceof DiscordjsError && err.code === DiscordjsErrorCodes.InteractionAlreadyReplied) ||
+			(err instanceof DiscordAPIError && err.code === RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged)
+		);
+	}
+
+	public static isValidEmoji(interaction: Typings.GuildInteraction, emojiIdOrSymbol: string): boolean {
+		return Boolean(
+			StringUtils.Regexes.UnicodeEmoji.test(emojiIdOrSymbol) || interaction.client.emojis.resolve(emojiIdOrSymbol)
+		);
+	}
+
+	public static modalSubmitToEmbedFIelds(interaction: ModalSubmitInteraction<"cached">): APIEmbedField[] {
+		const textInputComponents = [...interaction.fields.fields.toJSON().values()].filter(({ value }) => !!value);
+
+		const fields: APIEmbedField[] = textInputComponents.map(({ customId, value }) => ({
+			name: customId.replaceAll("_", " ").replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()),
+			value
+		}));
+
+		return fields;
+	}
+
+	public static async replyNoData(interaction: Typings.DeferrableGuildInteraction, ephemeral: boolean = true) {
+		return await this.replyOrFollowUp(interaction, {
+			content: this.Messages.NoData,
+			ephemeral
+		});
+	}
+
+	public static async replyOrFollowUp(
+		interaction: Typings.DeferrableGuildInteraction,
+		replyOptions: ReplyOptions & { fetchReply: true }
+	): Promise<Message>;
+	public static async replyOrFollowUp(
+		interaction: Typings.DeferrableGuildInteraction,
+		replyOptions: ReplyOptions
+	): Promise<Message | InteractionResponse>;
+	public static async replyOrFollowUp(
+		interaction: Typings.DeferrableGuildInteraction,
+		replyOptions: ReplyOptions
+	): Promise<Message | InteractionResponse> {
+		try {
+			if (replyOptions.ephemeral === null) {
+				replyOptions.ephemeral = interaction.ephemeral;
+			}
+
+			const options = replyOptions as InteractionReplyOptions;
+
+			if (interaction.replied) {
+				return await interaction.followUp(options);
+			}
+
+			if (interaction.deferred) {
+				if (!interaction.ephemeral && replyOptions.ephemeral) {
+					return await interaction.followUp(options);
+				}
+
+				const { ephemeral, ...editReplyOptions } = options;
+
+				return await interaction.editReply(editReplyOptions);
+			}
+
+			return await interaction.reply(options);
+		} catch (err) {
+			const unknownInteractionOrMessage =
+				err instanceof DiscordAPIError &&
+				(err.code === RESTJSONErrorCodes.UnknownInteraction || err.code === RESTJSONErrorCodes.UnknownMessage);
+
+			if (this.isDeferRaceCondition(err) || unknownInteractionOrMessage) {
+				return await this.replyOrFollowUp(interaction, replyOptions).catch(() => {
+					throw new ValidationError("Something went wrong.");
+				});
+			}
+
+			throw err;
+		}
 	}
 
 	public static toDisabledComponents<
@@ -372,22 +387,5 @@ export abstract class InteractionUtils {
 				return c;
 			})
 		})) as T;
-	}
-
-	public static emojiMention(emoji: APIMessageComponentEmoji): string {
-		return emoji.id ? formatEmoji(emoji.id, emoji.animated) : emoji.name!;
-	}
-
-	public static isValidEmoji(interaction: Typings.GuildInteraction, emojiIdOrSymbol: string): boolean {
-		return Boolean(
-			StringUtils.Regexes.UnicodeEmoji.test(emojiIdOrSymbol) || interaction.client.emojis.resolve(emojiIdOrSymbol)
-		);
-	}
-
-	public static isDeferRaceCondition(err: unknown): err is DiscordjsError | DiscordAPIError {
-		return (
-			(err instanceof DiscordjsError && err.code === DiscordjsErrorCodes.InteractionAlreadyReplied) ||
-			(err instanceof DiscordAPIError && err.code === RESTJSONErrorCodes.InteractionHasAlreadyBeenAcknowledged)
-		);
 	}
 }

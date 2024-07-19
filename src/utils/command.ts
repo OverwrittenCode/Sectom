@@ -7,29 +7,29 @@ import type { Typings } from "~/ts/Typings.js";
 import type { CommandInteraction, CommandInteractionOption } from "discord.js";
 
 type CategoryGroupedDataKey = Enums.CommandCategory;
+
 type CategoryGroupedDataValue = Array<
 	Typings.Prettify<Pick<Required<Typings.DSlashCommand>, "name" | "description" | "options" | "category">>
 >;
 
 interface CategoryGroupedData {
 	keys: CategoryGroupedDataKey[];
-	values: CategoryGroupedDataValue[];
 	obj: Record<CategoryGroupedDataKey, CategoryGroupedDataValue>;
+	values: CategoryGroupedDataValue[];
 }
 
 export abstract class CommandUtils {
 	public static CategoryGroupedData: CategoryGroupedData;
 	public static CollectionTime = ms("10m");
-	public static EntityType = { ...EntityType, SNOWFLAKE: "SNOWFLAKE" as const };
-	public static SlashOptions = {
-		ChannelPermissionName: "in_channel",
-		DisableChoice: "disable"
-	} as const;
-
 	public static DurationLimits = {
 		Timeout: { min: "5s", max: "28d" },
 		Warn: { min: "1m", max: "90d" },
 		Ban: { max: "7d" }
+	} as const;
+	public static EntityType = { ...EntityType, SNOWFLAKE: "SNOWFLAKE" as const };
+	public static SlashOptions = {
+		ChannelPermissionName: "in_channel",
+		DisableChoice: "disable"
 	} as const;
 
 	public static retrieveCommandInteractionOptions(interaction: CommandInteraction): CommandInteractionOption[] {

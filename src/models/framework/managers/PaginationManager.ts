@@ -15,17 +15,38 @@ import type {
 } from "@discordx/pagination";
 import type { APIEmbed, InteractionResponse, Message, TextBasedChannel } from "discord.js";
 
-interface HandleStaticOptions {
-	sendTo: PaginationInteractions | Message;
-	embedTitle: string;
-	descriptionArray: string[];
-	config?: PaginationOptions;
-	ephemeral?: boolean;
-}
-
 type PaginationOutput = Awaited<ReturnType<Pagination["send"]>>;
 
+interface HandleStaticOptions {
+	config?: PaginationOptions;
+	descriptionArray: string[];
+	embedTitle: string;
+	ephemeral?: boolean;
+	sendTo: PaginationInteractions | Message;
+}
+
 export class PaginationManager<T extends PaginationResolver = PaginationResolver> extends Pagination<T> {
+	constructor(
+		sendTo: PaginationInteractions | Message | TextBasedChannel,
+		pages: PaginationItem[] | T,
+		config: PaginationOptions
+	) {
+		config.showStartEnd ??= true;
+		config.time ??= CommandUtils.CollectionTime;
+		config.enableExit ??= !config.ephemeral;
+		config.onTimeout ??= (_, message) => InteractionUtils.disableComponents(message);
+
+		const isRestrictableToController = "applicationId" in sendTo;
+
+		if (!config.filter && isRestrictableToController) {
+			const controllerId = "user" in sendTo ? sendTo.user.id : sendTo.author.id;
+
+			config.filter = (i) => i.user.id === controllerId;
+		}
+
+		super(sendTo, pages, config);
+	}
+
 	public static async handleStatic(
 		options: HandleStaticOptions
 	): Promise<PaginationOutput | Message<boolean> | InteractionResponse<boolean> | null> {
@@ -65,26 +86,6 @@ export class PaginationManager<T extends PaginationResolver = PaginationResolver
 		});
 
 		return await pagination.init();
-	}
-
-	constructor(
-		sendTo: PaginationInteractions | Message | TextBasedChannel,
-		pages: PaginationItem[] | T,
-		config: PaginationOptions
-	) {
-		config.showStartEnd ??= true;
-		config.time ??= CommandUtils.CollectionTime;
-		config.enableExit ??= !config.ephemeral;
-		config.onTimeout ??= (_, message) => InteractionUtils.disableComponents(message);
-
-		const isRestrictableToController = "applicationId" in sendTo;
-
-		if (!config.filter && isRestrictableToController) {
-			const controllerId = "user" in sendTo ? sendTo.user.id : sendTo.author.id;
-			config.filter = (i) => i.user.id === controllerId;
-		}
-
-		super(sendTo, pages, config);
 	}
 
 	public async init(): Promise<PaginationOutput> {

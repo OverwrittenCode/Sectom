@@ -18,13 +18,12 @@ declare global {
 		}
 
 		interface WarningThresholds {
-			threshold: number;
-			punishment: ActionType;
 			duration?: number;
+			punishment: ActionType;
+			threshold: number;
 		}
 
 		interface WarningConfiguration extends ActiveState {
-			thresholds: WarningThresholds[];
 			/**
 			 * How much the duration of the same punishment should geometrically increase by.
 			 * - Resets back to 1 when the next punishment is hit.
@@ -33,6 +32,7 @@ declare global {
 			 * const nextPunishmentDuration = durationMultiplier ** repetitionCount * baseDurationPunishment
 			 * */
 			durationMultiplier: number;
+			thresholds: WarningThresholds[];
 		}
 
 		interface BaseContentClusterManagerComponent {
@@ -64,23 +64,27 @@ declare global {
 		interface SuggestionPanel extends BasePanel {
 			channelId?: string;
 		}
+
 		interface SuggestionSubject extends BaseSubject {}
+
 		interface SuggestionConfiguration
 			extends BaseContentClusterManagerConfiguration<SuggestionPanel, SuggestionSubject> {}
 
 		interface TicketPanel extends BasePanel, BasePanelComponentPermission {
 			channelId?: string;
 		}
+
 		interface TicketSubject extends BaseSubject {}
+
 		interface TicketConfiguration
 			extends BaseContentClusterManagerConfiguration<TicketPanel, TicketSubject>,
 				BasePanelComponentPermission,
 				Partial<WithEmbed> {
+			autoStaffMention?: boolean;
 			/**
 			 * If the create button should prompt the user with the subject and description of the ticket in a ModalSubmit
 			 */
 			prompt?: boolean;
-			autoStaffMention?: boolean;
 		}
 
 		interface LevelingRole extends IDLink {
@@ -88,8 +92,8 @@ declare global {
 		}
 
 		interface LevelingXPOptions {
-			multiplier: number;
 			cooldown: number;
+			multiplier: number;
 			roles: LevelingRole[];
 		}
 
@@ -98,15 +102,15 @@ declare global {
 		}
 
 		interface LevelingConfiguration extends ActiveState, LevelingXPOptions {
-			stackXPMultipliers: boolean;
 			overrides: LevelingXPOverride[];
+			stackXPMultipliers: boolean;
 		}
 
 		interface Configuration {
-			warning: WarningConfiguration;
+			leveling: LevelingConfiguration;
 			suggestion: SuggestionConfiguration;
 			ticket: TicketConfiguration;
-			leveling: LevelingConfiguration;
+			warning: WarningConfiguration;
 		}
 	}
 }

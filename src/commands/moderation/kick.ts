@@ -11,6 +11,7 @@ import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
 const mutualPermissions = [PermissionFlagsBits.KickMembers];
+
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Kick {

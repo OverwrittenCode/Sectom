@@ -12,6 +12,7 @@ import { DBConnectionManager } from "./DBConnectionManager.js";
 import type { Entries } from "type-fest";
 
 type PrismaDoc<M extends Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
+
 type TDoc<M extends Prisma.ModelName> = Typings.Database.DocumentInput<M>;
 
 export abstract class RedisCacheManager<
@@ -19,9 +20,11 @@ export abstract class RedisCacheManager<
 	const IndexList extends Typings.Database.Redis.TTerms<M>[] = []
 > extends RedisDataService<M> {
 	private readonly queryClient: Query;
-	public readonly modelName: M;
+
 	public readonly collection: Typings.Database.Redis.ModelCollection<M>;
+	public readonly modelName: M;
 	public readonly prismaModel: (typeof DBConnectionManager.Prisma)[Lowercase<M>];
+
 	public indexes = {} as Typings.Database.Redis.IndexObject<M, IndexList[number]>;
 
 	constructor(prismaModelName: M, indexList?: IndexList) {
@@ -55,28 +58,34 @@ export abstract class RedisCacheManager<
 		return `by${tterms.map((v) => StringUtils.capitaliseFirstLetter(v)).join("And")}`;
 	}
 
-	public async set(input: TDoc<M>): Promise<"OK"> {
-		const doc = this.withIDField(input);
-
-		await this.collection.set(doc.id, doc as PrismaDoc<M>);
-		return "OK";
-	}
-
 	public async delete(id: string): Promise<"OK"> {
 		await this.collection.delete(id);
 
 		return "OK";
 	}
 
+	public async deleteAll(): Promise<string[]> {
+		let cursor = 0;
+		const deletedKeys: string[] = [];
+
+		do {
+			const [nextCursor, keys] = await this.collection.redis.scan(cursor, { match: `${this.modelName}*` });
+
+			if (keys.length > 0) {
+				await this.collection.redis.del(...keys);
+				deletedKeys.push(...keys);
+			}
+
+			cursor = nextCursor;
+		} while (cursor !== 0);
+
+		return deletedKeys;
+	}
+
 	public async get(input: TDoc<M> | string): ReturnType<Typings.Database.Redis.ModelCollection<M>["get"]> {
 		const doc = typeof input === "string" ? { id: input } : this.withIDField(input);
 
 		return await this.collection.get(doc.id);
-	}
-
-	public async update(after: TDoc<M>) {
-		const doc = this.withIDField(after);
-		return await this.collection.update(doc.id, doc as PrismaDoc<M>);
 	}
 
 	public async retrieveDocuments(filter?: Typings.Database.SimpleWhere<M>): Promise<PrismaDoc<M>[]> {
@@ -128,20 +137,16 @@ export abstract class RedisCacheManager<
 		);
 	}
 
-	public async deleteAll(): Promise<string[]> {
-		let cursor = 0;
-		const deletedKeys: string[] = [];
-		do {
-			const [nextCursor, keys] = await this.collection.redis.scan(cursor, { match: `${this.modelName}*` });
+	public async set(input: TDoc<M>): Promise<"OK"> {
+		const doc = this.withIDField(input);
 
-			if (keys.length > 0) {
-				await this.collection.redis.del(...keys);
-				deletedKeys.push(...keys);
-			}
+		await this.collection.set(doc.id, doc as PrismaDoc<M>);
+		return "OK";
+	}
 
-			cursor = nextCursor;
-		} while (cursor !== 0);
+	public async update(after: TDoc<M>) {
+		const doc = this.withIDField(after);
 
-		return deletedKeys;
+		return await this.collection.update(doc.id, doc as PrismaDoc<M>);
 	}
 }

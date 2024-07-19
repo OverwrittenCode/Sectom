@@ -14,16 +14,16 @@ import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember } from
 import type { SetOptional } from "type-fest";
 
 interface GetLevelingDataOutput extends Required<PrismaJson.LevelingXPOptions> {
-	doc: Typings.Database.Prisma.RetrieveModelDocument<"Leveling">;
-	currentXP: number;
 	currentLevel: number;
+	currentXP: number;
+	doc: Typings.Database.Prisma.RetrieveModelDocument<"Leveling">;
 	isOnCooldown: boolean;
 }
 
 interface AwardXPOptions {
 	interaction: InteractionType;
-	target: GuildMember;
 	levelingData?: GetLevelingDataOutput | null;
+	target: GuildMember;
 }
 
 interface LevelRequiredOptions extends AwardXPOptions {
@@ -31,9 +31,9 @@ interface LevelRequiredOptions extends AwardXPOptions {
 }
 
 interface FetchLeaderboardOptions {
+	fetchAfter?: boolean;
 	guildId: string;
 	take?: number;
-	fetchAfter?: boolean;
 }
 
 type FetchLeaderboardOutput = Array<
@@ -108,60 +108,6 @@ export class LevelingInstanceMethods {
 		}
 	}
 
-	public async sendLevelUp<T>(this: T, options: LevelRequiredOptions): Promise<void> {
-		const clazz = container.resolve(LevelingInstanceMethods);
-
-		const { interaction, target, levelingData, levelAfter } = options;
-
-		let grantedRoleMention: string | null = null;
-
-		if (levelingData) {
-			const grantedRoleData = levelingData.roles
-				.toSorted((a, b) => b.level - a.level)
-				.find(({ level }) => level === levelAfter);
-
-			if (grantedRoleData) {
-				try {
-					await target.roles.add(grantedRoleData.id);
-
-					grantedRoleMention = roleMention(grantedRoleData.id);
-				} catch {
-					// delibertly do nothing
-					// the error will be to do with:
-					// permission or unknown role/member
-				}
-			}
-		}
-
-		let levelChannel: GuildBasedChannel | null = await container
-			.resolve(EntityInstanceMethods)
-			.retrieveGivenGuildLogChannel(interaction, ActionType.LEVEL_UP_ACKNOWLEDGED_NEW);
-
-		levelChannel ??= interaction.channel;
-
-		if (!levelChannel || levelChannel.type !== ChannelType.GuildText) {
-			return;
-		}
-
-		await levelChannel.sendTyping();
-		const attachment = await clazz.buildRankCard({ interaction, target, levelAfter });
-
-		if (!attachment) {
-			return;
-		}
-
-		let content = `Congrats ${target.toString()}! You are now level ${bold(levelAfter.toString())}!`;
-
-		if (grantedRoleMention) {
-			content += ` You have earned ${grantedRoleMention}`;
-		}
-
-		await levelChannel.send({
-			content,
-			files: [attachment]
-		});
-	}
-
 	public async buildRankCard<T>(
 		this: T,
 		options: SetOptional<Omit<LevelRequiredOptions, "levelingData">, "levelAfter">
@@ -209,6 +155,25 @@ export class LevelingInstanceMethods {
 		return attachment;
 	}
 
+	public async fetchLeaderboard<T>(this: T, options: FetchLeaderboardOptions): Promise<FetchLeaderboardOutput> {
+		const clazz = container.resolve(LevelingInstanceMethods);
+
+		const { guildId, take } = options;
+
+		return await clazz.client.leveling.fetchMany({
+			where: {
+				guildId
+			},
+			take,
+			orderBy: {
+				currentXP: "desc"
+			},
+			select: {
+				currentXP: true
+			}
+		});
+	}
+
 	public getCurrentLevel<T>(this: T, currentXP: number): number {
 		const a = LevelingInstanceMethods.MAX_XP;
 		const b = LevelingInstanceMethods.MIN_XP * 3;
@@ -226,15 +191,6 @@ export class LevelingInstanceMethods {
 		const level = Math.max(root1, root2);
 
 		return Math.floor(level);
-	}
-
-	public getRequiredXP<T>(this: T, currentLevel: number): number {
-		const nextLevel = ++currentLevel;
-
-		const a = LevelingInstanceMethods.MAX_XP;
-		const b = LevelingInstanceMethods.MIN_XP * 3;
-
-		return a * nextLevel ** 2 + b * nextLevel;
 	}
 
 	public async getLevelingData<T>(
@@ -317,22 +273,67 @@ export class LevelingInstanceMethods {
 		return { doc, isOnCooldown, currentXP, currentLevel, ...leveling };
 	}
 
-	public async fetchLeaderboard<T>(this: T, options: FetchLeaderboardOptions): Promise<FetchLeaderboardOutput> {
+	public getRequiredXP<T>(this: T, currentLevel: number): number {
+		const nextLevel = ++currentLevel;
+
+		const a = LevelingInstanceMethods.MAX_XP;
+		const b = LevelingInstanceMethods.MIN_XP * 3;
+
+		return a * nextLevel ** 2 + b * nextLevel;
+	}
+
+	public async sendLevelUp<T>(this: T, options: LevelRequiredOptions): Promise<void> {
 		const clazz = container.resolve(LevelingInstanceMethods);
 
-		const { guildId, take } = options;
+		const { interaction, target, levelingData, levelAfter } = options;
 
-		return await clazz.client.leveling.fetchMany({
-			where: {
-				guildId
-			},
-			take,
-			orderBy: {
-				currentXP: "desc"
-			},
-			select: {
-				currentXP: true
+		let grantedRoleMention: string | null = null;
+
+		if (levelingData) {
+			const grantedRoleData = levelingData.roles
+				.toSorted((a, b) => b.level - a.level)
+				.find(({ level }) => level === levelAfter);
+
+			if (grantedRoleData) {
+				try {
+					await target.roles.add(grantedRoleData.id);
+
+					grantedRoleMention = roleMention(grantedRoleData.id);
+				} catch {
+					// delibertly do nothing
+					// the error will be to do with:
+					// permission or unknown role/member
+				}
 			}
+		}
+
+		let levelChannel: GuildBasedChannel | null = await container
+			.resolve(EntityInstanceMethods)
+			.retrieveGivenGuildLogChannel(interaction, ActionType.LEVEL_UP_ACKNOWLEDGED_NEW);
+
+		levelChannel ??= interaction.channel;
+
+		if (!levelChannel || levelChannel.type !== ChannelType.GuildText) {
+			return;
+		}
+
+		await levelChannel.sendTyping();
+
+		const attachment = await clazz.buildRankCard({ interaction, target, levelAfter });
+
+		if (!attachment) {
+			return;
+		}
+
+		let content = `Congrats ${target.toString()}! You are now level ${bold(levelAfter.toString())}!`;
+
+		if (grantedRoleMention) {
+			content += ` You have earned ${grantedRoleMention}`;
+		}
+
+		await levelChannel.send({
+			content,
+			files: [attachment]
 		});
 	}
 }

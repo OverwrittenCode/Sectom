@@ -15,6 +15,7 @@ import { InteractionUtils } from "~/utils/interaction.js";
 import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 
 const mutualPermissions = [PermissionFlagsBits.ModerateMembers];
+
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Timeout {
@@ -77,6 +78,7 @@ export abstract class Timeout {
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const isTimedOut = target.isCommunicationDisabled();
+
 		if (!isTimedOut) {
 			return await InteractionUtils.replyOrFollowUp(interaction, {
 				content: "I cannot perform this action: that user is not timed out.",

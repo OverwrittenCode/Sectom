@@ -29,63 +29,6 @@ import type { ChatInputCommandInteraction, Role, StringSelectMenuInteraction } f
 })
 @SlashGroup("leveling", "config")
 export abstract class LevelingConfig {
-	@Slash({ description: "Enables/disables this configuration " })
-	public toggle(
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return Config.togglestate("leveling", reason, interaction);
-	}
-
-	@Slash({ description: "Configures the cooldown for gaining xp" })
-	public async cooldown(
-		@SlashOption({
-			description: "The cooldown in seconds. Default is 3 seconds",
-			name: "cooldown",
-			type: ApplicationCommandOptionType.Integer,
-			minValue: 3,
-			maxValue: 60
-		})
-		cooldown: number = 3,
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.SNOWFLAKE,
-			descriptionNote: "Applied globally if blank",
-			name: "override_for",
-			required: false
-		})
-		target: Typings.EntityObjectType | undefined,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.mutualPropertyHandler(cooldown * 1000, "cooldown", target, reason, interaction);
-	}
-
-	@Slash({ description: "Configures the xp multiplier" })
-	public async multiplier(
-		@SlashOption({
-			description: "The multiplier",
-			name: "multiplier",
-			type: ApplicationCommandOptionType.Number,
-			minValue: 0.1,
-			maxValue: 10
-		})
-		multiplier: number = 1,
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.SNOWFLAKE,
-			descriptionNote: "Applied globally if blank",
-			name: "override_for",
-			required: false
-		})
-		target: Typings.EntityObjectType | undefined,
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return this.mutualPropertyHandler(multiplier, "multiplier", target, reason, interaction);
-	}
-
 	@Slash({ description: "Configures the roles given on reaching a certain level" })
 	public async autorole(
 		@SlashOption({
@@ -156,6 +99,54 @@ export abstract class LevelingConfig {
 		});
 	}
 
+	@Slash({ description: "Configures the cooldown for gaining xp" })
+	public async cooldown(
+		@SlashOption({
+			description: "The cooldown in seconds. Default is 3 seconds",
+			name: "cooldown",
+			type: ApplicationCommandOptionType.Integer,
+			minValue: 3,
+			maxValue: 60
+		})
+		cooldown: number = 3,
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.SNOWFLAKE,
+			descriptionNote: "Applied globally if blank",
+			name: "override_for",
+			required: false
+		})
+		target: Typings.EntityObjectType | undefined,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.mutualPropertyHandler(cooldown * 1000, "cooldown", target, reason, interaction);
+	}
+
+	@Slash({ description: "Configures the xp multiplier" })
+	public async multiplier(
+		@SlashOption({
+			description: "The multiplier",
+			name: "multiplier",
+			type: ApplicationCommandOptionType.Number,
+			minValue: 0.1,
+			maxValue: 10
+		})
+		multiplier: number = 1,
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.SNOWFLAKE,
+			descriptionNote: "Applied globally if blank",
+			name: "override_for",
+			required: false
+		})
+		target: Typings.EntityObjectType | undefined,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.mutualPropertyHandler(multiplier, "multiplier", target, reason, interaction);
+	}
+
 	@Slash({ description: "Toggles the stackXPMultipliers true/false" })
 	public async stackxpmultipliers(
 		@ReasonSlashOption()
@@ -185,6 +176,15 @@ export abstract class LevelingConfig {
 			},
 			successContent: `updated the leveling configuration ${StringUtils.LineBreak} -> toggle ${inlineCode("stackXPMultipliers")} to ${leveling.stackXPMultipliers}`
 		});
+	}
+
+	@Slash({ description: "Enables/disables this configuration " })
+	public toggle(
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Config.togglestate("leveling", reason, interaction);
 	}
 
 	private async mutualPropertyHandler(
@@ -297,6 +297,7 @@ export abstract class LevelingConfigMessageComponentHandler {
 						descriptionArray.push(elements.join(StringUtils.LineBreak));
 					});
 				}
+
 				break;
 			case "roles":
 				{
@@ -306,6 +307,7 @@ export abstract class LevelingConfigMessageComponentHandler {
 						)
 					);
 				}
+
 				break;
 			default:
 				throw new Error("Unexpected option", option);

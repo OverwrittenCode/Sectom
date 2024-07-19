@@ -51,7 +51,11 @@ import type {
 	Role
 } from "discord.js";
 
-const componentType = Enums.ContentClusterComponentType.Ticket;
+interface CreateTicketOptions {
+	interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
+	modalEmbed?: EmbedBuilder;
+	ticketConfiguration: PrismaJson.TicketConfiguration;
+}
 
 enum EmbedTextInputField {
 	Title = "title",
@@ -65,11 +69,7 @@ enum PromptTextInputField {
 	Description = "description"
 }
 
-interface CreateTicketOptions {
-	interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">;
-	ticketConfiguration: PrismaJson.TicketConfiguration;
-	modalEmbed?: EmbedBuilder;
-}
+const componentType = Enums.ContentClusterComponentType.Ticket;
 
 @Discord()
 @Category(Enums.CommandCategory.Admin)
@@ -80,6 +80,13 @@ interface CreateTicketOptions {
 })
 @SlashGroup("ticket", "config")
 export abstract class TicketConfig {
+	public static readonly customIdRecords = ContentClusterManager.constructCustomIdRecords(
+		componentType,
+		"embed",
+		"prompt",
+		"close",
+		"lock"
+	);
 	public static readonly embedDefaults = {
 		title: "{subject_name} Ticket",
 		description: [
@@ -89,60 +96,12 @@ export abstract class TicketConfig {
 		].join(StringUtils.LineBreak)
 	};
 
-	public static readonly customIdRecords = ContentClusterManager.constructCustomIdRecords(
-		componentType,
-		"embed",
-		"prompt",
-		"close",
-		"lock"
-	);
-
-	@Slash({ description: "Enables/disables this configuration " })
-	public toggle(
-		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return Config.togglestate("ticket", reason, interaction);
-	}
-
 	@Slash({ description: "Add a new ticket subject or panel" })
 	public async add(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
 			componentType,
 			modifierType: Enums.ModifierType.Add
-		});
-	}
-
-	@Slash({ description: "Update a ticket subject or panel" })
-	public async update(interaction: ChatInputCommandInteraction<"cached">) {
-		return ContentClusterManager.setupModifyComponent({
-			interaction,
-			componentType,
-			modifierType: Enums.ModifierType.Update
-		});
-	}
-
-	@Slash({ description: "Remove a ticket subject or panel" })
-	public async remove(interaction: ChatInputCommandInteraction<"cached">) {
-		return ContentClusterManager.setupModifyComponent({
-			interaction,
-			componentType,
-			modifierType: Enums.ModifierType.Remove
-		});
-	}
-
-	@Slash({ description: "Send a ticket panel to a channel" })
-	public async send(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.CHANNEL })
-		channel: GuildTextBasedChannel,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return ContentClusterManager.send({
-			interaction,
-			channel,
-			componentType
 		});
 	}
 
@@ -223,6 +182,28 @@ export abstract class TicketConfig {
 		return await interaction.showModal(modal);
 	}
 
+	@Slash({ description: "Remove a ticket subject or panel" })
+	public async remove(interaction: ChatInputCommandInteraction<"cached">) {
+		return ContentClusterManager.setupModifyComponent({
+			interaction,
+			componentType,
+			modifierType: Enums.ModifierType.Remove
+		});
+	}
+
+	@Slash({ description: "Send a ticket panel to a channel" })
+	public async send(
+		@TargetSlashOption({ entityType: CommandUtils.EntityType.CHANNEL })
+		channel: GuildTextBasedChannel,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return ContentClusterManager.send({
+			interaction,
+			channel,
+			componentType
+		});
+	}
+
 	@Slash({ description: "Configure global ticket settings" })
 	@Guard(AtLeastOneSlashOption, RateLimit(TIME_UNIT.seconds, 3))
 	public async settings(
@@ -292,84 +273,102 @@ export abstract class TicketConfig {
 			successContent: "updated ticket settings"
 		});
 	}
+
+	@Slash({ description: "Enables/disables this configuration " })
+	public toggle(
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.Messages.NoReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Config.togglestate("ticket", reason, interaction);
+	}
+
+	@Slash({ description: "Update a ticket subject or panel" })
+	public async update(interaction: ChatInputCommandInteraction<"cached">) {
+		return ContentClusterManager.setupModifyComponent({
+			interaction,
+			componentType,
+			modifierType: Enums.ModifierType.Update
+		});
+	}
 }
 
 @Discord()
 export abstract class TicketConfigMessageComponentHandler {
-	@ModalComponent({ id: TicketConfig.customIdRecords.ticket_embed.regex })
-	public async modalEmbed(interaction: ModalSubmitInteraction<"cached">) {
-		const { channelId, fields, guildId } = interaction;
-		assert(channelId && fields);
+	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_close.regex })
+	@Guard(ClientRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
+	public async buttonClose(interaction: ButtonInteraction<"cached">) {
+		const { channelId, channel, customId } = interaction;
 
-		const {
-			configuration: { ticket },
-			save
-		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-			guildId,
-			check: "ticket"
+		assert(channelId && channel?.isThread());
+
+		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+
+		const collection = await InteractionUtils.confirmationButton(interaction, {
+			content: "Are you sure you want to close this ticket?"
 		});
 
-		const isUpdate = _.isEqual(ticket, GuildInstanceMethods.defaultConfiguration.ticket);
+		await InteractionUtils.replyOrFollowUp(collection.first()!, {
+			content: "Please wait: generating transcript."
+		});
 
-		const actionType = ActionType[`CONFIG_TICKET_SETTINGS_${isUpdate ? "UPDATE" : "ADD"}`];
+		const cacheChannelId = process.env.DISCORD_CACHE_CHANNEL;
 
-		const [title, description, colour, reason] = [
-			EmbedTextInputField.Title,
-			EmbedTextInputField.Description,
-			EmbedTextInputField.Colour,
-			EmbedTextInputField.Reason
-		].map((id) => fields.fields.find((data) => data.customId === id)?.value) as [
-			...requiredFields: [string, string],
-			...optionalFields: Array<string | undefined>
-		];
+		assert(cacheChannelId);
 
-		const rawCode = colour?.replace("#", "");
-		const hexCode = rawCode ? parseInt(`0x${rawCode}`) : null;
+		const cacheChannel = await interaction.client.channels.fetch(cacheChannelId);
 
-		if (rawCode && !StringUtils.Regexes.HexCode.test(rawCode)) {
-			throw new ValidationError("invalid hex code provided.");
-		}
+		assert(cacheChannel?.isTextBased());
 
-		const newEmbed = new EmbedBuilder(ticket.apiEmbed)
-			.setTitle(title)
-			.setColor(hexCode)
-			.setDescription(description);
+		const transcriptAttachment = await createTranscript(channel, {
+			poweredBy: false,
+			saveImages: true,
+			hydrate: true,
+			filename: `${channel.name.toLowerCase()}-transcript.html`
+		});
 
-		if (title) {
-			newEmbed.setTitle(title);
-		}
+		const { attachments } = await cacheChannel.send({
+			files: [transcriptAttachment]
+		});
 
-		ticket.apiEmbed = newEmbed.toJSON();
+		const proxyWorkerURL = `https://discord-cdn-proxy.sectom.workers.dev/?${attachments.first()!.url}`;
 
-		return await ActionManager.logCase({
+		const transcriptActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(proxyWorkerURL)
+		);
+
+		const {
+			doc: { authorId: ticketAuthorId }
+		} = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
+			where: { channelId },
+			select: { authorId: true }
+		});
+
+		const ticketAuthor = {
+			username: "",
+			id: ticketAuthorId,
+			...channel.members.cache.find((m) => m.id === ticketAuthorId)
+		};
+
+		const reason = `The Ticket Subject Name is called "${subjectName}"`;
+
+		const auditReason = ActionManager.generateAuditReason(interaction, reason, {
+			author: ticketAuthor
+		});
+
+		await ActionManager.logCase({
 			interaction,
 			target: {
-				id: channelId,
-				type: EntityType.CHANNEL
+				id: ticketAuthorId,
+				type: EntityType.USER
 			},
-			reason: reason ?? InteractionUtils.Messages.NoReason,
-			actionType,
+			reason,
+			actionType: ActionType.TICKET_INSTANCE_CLOSE,
 			actionOptions: {
-				pendingExecution: save
+				pendingExecution: () => channel.delete(auditReason)
 			},
-			successContent: `${isUpdate ? "updated" : "set"} the ticket configuration`
+			buttonActionRows: [transcriptActionRow]
 		});
-	}
-
-	@ModalComponent({ id: TicketConfig.customIdRecords.ticket_prompt.regex })
-	public async modalPrompt(interaction: ModalSubmitInteraction<"cached">) {
-		const {
-			configuration: { ticket: ticketConfiguration }
-		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-			guildId: interaction.guildId,
-			check: "ticket"
-		});
-
-		const embedFields = InteractionUtils.modalSubmitToEmbedFIelds(interaction);
-
-		const modalEmbed = new EmbedBuilder().addFields(embedFields);
-
-		return this.createTicket({ interaction, ticketConfiguration, modalEmbed });
 	}
 
 	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_create.regex })
@@ -509,80 +508,81 @@ export abstract class TicketConfigMessageComponentHandler {
 		});
 	}
 
-	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_close.regex })
-	@Guard(ClientRequiredPermissions<ButtonInteraction>([PermissionFlagsBits.ManageThreads]))
-	public async buttonClose(interaction: ButtonInteraction<"cached">) {
-		const { channelId, channel, customId } = interaction;
+	@ModalComponent({ id: TicketConfig.customIdRecords.ticket_embed.regex })
+	public async modalEmbed(interaction: ModalSubmitInteraction<"cached">) {
+		const { channelId, fields, guildId } = interaction;
 
-		assert(channelId && channel?.isThread());
-
-		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
-
-		const collection = await InteractionUtils.confirmationButton(interaction, {
-			content: "Are you sure you want to close this ticket?"
-		});
-
-		await InteractionUtils.replyOrFollowUp(collection.first()!, {
-			content: "Please wait: generating transcript."
-		});
-
-		const cacheChannelId = process.env.DISCORD_CACHE_CHANNEL;
-
-		assert(cacheChannelId);
-
-		const cacheChannel = await interaction.client.channels.fetch(cacheChannelId);
-
-		assert(cacheChannel?.isTextBased());
-
-		const transcriptAttachment = await createTranscript(channel, {
-			poweredBy: false,
-			saveImages: true,
-			hydrate: true,
-			filename: `${channel.name.toLowerCase()}-transcript.html`
-		});
-
-		const { attachments } = await cacheChannel.send({
-			files: [transcriptAttachment]
-		});
-
-		const proxyWorkerURL = `https://discord-cdn-proxy.sectom.workers.dev/?${attachments.first()!.url}`;
-
-		const transcriptActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-			new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Transcript").setURL(proxyWorkerURL)
-		);
+		assert(channelId && fields);
 
 		const {
-			doc: { authorId: ticketAuthorId }
-		} = await DBConnectionManager.Prisma.ticket.fetchFirstOrThrow({
-			where: { channelId },
-			select: { authorId: true }
+			configuration: { ticket },
+			save
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: "ticket"
 		});
 
-		const ticketAuthor = {
-			username: "",
-			id: ticketAuthorId,
-			...channel.members.cache.find((m) => m.id === ticketAuthorId)
-		};
+		const isUpdate = _.isEqual(ticket, GuildInstanceMethods.defaultConfiguration.ticket);
 
-		const reason = `The Ticket Subject Name is called "${subjectName}"`;
+		const actionType = ActionType[`CONFIG_TICKET_SETTINGS_${isUpdate ? "UPDATE" : "ADD"}`];
 
-		const auditReason = ActionManager.generateAuditReason(interaction, reason, {
-			author: ticketAuthor
-		});
+		const [title, description, colour, reason] = [
+			EmbedTextInputField.Title,
+			EmbedTextInputField.Description,
+			EmbedTextInputField.Colour,
+			EmbedTextInputField.Reason
+		].map((id) => fields.fields.find((data) => data.customId === id)?.value) as [
+			...requiredFields: [string, string],
+			...optionalFields: Array<string | undefined>
+		];
 
-		await ActionManager.logCase({
+		const rawCode = colour?.replace("#", "");
+		const hexCode = rawCode ? parseInt(`0x${rawCode}`) : null;
+
+		if (rawCode && !StringUtils.Regexes.HexCode.test(rawCode)) {
+			throw new ValidationError("invalid hex code provided.");
+		}
+
+		const newEmbed = new EmbedBuilder(ticket.apiEmbed)
+			.setTitle(title)
+			.setColor(hexCode)
+			.setDescription(description);
+
+		if (title) {
+			newEmbed.setTitle(title);
+		}
+
+		ticket.apiEmbed = newEmbed.toJSON();
+
+		return await ActionManager.logCase({
 			interaction,
 			target: {
-				id: ticketAuthorId,
-				type: EntityType.USER
+				id: channelId,
+				type: EntityType.CHANNEL
 			},
-			reason,
-			actionType: ActionType.TICKET_INSTANCE_CLOSE,
+			reason: reason ?? InteractionUtils.Messages.NoReason,
+			actionType,
 			actionOptions: {
-				pendingExecution: () => channel.delete(auditReason)
+				pendingExecution: save
 			},
-			buttonActionRows: [transcriptActionRow]
+			successContent: `${isUpdate ? "updated" : "set"} the ticket configuration`
 		});
+	}
+
+	@ModalComponent({ id: TicketConfig.customIdRecords.ticket_prompt.regex })
+	public async modalPrompt(interaction: ModalSubmitInteraction<"cached">) {
+		const {
+			configuration: { ticket: ticketConfiguration }
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId: interaction.guildId,
+			check: "ticket"
+		});
+
+		const embedFields = InteractionUtils.modalSubmitToEmbedFIelds(interaction);
+
+		const modalEmbed = new EmbedBuilder().addFields(embedFields);
+
+		return this.createTicket({ interaction, ticketConfiguration, modalEmbed });
 	}
 
 	private async createTicket(options: CreateTicketOptions) {

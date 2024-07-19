@@ -13,13 +13,8 @@ import type { Typings } from "~/ts/Typings.js";
 import type { EntityType, Prisma } from "@prisma/client";
 import type { Message } from "discord.js";
 
-interface CreateOptions extends Pick<Prisma.CaseCreateInput, "guild"> {
-	id: string;
-	type: EntityType;
-}
-
-interface WhereOption {
-	id: string;
+interface ConnectOrCreate {
+	connectOrCreate: ConnectOrCreateOptions;
 }
 
 interface ConnectOrCreateOptions {
@@ -27,8 +22,13 @@ interface ConnectOrCreateOptions {
 	where: WhereOption;
 }
 
-interface ConnectOrCreate {
-	connectOrCreate: ConnectOrCreateOptions;
+interface CreateOptions extends Pick<Prisma.CaseCreateInput, "guild"> {
+	id: string;
+	type: EntityType;
+}
+
+interface WhereOption {
+	id: string;
 }
 
 @singleton()
@@ -66,6 +66,7 @@ export class EntityInstanceMethods {
 		givenGuildLogChannelType: ActionType | null = null
 	): Promise<TextChannel | null> {
 		const { guildId, guild, channel } = interaction;
+
 		assert(channel);
 
 		const clazz = container.resolve(EntityInstanceMethods);

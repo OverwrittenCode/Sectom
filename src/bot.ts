@@ -32,11 +32,6 @@ const { BOT_TOKEN } = process.env;
 
 @Discord()
 export abstract class Main {
-	public static connectionDates: {
-		loggedIn?: Date;
-		readyAt?: Date;
-	} = {};
-
 	public static readonly bot = new Client({
 		botId: BOT_ID,
 		botGuilds: GUILD_IDS,
@@ -64,6 +59,11 @@ export abstract class Main {
 			status: "online"
 		}
 	});
+
+	public static connectionDates: {
+		loggedIn?: Date;
+		readyAt?: Date;
+	} = {};
 
 	public static async start() {
 		try {
@@ -156,6 +156,7 @@ export abstract class Main {
 			console.groupEnd();
 
 			console.group("[TIMING]");
+
 			const { prisma, redis } = DBConnectionManager.connectionDates;
 			const { loggedIn, readyAt } = Main.connectionDates;
 

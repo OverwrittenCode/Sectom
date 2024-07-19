@@ -17,31 +17,6 @@ import type { ChatInputCommandInteraction } from "discord.js";
 @SlashGroup("avatar")
 export abstract class Avatar {
 	private sizeURLSuffix = "?size=4096";
-	@Slash({ description: "Display the server avatar of a user or global avatar otherwise" })
-	public server(
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
-			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
-			required: false
-		})
-		target: GuildMember | undefined,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		target ??= interaction.member;
-
-		const name = target.nickname ?? target.displayName;
-
-		const iconURL = target.displayAvatarURL();
-
-		const embed = new EmbedBuilder()
-			.setAuthor({ name, iconURL })
-			.setColor(target.displayHexColor)
-			.setImage(iconURL + this.sizeURLSuffix);
-
-		return InteractionUtils.replyOrFollowUp(interaction, {
-			embeds: [embed]
-		});
-	}
 
 	@Slash({ description: "Display the global avatar of a user" })
 	public global(
@@ -68,6 +43,32 @@ export abstract class Avatar {
 		const embed = new EmbedBuilder()
 			.setAuthor({ name, iconURL })
 			.setColor(colour)
+			.setImage(iconURL + this.sizeURLSuffix);
+
+		return InteractionUtils.replyOrFollowUp(interaction, {
+			embeds: [embed]
+		});
+	}
+
+	@Slash({ description: "Display the server avatar of a user or global avatar otherwise" })
+	public server(
+		@TargetSlashOption({
+			entityType: CommandUtils.EntityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
+			required: false
+		})
+		target: GuildMember | undefined,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		target ??= interaction.member;
+
+		const name = target.nickname ?? target.displayName;
+
+		const iconURL = target.displayAvatarURL();
+
+		const embed = new EmbedBuilder()
+			.setAuthor({ name, iconURL })
+			.setColor(target.displayHexColor)
 			.setImage(iconURL + this.sizeURLSuffix);
 
 		return InteractionUtils.replyOrFollowUp(interaction, {
