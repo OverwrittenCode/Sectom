@@ -20,6 +20,13 @@ import type { ChatInputCommandInteraction } from "discord.js";
 
 type ThresholdPunishmentType = (typeof ThresholdPunishmentOption)[keyof typeof ThresholdPunishmentOption];
 
+const ThresholdPunishmentOption = {
+	disable: "disable",
+	timeout: ActionType.TIME_OUT_USER_ADD,
+	kick: ActionType.KICK_USER_SET,
+	ban: ActionType.BAN_USER_ADD
+} as const;
+
 @Discord()
 @Category(Enums.CommandCategory.Admin)
 @SlashGroup({ description: "Warning configuration", name: "warn", root: "config" })
@@ -227,10 +234,3 @@ export abstract class WarnConfig {
 		return Config.togglestate("warning", reason, interaction);
 	}
 }
-
-const ThresholdPunishmentOption = {
-	disable: "disable",
-	timeout: ActionType.TIME_OUT_USER_ADD,
-	kick: ActionType.KICK_USER_SET,
-	ban: ActionType.BAN_USER_ADD
-} as const;

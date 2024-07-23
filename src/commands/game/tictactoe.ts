@@ -25,6 +25,22 @@ interface MoveScore {
 	score: number;
 }
 
+enum Difficulty {
+	Easy = "Easy",
+	Medium = "Medium",
+	Hard = "Hard",
+	"Impossible (When Classic Mode is on)" = "Impossible",
+	"Computer Biased Game Matster (Not Allowed For Classic)" = "Computer Biased Game Master"
+}
+
+enum Teams {
+	Naughts = "X",
+	Crosses = "O"
+}
+
+const minGridSize = 3;
+const gridSizeChoices = Array.from({ length: MAX_COMPONENT_GRID_SIZE - minGridSize + 1 }, (_, i) => i + minGridSize);
+
 @Discord()
 @Category(Enums.CommandCategory.Game)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
@@ -636,19 +652,3 @@ export abstract class TicTacToe {
 		return await game.init();
 	}
 }
-
-enum Difficulty {
-	Easy = "Easy",
-	Medium = "Medium",
-	Hard = "Hard",
-	"Impossible (When Classic Mode is on)" = "Impossible",
-	"Computer Biased Game Matster (Not Allowed For Classic)" = "Computer Biased Game Master"
-}
-
-enum Teams {
-	Naughts = "X",
-	Crosses = "O"
-}
-
-const minGridSize = 3;
-const gridSizeChoices = Array.from({ length: MAX_COMPONENT_GRID_SIZE - minGridSize + 1 }, (_, i) => i + minGridSize);
