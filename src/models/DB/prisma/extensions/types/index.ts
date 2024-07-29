@@ -26,7 +26,8 @@ export type ClientCTX<M extends Prisma.ModelName = Prisma.ModelName, Inner exten
 export type FetchExtendedClient = DynamicClientExtensionThis<
 	Prisma.TypeMap<InternalArgs & FetchExtensionArg>,
 	Prisma.TypeMapCb,
-	FetchExtensionArg
+	FetchExtensionArg,
+	{}
 >;
 
 type FetchExtensionArg = Record<"result" | "query" | "client", {}> & {
