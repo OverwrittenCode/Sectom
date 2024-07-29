@@ -294,6 +294,7 @@ export abstract class ActionManager {
 
 	public static async logCase(options: LogCaseOptions) {
 		const { interaction, target, reason, actionType, caseType, actionOptions, successContent, tx } = options;
+
 		let { buttonActionRows = [] } = options;
 
 		const commandInteraction =
@@ -306,6 +307,7 @@ export abstract class ActionManager {
 		const { guild, guildId, channelId, user: perpetrator } = interaction;
 
 		const { id: targetId, type: targetType } = target;
+
 		let { id: perpetratorId } = perpetrator;
 
 		const { case: _case, entity: _entity } = tx ?? DBConnectionManager.Prisma;

@@ -514,6 +514,7 @@ export abstract class Purge {
 		await InteractionUtils.deferInteraction(interaction, true);
 
 		const { channel, count, reason, inverse, after, messageFilter } = options;
+
 		let { before: lastDeletedMessageId } = options;
 
 		const purgeChannel = channel ?? interaction.channel!;

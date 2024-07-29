@@ -35,6 +35,7 @@ export function GivenChannelSlashOption(
 
 export function TargetSlashOption(args: TargetSlashOptionArguments) {
 	const { entityType, flags, required = true, name } = args;
+
 	let { descriptionNote = "", channelTypes } = args;
 
 	if (descriptionNote) {

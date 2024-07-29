@@ -220,6 +220,7 @@ export class GameController {
 		);
 
 		const baseEmbed = new EmbedBuilder().setTitle(`${title} Game`).setColor(Colors.Purple).toJSON();
+
 		let multiplayerWaitingLobbyText: string | undefined = void 0;
 
 		const fields: APIEmbedField[] = [

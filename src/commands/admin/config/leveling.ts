@@ -59,6 +59,7 @@ export abstract class LevelingConfig {
 
 		const index = leveling.roles.findIndex((r) => r.id === role?.id || r.level === level);
 		const isValidIndex = index !== -1;
+
 		let targetId: string;
 
 		if (role) {

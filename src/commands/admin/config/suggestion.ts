@@ -456,6 +456,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 		const totalVotes = upvotes.length + downvotes.length;
 		const progressBarLength = 12;
 		const filledSquares = Math.round((upvotes.length / totalVotes) * progressBarLength) || 0;
+
 		let emptySquares = progressBarLength - filledSquares || 0;
 
 		if (!filledSquares && !emptySquares) {

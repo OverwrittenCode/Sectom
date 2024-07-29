@@ -66,6 +66,7 @@ export abstract class RedisCacheManager<
 
 	public async deleteAll(): Promise<string[]> {
 		let cursor = 0;
+
 		const deletedKeys: string[] = [];
 
 		do {

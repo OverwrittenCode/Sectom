@@ -363,6 +363,7 @@ export abstract class TicTacToe {
 						timeLimit: number
 					): MoveScore => {
 						let bestMove = MIN;
+
 						const startTime = Date.now();
 
 						for (let depth = 1; depth <= maxDepth; depth++) {

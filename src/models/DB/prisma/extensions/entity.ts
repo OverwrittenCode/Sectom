@@ -78,6 +78,7 @@ export class EntityInstanceMethods {
 		} satisfies Prisma.EntityWhereInput;
 
 		let moderativeLogChannelId: string | undefined | null = null;
+
 		const cacheRecords = await RedisCache.entity.retrieveDocuments(moderativeLogWhereFilter);
 
 		if (cacheRecords.length) {
