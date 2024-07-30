@@ -30,7 +30,7 @@ export abstract class StringUtils {
 			).join("|")})$`,
 			"g"
 		),
-		CreateBasedActionModifiers: /_(ADD|CREATE|SET)$/g
+		CreateBasedActionModifiers: /_(ADD|CREATE|SET|ENABLE)$/g
 	} as const;
 	public static TabCharacter = "⠀" as const;
 

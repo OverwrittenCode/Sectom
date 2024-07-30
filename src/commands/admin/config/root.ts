@@ -59,6 +59,10 @@ export abstract class Config {
 
 		configuration[key].disabled = !configuration[key].disabled;
 
+		const actionTypeSuffix = configuration[key].disabled ? "DISABLE" : "ENABLE";
+
+		const actionType = ActionType[`CONFIG_MODULE_${actionTypeSuffix}`];
+
 		return await ActionManager.logCase({
 			interaction,
 			target: {
@@ -66,12 +70,11 @@ export abstract class Config {
 				type: EntityType.CHANNEL
 			},
 			reason,
-			actionType: ActionType.CONFIG_LEVEL_SETTINGS_UPDATE,
+			actionType,
 			actionOptions: {
-				pastTense: "updated the leveling configuration",
 				pendingExecution: save
 			},
-			successContent: `${configuration[key].disabled ? "disabled" : "enabled"} the ${key} configuration`
+			successContent: `${actionTypeSuffix.toLowerCase()}d the ${key} configuration`
 		});
 	}
 
