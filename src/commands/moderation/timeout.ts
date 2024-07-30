@@ -14,19 +14,19 @@ import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 
-const mutualPermissions = [PermissionFlagsBits.ModerateMembers];
-
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Timeout {
+	private static readonly mutualPermissions = [PermissionFlagsBits.ModerateMembers];
+
 	private checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
 
 	@Slash({
 		dmPermission: false,
 		description: "Timeout a user on the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Timeout.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Timeout.mutualPermissions))
 	public async timeout(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -64,9 +64,9 @@ export abstract class Timeout {
 	@Slash({
 		dmPermission: false,
 		description: "Remove a timeout a user on the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Timeout.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Timeout.mutualPermissions))
 	public async untimeout(
 		@TargetSlashOption({
 			entityType: EntityType.USER,

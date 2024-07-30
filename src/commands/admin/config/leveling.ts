@@ -260,7 +260,7 @@ export abstract class LevelingConfig {
 
 @Discord()
 export abstract class LevelingConfigMessageComponentHandler {
-	@SelectMenuComponent({ id: Config.LevelingCustomIDRecords.leveling_view.regex })
+	@SelectMenuComponent({ id: Config.levelingCustomIDRecords.leveling_view.regex })
 	public async selectMenuView(interaction: StringSelectMenuInteraction<"cached">) {
 		const { values, guild, guildId } = interaction;
 

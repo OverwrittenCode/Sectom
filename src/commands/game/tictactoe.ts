@@ -38,13 +38,16 @@ enum Teams {
 	Crosses = "O"
 }
 
-const minGridSize = 3;
-const gridSizeChoices = Array.from({ length: MAX_COMPONENT_GRID_SIZE - minGridSize + 1 }, (_, i) => i + minGridSize);
-
 @Discord()
 @Category(Enums.CommandCategory.Game)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class TicTacToe {
+	private static readonly minGridSize = 3;
+	private static readonly gridSizeChoices = Array.from(
+		{ length: MAX_COMPONENT_GRID_SIZE - TicTacToe.minGridSize + 1 },
+		(_, i) => i + TicTacToe.minGridSize
+	);
+
 	@Slash({ dmPermission: false, description: "Play TicTacToe" })
 	public async ttt(
 		@TargetSlashOption({
@@ -67,7 +70,7 @@ export abstract class TicTacToe {
 			type: ApplicationCommandOptionType.Boolean
 		})
 		deuce: boolean = true,
-		@SlashChoice(...gridSizeChoices)
+		@SlashChoice(...TicTacToe.gridSizeChoices)
 		@SlashOption({
 			description: "Grid size N x N",
 			name: "grid_size",

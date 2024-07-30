@@ -26,7 +26,7 @@ import type { StringSelectMenuInteraction } from "discord.js";
 @Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Help {
-	public static CustomIdRecords = InteractionUtils.customIdPrefixRecords("help_command_view");
+	public static customIdRecords = InteractionUtils.customIdPrefixRecords("help_command_view");
 
 	@Slash({ dmPermission: false, description: "Get help on commands and categories" })
 	public async help(interaction: ChatInputCommandInteraction<"cached">) {
@@ -34,7 +34,7 @@ export abstract class Help {
 		const embedTitle = `${interaction.guild.name} | Help Menu`;
 
 		const customIdGenerator = InteractionUtils.constructCustomIdGenerator({
-			baseID: Help.CustomIdRecords.help_command_view.id,
+			baseID: Help.customIdRecords.help_command_view.id,
 			messageComponentType: Enums.MessageComponentType.SelectMenu
 		});
 
@@ -109,7 +109,7 @@ export abstract class Help {
 
 @Discord()
 export abstract class HelpMessageComponentHandler {
-	@SelectMenuComponent({ id: Help.CustomIdRecords.help_command_view.regex })
+	@SelectMenuComponent({ id: Help.customIdRecords.help_command_view.regex })
 	public async selectMenuCommandView(interaction: StringSelectMenuInteraction<"cached">) {
 		const { customId, values } = interaction;
 

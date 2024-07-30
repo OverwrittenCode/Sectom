@@ -17,19 +17,19 @@ import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
-const mutualPermissions = [PermissionFlagsBits.ManageNicknames];
-
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
-@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Nick.mutualPermissions))
 @SlashGroup({
 	dmPermission: false,
 	description: "Set or reset the nickname of a member in the server",
 	name: "nick",
-	defaultMemberPermissions: mutualPermissions
+	defaultMemberPermissions: Nick.mutualPermissions
 })
 @SlashGroup("nick")
 export abstract class Nick {
+	private static readonly mutualPermissions = [PermissionFlagsBits.ManageNicknames];
+
 	@Slash({ dmPermission: false, description: "Reset the nickname of a member in the server" })
 	public reset(
 		@TargetSlashOption({

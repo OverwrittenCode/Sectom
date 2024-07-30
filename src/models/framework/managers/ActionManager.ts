@@ -1,5 +1,4 @@
 import assert from "assert";
-
 import * as discordBuilders from "@discordjs/builders";
 import { PaginationType } from "@discordx/pagination";
 import { ActionType, CaseType, EntityType } from "@prisma/client";
@@ -17,7 +16,6 @@ import {
 } from "discord.js";
 import _ from "lodash";
 import prettyMilliseconds from "pretty-ms";
-
 import { BOT_ID, LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
 import { PaginationManager } from "~/models/framework/managers/PaginationManager.js";
 import type { Typings } from "~/ts/Typings.js";
@@ -25,7 +23,6 @@ import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
-
 import { DBConnectionManager } from "./DBConnectionManager.js";
 import { EmbedManager } from "./EmbedManager.js";
 import type { PaginationItem } from "@discordx/pagination";
@@ -43,11 +40,8 @@ type AuditFields = Record<
 	string,
 	string | Typings.SetNullableCase<Typings.ExactlyOneOf<{ name: string; username: string }> & { id: string }, false>
 >;
-
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
-
 type LogCaseOptions = CommandLogCaseOptions | DeferrableLogCaseOptions;
-
 type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn: infer A) => any
 	? A extends (client: infer B) => Promise<any>
 		? B
@@ -93,15 +87,15 @@ interface TimestampFieldOptions {
 }
 
 export abstract class ActionManager {
-	private static getCasesSelect = {
+	private static readonly getCasesSelect = {
 		id: true,
 		action: true,
 		createdAt: true,
 		apiEmbeds: true,
 		messageURL: true
-	} as const satisfies Prisma.CaseSelectScalar;
+	} satisfies Prisma.CaseSelectScalar;
 
-	public static CreateBasedTypes = Object.values(ActionType).filter((caseActionType) =>
+	public static readonly createBasedTypes = Object.values(ActionType).filter((caseActionType) =>
 		StringUtils.Regexes.CreateBasedActionModifiers.test(caseActionType)
 	);
 

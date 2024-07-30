@@ -97,18 +97,18 @@ enum SubjectTextInputField {
 	Emoji = "emoji"
 }
 
-const baseCustomIds = ["setup", "view", "channel", "send", "create"] as const;
-const componentTypePrefixMatch = `(${Object.values(Enums.ContentClusterComponentType).join("|")})`;
-
 export abstract class ContentClusterManager {
-	public static readonly modifiers = Object.values(Enums.ModifierType);
+	private static readonly modifiers = Object.values(Enums.ModifierType);
+	
 	public static readonly properties = Object.values(Enums.ContentClusterPropertyType);
+	public static readonly baseCustomIds = ["setup", "view", "channel", "send", "create"];
+	public static readonly componentTypePrefixMatch = `(${Object.values(Enums.ContentClusterComponentType).join("|")})`;
 
 	public static constructCustomIdRecords<
 		const ComponentType extends Enums.ContentClusterComponentType,
 		const AdditionalCustomIds extends string[]
 	>(componentType: ComponentType, ...additionalCustomIds: AdditionalCustomIds) {
-		const customIds = [...baseCustomIds, ...(additionalCustomIds || [])].map(
+		const customIds = [...ContentClusterManager.baseCustomIds, ...(additionalCustomIds || [])].map(
 			(customId) =>
 				(componentType +
 					StringUtils.CustomIDFieldPrefixSeperator +
@@ -303,12 +303,14 @@ export abstract class ContentClusterManager {
 
 @Discord()
 export abstract class ContentClusterMessageComponentHandler {
-	private static readonly propertyRegexes = baseCustomIds.reduce(
+	private static readonly propertyRegexes = ContentClusterManager.baseCustomIds.reduce(
 		(acc, id) => {
-			acc[id] = new RegExp(`^${componentTypePrefixMatch + StringUtils.CustomIDFieldPrefixSeperator + id}`);
+			acc[id] = new RegExp(
+				`^${ContentClusterManager.componentTypePrefixMatch + StringUtils.CustomIDFieldPrefixSeperator + id}`
+			);
 			return acc;
 		},
-		{} as Record<(typeof baseCustomIds)[number], RegExp>
+		{} as Record<(typeof ContentClusterManager.baseCustomIds)[number], RegExp>
 	);
 
 	@ButtonComponent({ id: ContentClusterMessageComponentHandler.propertyRegexes.setup })

@@ -12,17 +12,17 @@ import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
-const mutualPermissions = [PermissionFlagsBits.MuteMembers];
-
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Mute {
+	private static readonly mutualPermissions = [PermissionFlagsBits.MuteMembers];
+
 	@Slash({
 		dmPermission: false,
 		description: "Mute a user in a voice channel on the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Mute.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Mute.mutualPermissions))
 	public async mute(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -69,9 +69,9 @@ export abstract class Mute {
 	@Slash({
 		dmPermission: false,
 		description: "Unmute a user in a voice channel on the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Mute.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Mute.mutualPermissions))
 	public async unmute(
 		@TargetSlashOption({
 			entityType: EntityType.USER,

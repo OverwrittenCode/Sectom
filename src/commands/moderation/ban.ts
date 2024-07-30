@@ -15,17 +15,17 @@ import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
 
-const mutualPermissions = [PermissionFlagsBits.BanMembers];
-
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Ban {
+	private static readonly mutualPermissions = [PermissionFlagsBits.BanMembers];
+
 	@Slash({
 		dmPermission: false,
 		description: "Ban a user from the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Ban.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Ban.mutualPermissions))
 	public async ban(
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
@@ -65,9 +65,9 @@ export abstract class Ban {
 	@Slash({
 		dmPermission: false,
 		description: "Ban a user to prune their messages and then immediately unban them from the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Ban.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Ban.mutualPermissions))
 	public async softban(
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,
@@ -112,9 +112,9 @@ export abstract class Ban {
 	@Slash({
 		dmPermission: false,
 		description: "Unban a user from the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Ban.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Ban.mutualPermissions))
 	public async unban(
 		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
 		target: User | GuildMember,

@@ -12,7 +12,7 @@ import { InteractionUtils } from "~/utils/interaction.js";
 @Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Leaderboard {
-	private static TopDisplayedUsers = 5;
+	private static topDisplayedUsers = 5;
 
 	@Slash({ dmPermission: false, description: "View the leaderboard for the leveling system" })
 	public async leaderboard(interaction: ChatInputCommandInteraction<"cached">) {
@@ -24,7 +24,7 @@ export abstract class Leaderboard {
 
 		const leaderboardData = await DBConnectionManager.Prisma.leveling.fetchLeaderboard({
 			guildId,
-			take: Leaderboard.TopDisplayedUsers
+			take: Leaderboard.topDisplayedUsers
 		});
 
 		if (leaderboardData.length) {
@@ -34,7 +34,7 @@ export abstract class Leaderboard {
 		}
 
 		const players = leaderboardData
-			.concat(Array(Leaderboard.TopDisplayedUsers - leaderboardData.length).fill({ currentXP: 0, entityId: "" }))
+			.concat(Array(Leaderboard.topDisplayedUsers - leaderboardData.length).fill({ currentXP: 0, entityId: "" }))
 			.map(({ currentXP: xp, entityId }, i) => {
 				const result = {
 					avatar: assets.unknownImage,

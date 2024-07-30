@@ -12,17 +12,17 @@ import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
-const mutualPermissions = [PermissionFlagsBits.DeafenMembers];
-
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Deafen {
+	private static readonly mutualPermissions = [PermissionFlagsBits.DeafenMembers];
+
 	@Slash({
 		dmPermission: false,
 		description: "Deafen a user in a voice channel on the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Deafen.mutualPermissions
 	})
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Deafen.mutualPermissions))
 	public async deafen(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -69,7 +69,7 @@ export abstract class Deafen {
 	@Slash({
 		dmPermission: false,
 		description: "Undeafen a user in a voice channel on the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Deafen.mutualPermissions
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions([PermissionFlagsBits.MuteMembers]))
 	public async undeafen(

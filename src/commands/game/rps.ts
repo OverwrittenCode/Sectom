@@ -31,45 +31,43 @@ enum RPS {
 	Spock = "Spock"
 }
 
-const outcomes: Outcomes = {
-	[RPS.Rock]: [
-		[RPS.Scissors, "crushes"],
-		[RPS.Lizard, "crushes"]
-	],
-	[RPS.Paper]: [
-		[RPS.Rock, "covers"],
-		[RPS.Spock, "disproves"]
-	],
-	[RPS.Scissors]: [
-		[RPS.Paper, "cuts"],
-		[RPS.Lizard, "decapitates"]
-	],
-	[RPS.Lizard]: [
-		[RPS.Spock, "poisons"],
-		[RPS.Paper, "eats"]
-	],
-	[RPS.Spock]: [
-		[RPS.Rock, "vaporizes"],
-		[RPS.Scissors, "smashes"]
-	]
-};
-
-const weapons = Object.keys(RPS) as RPSKey[];
-
 @Discord()
 @Category(Enums.CommandCategory.Game)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Rps {
-	private static actionRow = new ActionRowBuilder<ButtonBuilder>()
+	private static readonly maxDecisionTime = ms("10s");
+	private static readonly weapons = Object.keys(RPS) as RPSKey[];
+	private static readonly outcomes = {
+		[RPS.Rock]: [
+			[RPS.Scissors, "crushes"],
+			[RPS.Lizard, "crushes"]
+		],
+		[RPS.Paper]: [
+			[RPS.Rock, "covers"],
+			[RPS.Spock, "disproves"]
+		],
+		[RPS.Scissors]: [
+			[RPS.Paper, "cuts"],
+			[RPS.Lizard, "decapitates"]
+		],
+		[RPS.Lizard]: [
+			[RPS.Spock, "poisons"],
+			[RPS.Paper, "eats"]
+		],
+		[RPS.Spock]: [
+			[RPS.Rock, "vaporizes"],
+			[RPS.Scissors, "smashes"]
+		]
+	} as Outcomes;
+	private static readonly actionRow = new ActionRowBuilder<ButtonBuilder>()
 		.addComponents(
 			Object.values(RPS).map((customId) =>
 				new ButtonBuilder().setCustomId(customId).setLabel(customId).setStyle(ButtonStyle.Secondary)
 			)
 		)
 		.toJSON() as GameControllerComponent;
-	private static maxDecisionTime = ms("10s");
 
-	@Slash({ dmPermission: false, description: `Play ${weapons.join(", ")}` })
+	@Slash({ dmPermission: false, description: `Play ${Rps.weapons.join(", ")}` })
 	public async rps(
 		@TargetSlashOption({
 			entityType: CommandUtils.EntityType.USER,
@@ -115,7 +113,7 @@ export abstract class Rps {
 
 					const key = action.customId as RPSKey;
 
-					const outcomeData = outcomes[key];
+					const outcomeData = Rps.outcomes[key];
 
 					const defeatedObjects = outcomeData.filter(([defeatedObject]) =>
 						playerActions.find(({ customId }) => defeatedObject === customId)

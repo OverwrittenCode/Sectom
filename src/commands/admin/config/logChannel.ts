@@ -14,24 +14,6 @@ import { StringUtils } from "~/utils/string.js";
 
 import type { Prisma, PrismaPromise } from "@prisma/client";
 import type { ChatInputCommandInteraction, TextChannel } from "discord.js";
-
-const LogChannelChoices = ActionManager.CreateBasedTypes.reduce(
-	(acc, actionType) => {
-		const formattedKey = StringUtils.concatenate(
-			" ",
-			...actionType
-				.replace(StringUtils.Regexes.CreateBasedActionModifiers, "")
-				.toLowerCase()
-				.split("_")
-				.map((str) => StringUtils.capitaliseFirstLetter(str))
-		);
-
-		acc[formattedKey] = actionType;
-
-		return acc;
-	},
-	{} as Record<string, string>
-);
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 
 @Discord()
@@ -43,10 +25,28 @@ import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermis
 })
 @SlashGroup("logchannel", "config")
 export abstract class LogChannelConfig {
+	public static readonly choices = ActionManager.createBasedTypes.reduce(
+		(acc, actionType) => {
+			const formattedKey = StringUtils.concatenate(
+				" ",
+				...actionType
+					.replace(StringUtils.Regexes.CreateBasedActionModifiers, "")
+					.toLowerCase()
+					.split("_")
+					.map((str) => StringUtils.capitaliseFirstLetter(str))
+			);
+
+			acc[formattedKey] = actionType;
+
+			return acc;
+		},
+		{} as Record<string, string>
+	);
+
 	@Slash({ description: "Removes a log channel" })
 	public async remove(
 		@SlashChoice({ name: "Default", value: "DEFAULT" })
-		@SlashChoice(...EnumChoice(LogChannelChoices))
+		@SlashChoice(...EnumChoice(LogChannelConfig.choices))
 		@SlashOption({
 			description: "The action type group",
 			name: "action_type",
@@ -106,7 +106,7 @@ export abstract class LogChannelConfig {
 		@GivenChannelSlashOption()
 		channel: TextChannel,
 		@SlashChoice({ name: "Default", value: "DEFAULT" })
-		@SlashChoice(...EnumChoice(LogChannelChoices))
+		@SlashChoice(...EnumChoice(LogChannelConfig.choices))
 		@SlashOption({
 			description: "The action type group",
 			name: "action_type",

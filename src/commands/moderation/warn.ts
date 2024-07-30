@@ -25,7 +25,7 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 })
 @SlashGroup("warn")
 export abstract class Warn {
-	public static MinThreshold = 3 as const;
+	public static minThreshold = 3 as const;
 
 	@Slash({ description: "Warn a user" })
 	public async add(
@@ -67,7 +67,7 @@ export abstract class Warn {
 					action: actionType
 				});
 
-				if (warnings.length >= Warn.MinThreshold) {
+				if (warnings.length >= Warn.minThreshold) {
 					const {
 						configuration: { warning: warningConfiguration }
 					} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({

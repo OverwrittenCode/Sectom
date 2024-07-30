@@ -46,8 +46,6 @@ enum StatusType {
 	Reject = "Reject"
 }
 
-const componentType = Enums.ContentClusterComponentType.Suggestion;
-
 @Discord()
 @Category(Enums.CommandCategory.Admin)
 @SlashGroup({
@@ -57,7 +55,12 @@ const componentType = Enums.ContentClusterComponentType.Suggestion;
 })
 @SlashGroup("suggestion", "config")
 export abstract class SuggestionConfig {
-	public static readonly customIdRecords = ContentClusterManager.constructCustomIdRecords(componentType, "status");
+	private static readonly componentType = Enums.ContentClusterComponentType.Suggestion;
+
+	public static readonly customIdRecords = ContentClusterManager.constructCustomIdRecords(
+		SuggestionConfig.componentType,
+		"status"
+	);
 
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
@@ -72,7 +75,7 @@ export abstract class SuggestionConfig {
 	public async add(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
-			componentType,
+			componentType: SuggestionConfig.componentType,
 			modifierType: Enums.ModifierType.Add
 		});
 	}
@@ -81,7 +84,7 @@ export abstract class SuggestionConfig {
 	public async update(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
-			componentType,
+			componentType: SuggestionConfig.componentType,
 			modifierType: Enums.ModifierType.Update
 		});
 	}
@@ -90,7 +93,7 @@ export abstract class SuggestionConfig {
 	public async remove(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
-			componentType,
+			componentType: SuggestionConfig.componentType,
 			modifierType: Enums.ModifierType.Remove
 		});
 	}
@@ -145,7 +148,7 @@ export abstract class SuggestionConfig {
 		return ContentClusterManager.send({
 			interaction,
 			channel,
-			componentType
+			componentType: SuggestionConfig.componentType
 		});
 	}
 }

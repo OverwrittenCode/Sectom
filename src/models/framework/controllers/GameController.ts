@@ -1,5 +1,4 @@
 import assert from "assert";
-
 import {
 	Collection,
 	Colors,
@@ -11,7 +10,6 @@ import {
 	userMention
 } from "discord.js";
 import prettyMilliseconds from "pretty-ms";
-
 import { BOT_ID, LIGHT_GOLD, MAX_BEST_OF_ROUNDS_LIMIT } from "~/constants.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
@@ -19,7 +17,6 @@ import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
-
 import type {
 	APIActionRowComponent,
 	APIButtonComponentWithCustomId,
@@ -36,9 +33,7 @@ import type {
 export type ComputerPlayerFn = (controller: GameController, enabledButtonIDArr: string[]) => string;
 export type GameControllerComponent = APIActionRowComponent<APIButtonComponentWithCustomId>;
 export type Opponent = GuildMember | ComputerPlayerFn;
-
 type PlayerMention = UserMention | "I" | "You";
-
 type SpecialRule = keyof typeof SpecialRuleDescriptionMap;
 
 interface Factor {
@@ -84,26 +79,26 @@ interface PlayerOptions {
 }
 
 export class GameController {
+	private static readonly BASE_RANGE_SPECIAL_RULE_THRESHOLD = {
+		min: 12,
+		max: 15
+	};
+	private static readonly MAX_SPECIAL_RULE_THRESHOLD = 75;
+	private static readonly NOTICE_PROCESSING_TIME = 1_000;
+
 	private readonly baseEmbed: APIEmbed;
+	private readonly blankBoard: GameControllerComponent[];
 	private readonly collectorPlayerIDs: string[];
+	private readonly interaction: ChatInputCommandInteraction<"cached">;
+	private readonly settings: Omit<GameControllerOptions, "opponent">;
 
 	private specialRuleCounter: number;
 	private teamList: string[];
 
-	public static readonly BASE_RANGE_SPECIAL_RULE_THRESHOLD = {
-		min: 12,
-		max: 15
-	};
-	public static readonly MAX_SPECIAL_RULE_THRESHOLD = 75;
-	public static readonly NOTICE_PROCESSING_TIME = 1_000;
 	public static readonly bestOfChoices = Array.from(
 		{ length: Math.floor((MAX_BEST_OF_ROUNDS_LIMIT + 1) / 2) },
 		(_, i) => 2 * i + 1
 	);
-
-	public readonly blankBoard: GameControllerComponent[];
-	public readonly interaction: ChatInputCommandInteraction<"cached">;
-	public readonly settings: Omit<GameControllerOptions, "opponent">;
 
 	public components: GameControllerComponent[];
 	public currentPlayerIndex: number;

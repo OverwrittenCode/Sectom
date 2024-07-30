@@ -69,8 +69,6 @@ enum PromptTextInputField {
 	Description = "description"
 }
 
-const componentType = Enums.ContentClusterComponentType.Ticket;
-
 @Discord()
 @Category(Enums.CommandCategory.Admin)
 @SlashGroup({
@@ -80,8 +78,10 @@ const componentType = Enums.ContentClusterComponentType.Ticket;
 })
 @SlashGroup("ticket", "config")
 export abstract class TicketConfig {
+	private static readonly componentType = Enums.ContentClusterComponentType.Ticket;
+
 	public static readonly customIdRecords = ContentClusterManager.constructCustomIdRecords(
-		componentType,
+		TicketConfig.componentType,
 		"embed",
 		"prompt",
 		"close",
@@ -100,7 +100,7 @@ export abstract class TicketConfig {
 	public async add(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
-			componentType,
+			componentType: TicketConfig.componentType,
 			modifierType: Enums.ModifierType.Add
 		});
 	}
@@ -186,7 +186,7 @@ export abstract class TicketConfig {
 	public async remove(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
-			componentType,
+			componentType: TicketConfig.componentType,
 			modifierType: Enums.ModifierType.Remove
 		});
 	}
@@ -200,7 +200,7 @@ export abstract class TicketConfig {
 		return ContentClusterManager.send({
 			interaction,
 			channel,
-			componentType
+			componentType: TicketConfig.componentType
 		});
 	}
 
@@ -287,7 +287,7 @@ export abstract class TicketConfig {
 	public async update(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
-			componentType,
+			componentType: TicketConfig.componentType,
 			modifierType: Enums.ModifierType.Update
 		});
 	}
@@ -466,12 +466,12 @@ export abstract class TicketConfigMessageComponentHandler {
 				)
 			);
 
-			return interaction.showModal(modal);
+			return await interaction.showModal(modal);
 		}
 
 		await InteractionUtils.deferInteraction(interaction, true);
 
-		return this.createTicket({ interaction, ticketConfiguration });
+		return await this.createTicket({ interaction, ticketConfiguration });
 	}
 
 	@ButtonComponent({ id: TicketConfig.customIdRecords.ticket_lock.regex })

@@ -1,5 +1,4 @@
 import assert from "assert";
-
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -15,13 +14,11 @@ import {
 	time
 } from "discord.js";
 import ms from "ms";
-
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
-
 import type {
 	APIActionRowComponent,
 	APIButtonComponentWithCustomId,
@@ -53,14 +50,12 @@ type ConstructCustomIdGeneratorOutput<
 	],
 	typeof StringUtils.CustomIDFIeldBodySeperator
 >;
-
 type CustomIdPrefixRecordOutput<T extends string> = {
 	[K in T]: {
 		id: K;
 		regex: RegExp;
 	};
 };
-
 type MessageComponentFlags = Omit<typeof InteractionUtils.MessageComponentIds, "Managed">;
 
 interface ConfirmationButtonOptions extends ReplyOptions {

@@ -18,20 +18,21 @@ import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
 
-type ThresholdPunishmentType = (typeof ThresholdPunishmentOption)[keyof typeof ThresholdPunishmentOption];
-
-const ThresholdPunishmentOption = {
-	disable: "disable",
-	timeout: ActionType.TIME_OUT_USER_ADD,
-	kick: ActionType.KICK_USER_SET,
-	ban: ActionType.BAN_USER_ADD
-} as const;
+type ThresholdPunishmentType =
+	(typeof WarnConfig.thresholdPunishmentChoices)[keyof typeof WarnConfig.thresholdPunishmentChoices];
 
 @Discord()
 @Category(Enums.CommandCategory.Admin)
 @SlashGroup({ description: "Warning configuration", name: "warn", root: "config" })
 @SlashGroup("warn", "config")
 export abstract class WarnConfig {
+	public static thresholdPunishmentChoices = {
+		disable: "disable",
+		timeout: ActionType.TIME_OUT_USER_ADD,
+		kick: ActionType.KICK_USER_SET,
+		ban: ActionType.BAN_USER_ADD
+	} as const;
+
 	@Slash({
 		description:
 			"Configures the duration multilpier for repeated automated offences. I.e. for 2 => 3m, 6m, 12m, 24m"
@@ -103,12 +104,12 @@ export abstract class WarnConfig {
 			description: "The number of warnings to trigger a punishment",
 			name: "threshold",
 			type: ApplicationCommandOptionType.Integer,
-			minValue: Warn.MinThreshold,
+			minValue: Warn.minThreshold,
 			maxValue: 20,
 			required: true
 		})
 		threshold: number,
-		@SlashChoice(...EnumChoice(ThresholdPunishmentOption))
+		@SlashChoice(...EnumChoice(WarnConfig.thresholdPunishmentChoices))
 		@SlashOption({
 			description: "The punishment on reaching the threshold",
 			name: "punishment",
@@ -120,12 +121,12 @@ export abstract class WarnConfig {
 			transformerOptions: {
 				allowDisableOption: "punishment",
 				actionTypeData: {
-					[ThresholdPunishmentOption.timeout]: {
+					[WarnConfig.thresholdPunishmentChoices.timeout]: {
 						allowDisableOption: true,
 						...CommandUtils.DurationLimits.Timeout
 					},
-					[ThresholdPunishmentOption.ban]: { forceDisableOption: true },
-					[ThresholdPunishmentOption.kick]: { forceDisableOption: true }
+					[WarnConfig.thresholdPunishmentChoices.ban]: { forceDisableOption: true },
+					[WarnConfig.thresholdPunishmentChoices.kick]: { forceDisableOption: true }
 				}
 			},
 			name: "base_duration",

@@ -10,16 +10,16 @@ import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 
-const mutualPermissions = [PermissionFlagsBits.KickMembers];
-
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Kick {
-	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+	private static readonly mutualPermissions = [PermissionFlagsBits.KickMembers];
+
+	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Kick.mutualPermissions))
 	@Slash({
 		dmPermission: false,
 		description: "Kick a user from the server",
-		defaultMemberPermissions: mutualPermissions
+		defaultMemberPermissions: Kick.mutualPermissions
 	})
 	public kick(
 		@TargetSlashOption({

@@ -29,12 +29,6 @@ import { StringUtils } from "~/utils/string.js";
 import type { PaginationItem } from "@discordx/pagination";
 import type { ButtonBuilder, ChatInputCommandInteraction } from "discord.js";
 
-const actionTypePunishmentMap = {
-	[ActionType.TIME_OUT_USER_ADD]: "Time Out",
-	[ActionType.KICK_USER_SET]: "Kick",
-	[ActionType.BAN_USER_ADD]: "Ban"
-};
-
 @Discord()
 @Category(Enums.CommandCategory.Admin)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
@@ -46,7 +40,13 @@ const actionTypePunishmentMap = {
 })
 @SlashGroup("config")
 export abstract class Config {
-	public static LevelingCustomIDRecords = InteractionUtils.customIdPrefixRecords("leveling_view");
+	private static readonly punishmentMap = {
+		[ActionType.TIME_OUT_USER_ADD]: "Time Out",
+		[ActionType.KICK_USER_SET]: "Kick",
+		[ActionType.BAN_USER_ADD]: "Ban"
+	};
+
+	public static readonly levelingCustomIDRecords = InteractionUtils.customIdPrefixRecords("leveling_view");
 
 	public static async togglestate(
 		key: keyof PrismaJson.Configuration,
@@ -149,7 +149,7 @@ export abstract class Config {
 						const entries = ObjectUtils.entries(levelingConfiguration);
 
 						const customIdGenerator = InteractionUtils.constructCustomIdGenerator({
-							baseID: Config.LevelingCustomIDRecords.leveling_view.id,
+							baseID: Config.levelingCustomIDRecords.leveling_view.id,
 							messageComponentType: Enums.MessageComponentType.SelectMenu
 						});
 
@@ -207,7 +207,7 @@ export abstract class Config {
 
 						warningConfiguration.thresholds.forEach(({ punishment, threshold, duration }) => {
 							const generalisedPunishment =
-								actionTypePunishmentMap[punishment as keyof typeof actionTypePunishmentMap];
+								Config.punishmentMap[punishment as keyof typeof Config.punishmentMap];
 
 							const strikePosition = NumberUtils.getOrdinalSuffix(threshold);
 

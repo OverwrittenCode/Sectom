@@ -41,20 +41,19 @@ interface PurgeHandlerOptions extends Pick<FetchMessagesOptions, "before" | "aft
 	target?: User | GuildMember | Role | Channel;
 }
 
-const mutualPermissions = [PermissionFlagsBits.ManageMessages];
-
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
-@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(mutualPermissions))
+@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Purge.mutualPermissions))
 @SlashGroup({
 	dmPermission: false,
 	description: "Purge messages in the current or given channel with a filter",
 	name: "purge",
-	defaultMemberPermissions: mutualPermissions
+	defaultMemberPermissions: Purge.mutualPermissions
 })
 @SlashGroup("purge")
 export abstract class Purge {
-	private static DefaultMessageFetchLimit = 50;
+	private static readonly mutualPermissions = [PermissionFlagsBits.ManageMessages];
+	private static readonly defaultMessageFetchLimit = 50;
 
 	@Slash({ description: "Purge all messages after a given messageId in the current or given channel" })
 	public async after(
@@ -68,7 +67,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -106,7 +105,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@ReasonSlashOption()
 		reason: string = InteractionUtils.Messages.NoReason,
 		interaction: ChatInputCommandInteraction<"cached">
@@ -123,7 +122,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -151,7 +150,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -195,7 +194,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -216,7 +215,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -237,7 +236,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -269,7 +268,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -290,7 +289,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -312,7 +311,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -345,7 +344,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -382,7 +381,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -414,7 +413,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -441,7 +440,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -472,7 +471,7 @@ export abstract class Purge {
 		@GivenChannelSlashOption()
 		channel: GuildTextBasedChannel | undefined,
 		@Purge.CountSlashOption()
-		count: number = Purge.DefaultMessageFetchLimit,
+		count: number = Purge.defaultMessageFetchLimit,
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
@@ -491,7 +490,7 @@ export abstract class Purge {
 	private static CountSlashOption() {
 		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
 			SlashOption({
-				description: `The number of messages to purge from 3 to ${MAX_PURGE_COUNT_LIMIT} inclusive. Default is ${Purge.DefaultMessageFetchLimit}`,
+				description: `The number of messages to purge from 3 to ${MAX_PURGE_COUNT_LIMIT} inclusive. Default is ${Purge.defaultMessageFetchLimit}`,
 				name: "count",
 				type: ApplicationCommandOptionType.Integer,
 				minValue: 3,
