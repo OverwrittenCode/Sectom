@@ -99,7 +99,7 @@ enum SubjectTextInputField {
 
 export abstract class ContentClusterManager {
 	private static readonly modifiers = Object.values(Enums.ModifierType);
-	
+
 	public static readonly properties = Object.values(Enums.ContentClusterPropertyType);
 	public static readonly baseCustomIds = ["setup", "view", "channel", "send", "create"];
 	public static readonly componentTypePrefixMatch = `(${Object.values(Enums.ContentClusterComponentType).join("|")})`;

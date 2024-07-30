@@ -1,4 +1,5 @@
 import assert from "assert";
+
 import {
 	Collection,
 	Colors,
@@ -10,6 +11,7 @@ import {
 	userMention
 } from "discord.js";
 import prettyMilliseconds from "pretty-ms";
+
 import { BOT_ID, LIGHT_GOLD, MAX_BEST_OF_ROUNDS_LIMIT } from "~/constants.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
@@ -17,6 +19,7 @@ import { Enums } from "~/ts/Enums.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
+
 import type {
 	APIActionRowComponent,
 	APIButtonComponentWithCustomId,
@@ -33,7 +36,9 @@ import type {
 export type ComputerPlayerFn = (controller: GameController, enabledButtonIDArr: string[]) => string;
 export type GameControllerComponent = APIActionRowComponent<APIButtonComponentWithCustomId>;
 export type Opponent = GuildMember | ComputerPlayerFn;
+
 type PlayerMention = UserMention | "I" | "You";
+
 type SpecialRule = keyof typeof SpecialRuleDescriptionMap;
 
 interface Factor {

@@ -6,6 +6,7 @@ import { Discord, Guard, Slash, SlashChoice, SlashGroup, SlashOption } from "dis
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { GivenChannelSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
@@ -14,7 +15,6 @@ import { StringUtils } from "~/utils/string.js";
 
 import type { Prisma, PrismaPromise } from "@prisma/client";
 import type { ChatInputCommandInteraction, TextChannel } from "discord.js";
-import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 
 @Discord()
 @Category(Enums.CommandCategory.Admin)
