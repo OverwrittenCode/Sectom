@@ -122,7 +122,7 @@ export abstract class InteractionUtils {
 			...replyOptions
 		} = options;
 
-		if (userIDs.length && replyOptions.ephemeral) {
+		if (userIDs.length > 1 && replyOptions.ephemeral) {
 			assert(!interaction.ephemeral);
 			delete replyOptions.ephemeral;
 		}
