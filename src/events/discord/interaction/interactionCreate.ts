@@ -84,6 +84,10 @@ export abstract class InteractionCreate {
 				bot.executeInteraction(interaction)
 			]);
 		} catch (err) {
+			if (InteractionUtils.isPermissionError(err)) {
+				return;
+			}
+
 			if (err instanceof ValidationError && !(interaction instanceof AutocompleteInteraction)) {
 				if (
 					err.message === ValidationError.MessageTemplates.ActionCancelled ||

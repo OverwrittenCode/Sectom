@@ -299,6 +299,13 @@ export abstract class InteractionUtils {
 		);
 	}
 
+	public static isPermissionError(err: unknown): err is DiscordAPIError {
+		return (
+			err instanceof DiscordAPIError &&
+			(err.code === RESTJSONErrorCodes.MissingPermissions || err.code === RESTJSONErrorCodes.MissingAccess)
+		);
+	}
+
 	public static isValidEmoji(interaction: Typings.GuildInteraction, emojiIdOrSymbol: string): boolean {
 		return Boolean(
 			StringUtils.Regexes.UnicodeEmoji.test(emojiIdOrSymbol) || interaction.client.emojis.resolve(emojiIdOrSymbol)

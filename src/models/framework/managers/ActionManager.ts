@@ -542,6 +542,7 @@ export abstract class ActionManager {
 		const apiEmbeds = formattedEmbeds.map((embed) => embed.toJSON());
 
 		let moderativeLogChannel = await _entity.retrieveGivenGuildLogChannel(interaction, actionType);
+		let moderationLogFailStatusMessage: string | null = null;
 		let logMessage: Message<true> | null = null;
 		let messageURL: string | null = null;
 
@@ -550,8 +551,16 @@ export abstract class ActionManager {
 		}
 
 		if (moderativeLogChannel) {
-			logMessage = await moderativeLogChannel.send({ embeds: formattedEmbeds, components: buttonActionRows });
-			messageURL = logMessage.url;
+			try {
+				logMessage = await moderativeLogChannel.send({ embeds: formattedEmbeds, components: buttonActionRows });
+				messageURL = logMessage.url;
+			} catch (err) {
+				if (!InteractionUtils.isPermissionError(err)) {
+					throw err;
+				}
+
+				moderationLogFailStatusMessage = `I was unable to send the log message to ${moderativeLogChannel.toString()}`;
+			}
 		}
 
 		await _case.create({
@@ -649,6 +658,13 @@ export abstract class ActionManager {
 				successEmbed.addFields({
 					name: "DM Status",
 					value: dmFailStatusMessage
+				});
+			}
+
+			if (moderationLogFailStatusMessage) {
+				successEmbed.addFields({
+					name: "Log Status",
+					value: moderationLogFailStatusMessage
 				});
 			}
 
