@@ -4,6 +4,7 @@ import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import {
 	ActionRowBuilder,
+	Colors,
 	EmbedBuilder,
 	PermissionFlagsBits,
 	StringSelectMenuBuilder,
@@ -85,11 +86,10 @@ export abstract class Config {
 
 		const paginationPages: Array<Pick<PaginationItem, "embeds" | "components">> = [];
 
-		const displayEmbed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} Configuration`);
+		const displayEmbed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | Configurations`);
 
-		const configurationName = "Configurations";
 		const configurationValues: string[] = [];
-		const pageTextArray: string[] = [configurationName];
+		const pageTextArray: string[] = ["Home"];
 
 		const logChannelConfigurations = await DBConnectionManager.Prisma.entity.fetchMany({
 			where: { logChannelGuildId: guildId },
@@ -100,13 +100,12 @@ export abstract class Config {
 		});
 
 		if (logChannelConfigurations.length) {
-			const configurationValue = "Log Channel";
-			const pageText = `${configurationValue} Configuration`;
+			const pageText = "Log Channel";
 
 			pageTextArray.push(pageText);
-			configurationValues.push(configurationValue);
+			configurationValues.push(pageText);
 
-			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText}`);
+			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText} Configuration`);
 			const descriptionArray = logChannelConfigurations.map((data) => {
 				const channel = channelMention(data.id);
 
@@ -124,15 +123,19 @@ export abstract class Config {
 		}
 
 		for (const [name, _configuration] of ObjectUtils.entries(configuration)) {
-			_configuration.disabled ??= false;
+			const pageText = StringUtils.capitaliseFirstLetter(name);
 
-			const sentenceCaseName = StringUtils.capitaliseFirstLetter(name);
-			const pageText = `${sentenceCaseName} Configurations`;
+			const colour = _configuration.disabled ? Colors.Red : LIGHT_GOLD;
 
-			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText}`);
+			const embed = new EmbedBuilder().setColor(colour).setTitle(`${guild.name} | ${pageText} Configuration`);
+
+			if (_configuration.disabled) {
+				embed.setFooter({ text: "This configuration is currently disabled" });
+			}
+
 			const actionRows: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[] = [];
 
-			const descriptionArray: string[] = [`${bold("Disabled:")} ${_configuration.disabled}`];
+			const descriptionArray: string[] = [];
 
 			switch (name) {
 				case "leveling":
@@ -296,19 +299,20 @@ export abstract class Config {
 					throw new Error("Unexpected configuration entry");
 			}
 
+			if (!descriptionArray.length) {
+				descriptionArray.push("No data yet");
+			}
+
 			pageTextArray.push(pageText);
 
-			configurationValues.push(sentenceCaseName);
+			configurationValues.push(pageText);
 
 			embed.setDescription(descriptionArray.join(StringUtils.LineBreak));
 
 			paginationPages.push({ embeds: EmbedManager.formatEmbeds([embed]), components: actionRows });
 		}
 
-		displayEmbed.addFields({
-			name: configurationName,
-			value: orderedList(configurationValues)
-		});
+		displayEmbed.setDescription(orderedList(configurationValues));
 
 		paginationPages.unshift({ embeds: [displayEmbed] });
 
