@@ -113,7 +113,7 @@ export abstract class InteractionCreate {
 			return await InteractionUtils.deferInteraction(interaction, true);
 		}
 
-		const isDeferrableInteraction = interaction.isChatInputCommand() || isUpdatable;
+		const isDeferrableInteraction = interaction.isChatInputCommand() || isSafeComponent;
 
 		if (!isDeferrableInteraction) {
 			return null;
