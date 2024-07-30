@@ -3,10 +3,10 @@ import { AttachmentBuilder, type ChatInputCommandInteraction } from "discord.js"
 import { Discord, Guard, Slash } from "discordx";
 
 import { assets } from "~/assets/index.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { LeaderboardBuilder } from "~/models/Canvacord/LeaderboardBuilder.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import { InteractionUtils } from "~/utils/interaction.js";
 
 @Discord()
 @Category(Enums.CommandCategory.Misc)

@@ -19,12 +19,12 @@ import _ from "lodash";
 import prettyMilliseconds from "pretty-ms";
 
 import { BOT_ID, LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
+import { ObjectUtils } from "~/helpers/utils/object.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 import { PaginationManager } from "~/models/framework/managers/PaginationManager.js";
 import type { Typings } from "~/ts/Typings.js";
-import { CommandUtils } from "~/utils/command.js";
-import { InteractionUtils } from "~/utils/interaction.js";
-import { ObjectUtils } from "~/utils/object.js";
-import { StringUtils } from "~/utils/string.js";
 
 import { DBConnectionManager } from "./DBConnectionManager.js";
 import { EmbedManager } from "./EmbedManager.js";

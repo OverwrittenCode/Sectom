@@ -1,7 +1,7 @@
 import { ChannelType } from "discord.js";
 
-import { ObjectUtils } from "~/utils/object.js";
-import { StringUtils } from "~/utils/string.js";
+import { ObjectUtils } from "~/helpers/utils/object.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 
 export class ValidationError extends Error {
 	public static messageTemplates = {

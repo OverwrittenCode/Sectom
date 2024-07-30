@@ -3,9 +3,9 @@ import { EmbedBuilder } from "discord.js";
 import _ from "lodash";
 
 import { LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants.js";
-import { CommandUtils } from "~/utils/command.js";
-import { InteractionUtils } from "~/utils/interaction.js";
-import { StringUtils } from "~/utils/string.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 
 import type {
 	PaginationInteractions,

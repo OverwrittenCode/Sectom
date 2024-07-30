@@ -3,9 +3,9 @@ import { Query } from "@upstash/query";
 import { Redis } from "@upstash/redis";
 
 import { RedisDataService } from "~/framework/services/RedisDataService.js";
+import { ObjectUtils } from "~/helpers/utils/object.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 import type { Typings } from "~/ts/Typings.js";
-import { ObjectUtils } from "~/utils/object.js";
-import { StringUtils } from "~/utils/string.js";
 
 import { DBConnectionManager } from "./DBConnectionManager.js";
 

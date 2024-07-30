@@ -1,7 +1,7 @@
 import { type APIEmbedField, bold } from "discord.js";
 import { EmbedBuilder } from "discord.js";
 
-import { StringUtils } from "~/utils/string.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 
 import type { APIEmbed } from "discord.js";
 

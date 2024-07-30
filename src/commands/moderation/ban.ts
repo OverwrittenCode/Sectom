@@ -8,10 +8,10 @@ import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
-import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js";
 

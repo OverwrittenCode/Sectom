@@ -4,7 +4,7 @@ import { SlashOption } from "discordx";
 import { MAX_AUTOCOMPLETE_OPTION_LIMIT } from "~/constants.js";
 import type { DurationMSValidateOptions } from "~/helpers/transformers/Duration.js";
 import { DurationGenerateAutoComplete, DurationTransformer } from "~/helpers/transformers/Duration.js";
-import { CommandUtils } from "~/utils/command.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
 
 import type { AutocompleteInteraction } from "discord.js";
 

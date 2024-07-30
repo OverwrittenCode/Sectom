@@ -8,9 +8,9 @@ import { Discord, Guard, Slash } from "discordx";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import { InteractionUtils } from "~/utils/interaction.js";
 
 @Discord()
 @Category(Enums.CommandCategory.Moderation)

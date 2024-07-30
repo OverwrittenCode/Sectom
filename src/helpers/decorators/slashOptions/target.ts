@@ -2,9 +2,9 @@ import { ApplicationCommandOptionType, ChannelType } from "discord.js";
 import { SlashOption } from "discordx";
 
 import { TargetTransformer } from "~/helpers/transformers/Target.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 import type { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
-import { StringUtils } from "~/utils/string.js";
 
 import type { SlashOptionOptions } from "discordx";
 

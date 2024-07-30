@@ -3,8 +3,8 @@ import assert from "node:assert";
 import { Prisma } from "@prisma/client";
 import _ from "lodash";
 
+import { ObjectUtils } from "~/helpers/utils/object.js";
 import type { Typings } from "~/ts/Typings.js";
-import { ObjectUtils } from "~/utils/object.js";
 
 type IDFields<M extends Prisma.ModelName> =
 	Typings.Database.SimpleUniqueWhereId<M> extends infer T ? (T extends string ? ["id"] : Array<keyof T>) : never;

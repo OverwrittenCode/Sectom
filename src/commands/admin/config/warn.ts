@@ -10,11 +10,11 @@ import { MAX_ELEMENTS_PER_PAGE } from "~/constants.js";
 import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
-import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
 

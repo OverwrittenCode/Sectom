@@ -1,5 +1,5 @@
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { CommandUtils } from "~/utils/command.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
 
 import type { CommandInteraction } from "discord.js";
 import type { GuardFunction } from "discordx";

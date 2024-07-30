@@ -11,11 +11,11 @@ import { Discord, Guard, Slash, SlashChoice, SlashOption } from "discordx";
 import ms from "ms";
 
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { ObjectUtils } from "~/helpers/utils/object.js";
 import type { GameControllerComponent } from "~/models/framework/controllers/GameController.js";
 import { GameController } from "~/models/framework/controllers/GameController.js";
 import { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
-import { ObjectUtils } from "~/utils/object.js";
 
 import type { GuildMember } from "discord.js";
 

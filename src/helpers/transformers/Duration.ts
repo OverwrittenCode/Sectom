@@ -5,9 +5,9 @@ import ms from "ms";
 import prettyMilliseconds from "pretty-ms";
 
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
-import { CommandUtils } from "~/utils/command.js";
-import { NumberUtils } from "~/utils/number.js";
-import { StringUtils } from "~/utils/string.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { NumberUtils } from "~/helpers/utils/number.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 
 import type { ActionType } from "@prisma/client";
 import type { AutocompleteInteraction } from "discord.js";

@@ -10,13 +10,13 @@ import { Discord, Guard, Slash, SlashChoice, SlashOption } from "discordx";
 
 import { MAX_COMPONENT_GRID_SIZE } from "~/constants.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
-import type { ComputerPlayerFn, GameControllerComponent } from "~/models/framework/controllers/GameController.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
+import { ObjectUtils } from "~/helpers/utils/object.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 import { GameController } from "~/models/framework/controllers/GameController.js";
+import type { ComputerPlayerFn, GameControllerComponent } from "~/models/framework/controllers/GameController.js";
 import { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
-import { InteractionUtils } from "~/utils/interaction.js";
-import { ObjectUtils } from "~/utils/object.js";
-import { StringUtils } from "~/utils/string.js";
 
 import type { APIButtonComponentWithCustomId, APIEmbedField, GuildMember } from "discord.js";
 

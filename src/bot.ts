@@ -20,11 +20,11 @@ import { container } from "tsyringe";
 
 import { BOT_ID, GUILD_IDS } from "~/constants";
 import { Beans } from "~/framework/DI/Beans.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { ObjectUtils } from "~/helpers/utils/object.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import type { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
-import { CommandUtils } from "~/utils/command.js";
-import { ObjectUtils } from "~/utils/object.js";
 
 const { BOT_TOKEN } = process.env;
 

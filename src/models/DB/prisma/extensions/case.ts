@@ -3,10 +3,10 @@ import { TimestampStyles, time } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 import type { FetchExtendedClient } from "~/models/DB/prisma/extensions/types/index.js";
 import { Beans } from "~/models/framework/DI/Beans.js";
 import type { Typings } from "~/ts/Typings.js";
-import { StringUtils } from "~/utils/string.js";
 
 import { EntityInstanceMethods } from "./entity.js";
 

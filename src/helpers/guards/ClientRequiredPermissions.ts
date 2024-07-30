@@ -3,8 +3,8 @@ import assert from "assert";
 import { Colors, EmbedBuilder, bold, unorderedList } from "discord.js";
 import { type GuardFunction } from "discordx";
 
-import { CommandUtils } from "~/utils/command.js";
-import { InteractionUtils } from "~/utils/interaction.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 
 import type { ButtonInteraction, CommandInteraction, PermissionResolvable } from "discord.js";
 

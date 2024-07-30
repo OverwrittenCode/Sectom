@@ -4,9 +4,9 @@ import { Discord, Guard, Slash, SlashGroup } from "discordx";
 
 import { LIGHT_GOLD } from "~/constants";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
-import { InteractionUtils } from "~/utils/interaction.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
 
