@@ -28,8 +28,6 @@ import { StringUtils } from "~/utils/string.js";
 
 import { DBConnectionManager } from "./DBConnectionManager.js";
 import { EmbedManager } from "./EmbedManager.js";
-import { EntityManager } from "./EntityManager.js";
-
 import type { PaginationItem } from "@discordx/pagination";
 import type { Prisma } from "@prisma/client";
 import type {
@@ -483,9 +481,9 @@ export abstract class ActionManager {
 						name: `${targetTypeSentenceCase} ID`,
 						value:
 							targetType === "USER"
-								? EntityManager.getUserHyperlink(targetId)
+								? this.getUserHyperlink(targetId)
 								: targetType === "CHANNEL"
-									? EntityManager.getChannelHyperlink(channelId, guildId)
+									? discordBuilders.channelLink(channelId, guildId)
 									: targetId
 					},
 					{
@@ -499,7 +497,7 @@ export abstract class ActionManager {
 				value: EmbedManager.indentFieldValues([
 					{
 						name: "User ID",
-						value: EntityManager.getUserHyperlink(perpetratorId)
+						value: this.getUserHyperlink(perpetratorId)
 					},
 					{
 						name: "User Mention",
@@ -698,5 +696,9 @@ export abstract class ActionManager {
 		}
 
 		return returnMessage;
+	}
+
+	private static getUserHyperlink(userId: string): string {
+		return `https://discordapp.com/users/${userId}`;
 	}
 }
