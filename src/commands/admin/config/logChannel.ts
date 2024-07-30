@@ -1,15 +1,14 @@
-import { Category, EnumChoice } from "@discordx/utilities";
+import { Category, EnumChoice, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
-import { ApplicationCommandOptionType, inlineCode } from "discord.js";
-import { Discord, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
+import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
+import { Discord, Guard, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
 
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { GivenChannelSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import { CommandUtils } from "~/utils/command.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { StringUtils } from "~/utils/string.js";
 
@@ -33,6 +32,7 @@ const LogChannelChoices = ActionManager.CreateBasedTypes.reduce(
 	},
 	{} as Record<string, string>
 );
+import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 
 @Discord()
 @Category(Enums.CommandCategory.Admin)
@@ -98,10 +98,12 @@ export abstract class LogChannelConfig {
 	}
 
 	@Slash({ description: "Sets the log channel for an action type group" })
+	@Guard(
+		RateLimit(TIME_UNIT.seconds, 3),
+		ClientRequiredPermissions([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])
+	)
 	public async set(
-		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.CHANNEL
-		})
+		@GivenChannelSlashOption()
 		channel: TextChannel,
 		@SlashChoice({ name: "Default", value: "DEFAULT" })
 		@SlashChoice(...EnumChoice(LogChannelChoices))
@@ -191,7 +193,7 @@ export abstract class LogChannelConfig {
 			reason,
 			actionType,
 			actionOptions: {
-				pastTense: `${actionStr} the ${inlineCode(actionTypeChoice ?? "default")} log channel`,
+				pastTense: `${actionStr} the log channel`,
 				pendingExecution: () => DBConnectionManager.Prisma.$transaction(prismaTransaction)
 			}
 		});
