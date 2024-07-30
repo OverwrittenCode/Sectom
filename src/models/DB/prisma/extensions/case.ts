@@ -11,7 +11,7 @@ import { StringUtils } from "~/utils/string.js";
 import { EntityInstanceMethods } from "./entity.js";
 
 import type { ActionType, Prisma } from "@prisma/client";
-import { Simplify } from "type-fest";
+import type { Simplify } from "type-fest";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 

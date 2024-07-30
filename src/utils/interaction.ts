@@ -38,7 +38,7 @@ import type {
 	ModalSubmitInteraction,
 	ReadonlyCollection
 } from "discord.js";
-import { Simplify } from "type-fest";
+import type { Simplify } from "type-fest";
 
 type ConstructCustomIdGeneratorOutput<
 	Prefix extends string[],

@@ -5,7 +5,7 @@ import type { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 
 import type { CommandInteraction, CommandInteractionOption } from "discord.js";
-import { Simplify } from "type-fest";
+import type { Simplify } from "type-fest";
 
 type CategoryGroupedDataKey = Enums.CommandCategory;
 

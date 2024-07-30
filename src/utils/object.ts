@@ -1,5 +1,3 @@
-import type { Typings } from "~/ts/Typings.js";
-
 import type { EmptyObject, Entries, NonEmptyObject, Simplify } from "type-fest";
 
 type EntriesOutput<T extends object, Options extends EntriesOptions | undefined = undefined> = Entries<

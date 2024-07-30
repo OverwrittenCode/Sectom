@@ -31,7 +31,7 @@ import type {
 	RetrieveModelName,
 	ShadowCTXName
 } from "./types/index.js";
-import { Simplify } from "type-fest";
+import type { Simplify } from "type-fest";
 
 type Doc<M extends Prisma.ModelName = Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 

@@ -39,7 +39,7 @@ import type {
 	InteractionResponse,
 	Message
 } from "discord.js";
-import { Simplify } from "type-fest";
+import type { Simplify } from "type-fest";
 
 type AuditFields = Record<
 	string,
