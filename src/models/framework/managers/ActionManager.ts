@@ -39,6 +39,7 @@ import type {
 	InteractionResponse,
 	Message
 } from "discord.js";
+import { Simplify } from "type-fest";
 
 type AuditFields = Record<
 	string,
@@ -172,7 +173,7 @@ export abstract class ActionManager {
 	public static async getCases(
 		interaction: ChatInputCommandInteraction<"cached">,
 		simpleFilter?: Typings.Database.SimpleFilter<"Case">
-	): Promise<Typings.Prettify<Pick<Doc, keyof typeof this.getCasesSelect>>[]> {
+	): Promise<Simplify<Pick<Doc, keyof typeof this.getCasesSelect>>[]> {
 		const { guildId } = interaction;
 
 		return await DBConnectionManager.Prisma.case.fetchMany({

@@ -1,6 +1,6 @@
 import type { Typings } from "~/ts/Typings.js";
 
-import type { EmptyObject, Entries, NonEmptyObject } from "type-fest";
+import type { EmptyObject, Entries, NonEmptyObject, Simplify } from "type-fest";
 
 type EntriesOutput<T extends object, Options extends EntriesOptions | undefined = undefined> = Entries<
 	Options extends { excludeUndefined?: true } ? { [K in keyof T]-?: Exclude<T[K], undefined> } : T
@@ -66,17 +66,17 @@ export abstract class ObjectUtils {
 		return typeof obj === "object" && obj !== null && obj !== undefined && this.keys(obj).length > 0;
 	}
 
-	public static keys<T extends object>(obj: T | object): Typings.Prettify<KeysOutput<T>> {
+	public static keys<T extends object>(obj: T | object): Simplify<KeysOutput<T>> {
 		return Object.keys(obj) as KeysOutput<T>;
 	}
 
-	public static pickKeys<T, U extends Array<keyof T>>(obj: T, properties: U): Typings.Prettify<Pick<T, U[number]>>;
-	public static pickKeys<T, U extends keyof T>(obj: T, ...properties: U[]): Typings.Prettify<Pick<T, U>>;
+	public static pickKeys<T, U extends Array<keyof T>>(obj: T, properties: U): Simplify<Pick<T, U[number]>>;
+	public static pickKeys<T, U extends keyof T>(obj: T, ...properties: U[]): Simplify<Pick<T, U>>;
 	public static pickKeys<T, U extends keyof T>(
 		obj: T,
 		propertiesOrFirstProperty: U | U[],
 		...restProperties: U[]
-	): Typings.Prettify<Pick<T, U>> {
+	): Simplify<Pick<T, U>> {
 		const properties = Array.isArray(propertiesOrFirstProperty)
 			? propertiesOrFirstProperty
 			: [propertiesOrFirstProperty, ...restProperties];

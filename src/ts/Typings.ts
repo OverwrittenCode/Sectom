@@ -25,7 +25,7 @@ import type {
 	UserSelectMenuInteraction
 } from "discord.js";
 import type { DApplicationCommand } from "discordx";
-import type { Join } from "type-fest";
+import type { Join, Simplify } from "type-fest";
 
 export namespace Typings {
 	export namespace Database {
@@ -37,7 +37,7 @@ export namespace Typings {
 
 		export namespace Redis {
 			export type RetrieveModelDocument<M extends _Prisma.ModelName> = M extends M
-				? Prettify<
+				? Simplify<
 						{
 							[K in keyof Prisma.RetrieveModelDocument<M>]: Prisma.RetrieveModelDocument<M>[K] extends
 								| AllowedStringify
@@ -74,7 +74,7 @@ export namespace Typings {
 
 			export type Indexes<M extends _Prisma.ModelName, T extends TTerms<M>[]> = MergeUnionTransformedTuples<M, T>;
 
-			export type IndexObject<M extends _Prisma.ModelName, T extends TTerms<M>> = Prettify<
+			export type IndexObject<M extends _Prisma.ModelName, T extends TTerms<M>> = Simplify<
 				UnionToIntersection<
 					T extends T
 						? {
@@ -125,7 +125,7 @@ export namespace Typings {
 			: never;
 
 		export type SimpleFilter<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
-			? Prettify<
+			? Simplify<
 					OnlyFilterableTypes<
 						Partial<
 							Intersection<
@@ -197,12 +197,9 @@ export namespace Typings {
 	export type SetNullableCase<T, WithoutFalsyCase extends boolean = true> = WithoutFalsyCase extends true
 		? T
 		: T | null | undefined;
-	export type Prettify<T> = {
-		[K in keyof T]: T[K];
-	} & {};
 	export type PickMatching<T, V> = { [K in keyof T as T[K] extends V | (() => V) ? K : never]: T[K] };
 	export type ExactlyOneOf<T> = {
-		[K in keyof T]: Prettify<Pick<T, K> & Partial<Record<Exclude<keyof T, K>, never>>>;
+		[K in keyof T]: Simplify<Pick<T, K> & Partial<Record<Exclude<keyof T, K>, never>>>;
 	}[keyof T];
 	export type Intersection<T, U> = {
 		[K in keyof T & keyof U]: U[K];

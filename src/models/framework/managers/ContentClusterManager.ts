@@ -27,7 +27,6 @@ import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
-import type { Typings } from "~/ts/Typings.js";
 import { InteractionUtils } from "~/utils/interaction.js";
 import { ObjectUtils } from "~/utils/object.js";
 import { StringUtils } from "~/utils/string.js";
@@ -40,7 +39,7 @@ import type {
 	ModalSubmitInteraction,
 	StringSelectMenuInteraction
 } from "discord.js";
-import type { SetRequired } from "type-fest";
+import type { SetRequired, Simplify } from "type-fest";
 
 interface BaseOptions extends Pick<CustomIdFieldOptions, "componentType"> {
 	interaction: ChatInputCommandInteraction<"cached">;
@@ -53,7 +52,7 @@ interface CustomIdFieldOptions {
 }
 
 interface ModalPropertyHandlerOptions extends CustomIdFieldOptions {
-	data?: Typings.Prettify<
+	data?: Simplify<
 		SetRequired<
 			{
 				[K in

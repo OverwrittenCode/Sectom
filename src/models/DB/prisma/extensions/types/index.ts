@@ -2,6 +2,7 @@ import type { Typings } from "~/ts/Typings.js";
 
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { DynamicClientExtensionThis, InternalArgs, Operation } from "@prisma/client/runtime/library.js";
+import { Simplify } from "type-fest";
 
 export type BaseFetchOptionsUnion<TModel> =
 	| BaseFetchByIdOptions<TModel>
@@ -59,7 +60,7 @@ export type FetchOutput<
 	O extends FetchOptions<TModel, F> = FetchOptions<TModel, F>
 > = Exclude<
 	Typings.SetNullableCase<
-		Typings.Prettify<
+		Simplify<
 			Typings.Database.SimpleSelectOutput<
 				RetrieveModelName<TModel>,
 				O["select"] extends infer T extends Typings.Database.SimpleSelect<RetrieveModelName<TModel>>

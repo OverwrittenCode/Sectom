@@ -31,6 +31,7 @@ import type {
 	RetrieveModelName,
 	ShadowCTXName
 } from "./types/index.js";
+import { Simplify } from "type-fest";
 
 type Doc<M extends Prisma.ModelName = Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 
@@ -89,7 +90,7 @@ export abstract class PrismaExtensions {
 						[curr]: async function <TModel, _, O extends FetchOptions<TModel>>(
 							this: TModel,
 							options: O
-						): Promise<Typings.Prettify<FetchOutput<TModel>>> {
+						): Promise<Simplify<FetchOutput<TModel>>> {
 							const { select } = options;
 
 							/**

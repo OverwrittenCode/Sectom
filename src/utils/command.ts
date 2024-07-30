@@ -5,11 +5,12 @@ import type { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 
 import type { CommandInteraction, CommandInteractionOption } from "discord.js";
+import { Simplify } from "type-fest";
 
 type CategoryGroupedDataKey = Enums.CommandCategory;
 
 type CategoryGroupedDataValue = Array<
-	Typings.Prettify<Pick<Required<Typings.DSlashCommand>, "name" | "description" | "options" | "category">>
+	Simplify<Pick<Required<Typings.DSlashCommand>, "name" | "description" | "options" | "category">>
 >;
 
 interface CategoryGroupedData {

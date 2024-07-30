@@ -38,6 +38,7 @@ import type {
 	ModalSubmitInteraction,
 	ReadonlyCollection
 } from "discord.js";
+import { Simplify } from "type-fest";
 
 type ConstructCustomIdGeneratorOutput<
 	Prefix extends string[],
@@ -253,7 +254,7 @@ export abstract class InteractionUtils {
 
 	public static customIdPrefixRecords<const T extends string>(
 		...customIds: T[]
-	): Typings.Prettify<CustomIdPrefixRecordOutput<T>> {
+	): Simplify<CustomIdPrefixRecordOutput<T>> {
 		return customIds.reduce((acc, id) => {
 			acc[id] = {
 				id,

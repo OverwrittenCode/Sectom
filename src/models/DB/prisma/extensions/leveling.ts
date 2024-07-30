@@ -11,7 +11,7 @@ import { EntityInstanceMethods } from "./entity.js";
 
 import type { FetchExtendedClient } from "./types/index.js";
 import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember } from "discord.js";
-import type { SetOptional } from "type-fest";
+import type { SetOptional, Simplify } from "type-fest";
 
 interface GetLevelingDataOutput extends Required<PrismaJson.LevelingXPOptions> {
 	currentLevel: number;
@@ -37,7 +37,7 @@ interface FetchLeaderboardOptions {
 }
 
 type FetchLeaderboardOutput = Array<
-	Typings.Prettify<Omit<Typings.Database.Prisma.RetrieveModelDocument<"Leveling">, "createdAt" | "updatedAt">>
+	Simplify<Omit<Typings.Database.Prisma.RetrieveModelDocument<"Leveling">, "createdAt" | "updatedAt">>
 >;
 
 type InteractionType = Message<true> | ChatInputCommandInteraction<"cached">;

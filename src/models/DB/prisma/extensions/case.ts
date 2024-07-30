@@ -11,6 +11,7 @@ import { StringUtils } from "~/utils/string.js";
 import { EntityInstanceMethods } from "./entity.js";
 
 import type { ActionType, Prisma } from "@prisma/client";
+import { Simplify } from "type-fest";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
 
@@ -53,7 +54,7 @@ export class CaseInstanceMethods {
 	public async retrieveCase<T>(
 		this: T,
 		options: RetrieveCaseOptions
-	): Promise<Typings.Prettify<Pick<Doc, keyof CaseInstanceMethods["retrieveCaseSelect"]>>> {
+	): Promise<Simplify<Pick<Doc, keyof CaseInstanceMethods["retrieveCaseSelect"]>>> {
 		const { interaction, allowedActions, caseID, targetId } = options;
 		const { guildId } = interaction;
 
