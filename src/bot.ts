@@ -1,6 +1,7 @@
 import "@total-typescript/ts-reset";
 import assert from "assert";
 import "reflect-metadata";
+import "dotenv/config.js";
 
 import { dirname, importx } from "@discordx/importer";
 import { NotBot } from "@discordx/utilities";
@@ -14,7 +15,6 @@ import {
 	On,
 	tsyringeDependencyRegistryEngine
 } from "discordx";
-import dotenv from "dotenv";
 import _ from "lodash";
 import { container } from "tsyringe";
 
@@ -25,8 +25,6 @@ import type { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 import { CommandUtils } from "~/utils/command.js";
 import { ObjectUtils } from "~/utils/object.js";
-
-dotenv.config();
 
 const { BOT_TOKEN } = process.env;
 
