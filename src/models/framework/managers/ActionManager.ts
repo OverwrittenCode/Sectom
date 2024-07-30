@@ -104,7 +104,7 @@ export abstract class ActionManager {
 	} satisfies Prisma.CaseSelectScalar;
 
 	public static readonly createBasedTypes = Object.values(ActionType).filter((caseActionType) =>
-		StringUtils.Regexes.CreateBasedActionModifiers.test(caseActionType)
+		StringUtils.regexes.createBasedActionModifiers.test(caseActionType)
 	);
 
 	public static generateAuditReason(
@@ -213,7 +213,7 @@ export abstract class ActionManager {
 		const addFooter = descriptionChunks.length > 1;
 
 		descriptionChunks.forEach((chunk, index, arr) => {
-			const embedDescription = chunk.join(StringUtils.LineBreak);
+			const embedDescription = chunk.join(StringUtils.lineBreak);
 			const embed = new EmbedBuilder().setTitle(embedTitle).setColor(LIGHT_GOLD).setDescription(embedDescription);
 
 			if (addFooter) {
@@ -363,7 +363,7 @@ export abstract class ActionManager {
 			perpetratorId
 		});
 
-		const id = StringUtils.GenerateID();
+		const id = StringUtils.generateID();
 
 		const targetTypeLowercase = targetType.toLowerCase() as Lowercase<typeof targetType>;
 		const targetTypeSentenceCase = StringUtils.capitaliseFirstLetter(targetTypeLowercase);
@@ -451,10 +451,10 @@ export abstract class ActionManager {
 
 						if (value in ActionType) {
 							value = StringUtils.convertToTitleCase(
-								value.replace(StringUtils.Regexes.AllActionModifiers, ""),
+								value.replace(StringUtils.regexes.allActionModifiers, ""),
 								"_"
 							);
-						} else if (option.name.includes("duration") && StringUtils.Regexes.Number.test(value)) {
+						} else if (option.name.includes("duration") && StringUtils.regexes.number.test(value)) {
 							value = prettyMilliseconds(parseInt(value), { verbose: true });
 						}
 

@@ -241,7 +241,7 @@ export class GameController {
 				},
 				{
 					name: multiplayerWaitingLobbyText,
-					value: StringUtils.TabCharacter
+					value: StringUtils.tabCharacter
 				}
 			);
 
@@ -460,7 +460,7 @@ export class GameController {
 				` > [TEAM / LABEL DISPLAY] > ${action.profile.team}`,
 				` > [MOVE#] > ${this.playerActionsPerGame.size}`,
 				` > [SPECIAL RULE] > ${this.specialRule}`
-			].join(StringUtils.LineBreak)
+			].join(StringUtils.lineBreak)
 		);
 
 		return this.playerActionsPerRound;
@@ -607,7 +607,7 @@ export class GameController {
 				components: component.components.map((subComponent) => {
 					const { custom_id } = subComponent;
 					const element = allButtons[index++];
-					const disabled = element.label !== StringUtils.TabCharacter;
+					const disabled = element.label !== StringUtils.tabCharacter;
 
 					if (disabled) {
 						const profile = previousPlayerActionsPerGame.get(element.custom_id)!.profile;
@@ -744,7 +744,7 @@ export class GameController {
 								"You must win by two points",
 								`The game now ends on scoring ${this.winThreshold} points`
 							])
-						].join(StringUtils.LineBreak)
+						].join(StringUtils.lineBreak)
 					)
 					.setFooter({ text: "Deuce!" });
 			}
@@ -764,7 +764,7 @@ export class GameController {
 			content ??= "";
 
 			if (content) {
-				content += StringUtils.LineBreak;
+				content += StringUtils.lineBreak;
 			}
 
 			content += this.specialRuleNotice;
@@ -822,13 +822,13 @@ export class GameController {
 
 				collector.on("end", async (collection) => {
 					if (collection.size !== filterPlayerIds.length) {
-						const content = ValidationError.MessageTemplates.Timeout;
+						const content = ValidationError.messageTemplates.Timeout;
 
 						await InteractionUtils.disableComponents(reply, {
 							messageEditOptions: { content, embeds: [] }
 						});
 
-						reject(ValidationError.MessageTemplates.Timeout);
+						reject(ValidationError.messageTemplates.Timeout);
 					}
 
 					resolve(this.playerActionsPerRound);
@@ -856,7 +856,7 @@ class Player {
 	public team?: string;
 
 	constructor(options: Omit<PlayerOptions, "score">) {
-		this.id = StringUtils.GenerateID();
+		this.id = StringUtils.generateID();
 		this.member = options.member;
 		this.score = 0;
 		this.team = options.team;

@@ -30,7 +30,7 @@ export abstract class LogChannelConfig {
 			const formattedKey = StringUtils.concatenate(
 				" ",
 				...actionType
-					.replace(StringUtils.Regexes.CreateBasedActionModifiers, "")
+					.replace(StringUtils.regexes.createBasedActionModifiers, "")
 					.toLowerCase()
 					.split("_")
 					.map((str) => StringUtils.capitaliseFirstLetter(str))
@@ -55,7 +55,7 @@ export abstract class LogChannelConfig {
 		})
 		actionTypeChoice: ActionType | "DEFAULT",
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const actionTypeGroup = actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
@@ -68,7 +68,7 @@ export abstract class LogChannelConfig {
 		const currentCorrespondingLogChannelId = retrievedGuildLogChannel?.id;
 
 		if (!currentCorrespondingLogChannelId) {
-			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("given log channel"));
+			throw new ValidationError(ValidationError.messageTemplates.NotConfigured("given log channel"));
 		}
 
 		return await ActionManager.logCase({
@@ -114,7 +114,7 @@ export abstract class LogChannelConfig {
 		})
 		actionTypeChoice: ActionType | "DEFAULT" | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;
@@ -131,7 +131,7 @@ export abstract class LogChannelConfig {
 
 		if (currentCorrespondingLogChannelId) {
 			if (currentCorrespondingLogChannelId === channel.id) {
-				throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
+				throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
 			}
 
 			prismaTransaction.push(

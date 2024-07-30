@@ -32,7 +32,7 @@ export class PaginationManager<T extends PaginationResolver = PaginationResolver
 		config: PaginationOptions
 	) {
 		config.showStartEnd ??= true;
-		config.time ??= CommandUtils.CollectionTime;
+		config.time ??= CommandUtils.collectionTime;
 		config.enableExit ??= !config.ephemeral;
 		config.onTimeout ??= (_, message) => InteractionUtils.disableComponents(message);
 
@@ -57,7 +57,7 @@ export class PaginationManager<T extends PaginationResolver = PaginationResolver
 		const descriptionChunks = _.chunk(descriptionArray, MAX_ELEMENTS_PER_PAGE);
 
 		descriptionChunks.forEach((chunk, index, arr) => {
-			const embedDescription = chunk.join(StringUtils.LineBreak);
+			const embedDescription = chunk.join(StringUtils.lineBreak);
 			const embed = new EmbedBuilder()
 				.setTitle(embedTitle)
 				.setColor(LIGHT_GOLD)

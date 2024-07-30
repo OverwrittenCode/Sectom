@@ -157,7 +157,7 @@ export function DurationTransformer(options: DurationMSValidateOptions) {
 
 		const isDisabled =
 			typeof msDurationStr === "undefined" ||
-			(options.allowDisableOption && msDurationStr === CommandUtils.SlashOptions.DisableChoice);
+			(options.allowDisableOption && msDurationStr === CommandUtils.slashOptions.DisableChoice);
 
 		if (!rangeValue || isDisabled) {
 			return;
@@ -212,6 +212,6 @@ const unitToQuantityMap = {
 	[IncrementTimeUnits.years]: ms("1y")
 } as const;
 const disabledAutoCompleteOption = {
-	name: CommandUtils.SlashOptions.DisableChoice,
-	value: CommandUtils.SlashOptions.DisableChoice
+	name: CommandUtils.slashOptions.DisableChoice,
+	value: CommandUtils.slashOptions.DisableChoice
 };

@@ -21,7 +21,7 @@ export abstract class Avatar {
 	@Slash({ description: "Display the global avatar of a user" })
 	public global(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
 			required: false
 		})
@@ -53,7 +53,7 @@ export abstract class Avatar {
 	@Slash({ description: "Display the server avatar of a user or global avatar otherwise" })
 	public server(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
 			required: false
 		})

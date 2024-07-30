@@ -54,7 +54,7 @@ export abstract class Case {
 			caseID
 		});
 
-		const actionTypeStem = caseData.action.replace(StringUtils.Regexes.AllActionModifiers, "");
+		const actionTypeStem = caseData.action.replace(StringUtils.regexes.allActionModifiers, "");
 
 		const actionTypes = Object.values(ActionType);
 
@@ -109,8 +109,8 @@ export abstract class Case {
 		assert(updatedEmbed.fields && targetInformationFieldIndex);
 
 		const [sentenceCaseEntityType, , hyperlinkedTargetId] = fields[targetInformationFieldIndex].value
-			.replaceAll(StringUtils.TabCharacter, "")
-			.split(StringUtils.LineBreak)
+			.replaceAll(StringUtils.tabCharacter, "")
+			.split(StringUtils.lineBreak)
 			.find((str) => str.includes("ID"))!
 			.replaceAll("*", "")
 			.split(" ");
@@ -204,7 +204,7 @@ export abstract class Case {
 		})
 		id: string | undefined,
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
 			descriptionNote: "This is ignored if case_id is provided",
 			name: "perpetrator",
@@ -212,7 +212,7 @@ export abstract class Case {
 		})
 		perpetrator: GuildMember | User | undefined,
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
 			descriptionNote: "This is ignored if case_id is provided",
 			name: "target",
@@ -220,7 +220,7 @@ export abstract class Case {
 		})
 		target: GuildMember | User | undefined,
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.CHANNEL,
+			entityType: CommandUtils.entityType.CHANNEL,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
 			descriptionNote: "This is ignored if case_id is provided",
 			required: false

@@ -110,8 +110,8 @@ export abstract class ContentClusterManager {
 		const customIds = [...ContentClusterManager.baseCustomIds, ...(additionalCustomIds || [])].map(
 			(customId) =>
 				(componentType +
-					StringUtils.CustomIDFieldPrefixSeperator +
-					customId) as `${ComponentType}${typeof StringUtils.CustomIDFieldPrefixSeperator}${typeof customId}`
+					StringUtils.customIDFieldPrefixSeperator +
+					customId) as `${ComponentType}${typeof StringUtils.customIDFieldPrefixSeperator}${typeof customId}`
 		);
 
 		return InteractionUtils.customIdPrefixRecords(...customIds);
@@ -119,10 +119,10 @@ export abstract class ContentClusterManager {
 
 	public static retrieveCustomIdFields(customId: string): CustomIdFieldOptions {
 		const componentType = customId
-			.split(StringUtils.CustomIDFieldPrefixSeperator)
+			.split(StringUtils.customIDFieldPrefixSeperator)
 			.shift() as Enums.ContentClusterComponentType;
 
-		const bodyFields = customId.split(StringUtils.CustomIDFIeldBodySeperator);
+		const bodyFields = customId.split(StringUtils.customIDFIeldBodySeperator);
 
 		const propertyType = bodyFields.find((str) =>
 			this.properties.includes(str)
@@ -145,7 +145,7 @@ export abstract class ContentClusterManager {
 			check: componentType
 		});
 
-		const { NotConfigured } = ValidationError.MessageTemplates;
+		const { NotConfigured } = ValidationError.messageTemplates;
 
 		if (componentType === Enums.ContentClusterComponentType.Ticket && !configuration[componentType].staffRoleId) {
 			throw new ValidationError(NotConfigured("ticket staff role"));
@@ -236,7 +236,7 @@ export abstract class ContentClusterManager {
 			const embed = new EmbedBuilder()
 				.setTitle("Add a subject or panel")
 				.setColor(LIGHT_GOLD)
-				.setDescription([...panelDescriptionArray, ...subjectDescriptionArray].join(StringUtils.LineBreak));
+				.setDescription([...panelDescriptionArray, ...subjectDescriptionArray].join(StringUtils.lineBreak));
 
 			return await InteractionUtils.replyOrFollowUp(interaction, { embeds: [embed], components: [actionRow] });
 		}
@@ -305,7 +305,7 @@ export abstract class ContentClusterMessageComponentHandler {
 	private static readonly propertyRegexes = ContentClusterManager.baseCustomIds.reduce(
 		(acc, id) => {
 			acc[id] = new RegExp(
-				`^${ContentClusterManager.componentTypePrefixMatch + StringUtils.CustomIDFieldPrefixSeperator + id}`
+				`^${ContentClusterManager.componentTypePrefixMatch + StringUtils.customIDFieldPrefixSeperator + id}`
 			);
 			return acc;
 		},
@@ -389,12 +389,12 @@ export abstract class ContentClusterMessageComponentHandler {
 			throw new ValidationError("at least one Subject is not valid, or not [wrapped] in square braces correctly");
 		}
 
-		if (rawCode && !StringUtils.Regexes.HexCode.test(rawCode)) {
+		if (rawCode && !StringUtils.regexes.hexCode.test(rawCode)) {
 			throw new ValidationError("invalid hex code provided.");
 		}
 
 		if (emoji) {
-			const unicodeEmojiCount = emoji.match(StringUtils.Regexes.UnicodeEmoji)?.length;
+			const unicodeEmojiCount = emoji.match(StringUtils.regexes.unicodeEmoji)?.length;
 
 			const isInvalidEmoji = !unicodeEmojiCount && !interaction.client.emojis.resolve(emoji);
 
@@ -418,7 +418,7 @@ export abstract class ContentClusterMessageComponentHandler {
 		const targetName =
 			modifierType === Enums.ModifierType.Add
 				? name!
-				: customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+				: customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 
 		const currentIndex = componentConfiguration[propertyTypeConfigKey].findIndex(
 			(property) => property.name === targetName
@@ -465,7 +465,7 @@ export abstract class ContentClusterMessageComponentHandler {
 				isUpdate && _.isEqual(configuration[componentType][propertyTypeConfigKey][appliedIndex], newProperty);
 
 			if (isEqualToCurrent) {
-				throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
+				throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
 			}
 
 			configuration[componentType][propertyTypeConfigKey][appliedIndex] = newProperty;
@@ -477,7 +477,7 @@ export abstract class ContentClusterMessageComponentHandler {
 				id: channelId,
 				type: EntityType.CHANNEL
 			},
-			reason: reason ?? InteractionUtils.Messages.NoReason,
+			reason: reason ?? InteractionUtils.messages.noReason,
 			actionType,
 			actionOptions: {
 				pendingExecution: () =>
@@ -494,17 +494,17 @@ export abstract class ContentClusterMessageComponentHandler {
 	public async selectMenuPropertySend(interaction: StringSelectMenuInteraction<"cached">) {
 		const { customId, guildId, guild, values } = interaction;
 
-		const channelId = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+		const channelId = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 
 		const channel = await guild.channels.fetch(channelId);
 
 		if (!channel) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall("Channel"));
+			throw new ValidationError(ValidationError.messageTemplates.CannotRecall("Channel"));
 		}
 
 		if (!(channel instanceof TextChannel)) {
 			throw new ValidationError(
-				ValidationError.MessageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
+				ValidationError.messageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
 			);
 		}
 
@@ -523,7 +523,7 @@ export abstract class ContentClusterMessageComponentHandler {
 		const panel = componentConfiguration.panels.find(({ name }) => name === panelName);
 
 		if (!panel) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall(`${panelName} Panel`));
+			throw new ValidationError(ValidationError.messageTemplates.CannotRecall(`${panelName} Panel`));
 		}
 
 		panel.apiEmbed.description ??= "";
@@ -567,7 +567,7 @@ export abstract class ContentClusterMessageComponentHandler {
 		});
 
 		panel.apiEmbed.description +=
-			StringUtils.LineBreak.repeat(2) + subjectDescriptionInfoArray.join(StringUtils.LineBreak);
+			StringUtils.lineBreak.repeat(2) + subjectDescriptionInfoArray.join(StringUtils.lineBreak);
 
 		const { url } = await channel.send({ embeds: [panel.apiEmbed], components: [linkedSubjectActionRow] });
 
@@ -651,7 +651,7 @@ export abstract class ContentClusterMessageComponentHandler {
 
 		if (!property) {
 			throw new ValidationError(
-				ValidationError.MessageTemplates.CannotRecall(
+				ValidationError.messageTemplates.CannotRecall(
 					`${value} ${StringUtils.capitaliseFirstLetter(propertyType)}`
 				)
 			);
@@ -680,7 +680,7 @@ export abstract class ContentClusterMessageComponentHandler {
 				`${StringUtils.capitaliseFirstLetter(componentType)} ${StringUtils.capitaliseFirstLetter(propertyType)}: ${property.name}`
 			)
 			.setColor(LIGHT_GOLD)
-			.setDescription(descriptionArray.join(StringUtils.LineBreak));
+			.setDescription(descriptionArray.join(StringUtils.lineBreak));
 
 		embeds.push(infoEmbed);
 
@@ -816,7 +816,7 @@ export abstract class ContentClusterMessageComponentHandler {
 					.map((subject) => subject.length)
 					.toSorted((a, b) => a - b)[0];
 
-				const allSubjectsAdded = wrappedSubjects.join(StringUtils.LineBreak);
+				const allSubjectsAdded = wrappedSubjects.join(StringUtils.lineBreak);
 
 				const linkedSubjectInput = new TextInputBuilder()
 					.setCustomId(PanelTextInputField.LinkedSubjects)
@@ -834,7 +834,7 @@ export abstract class ContentClusterMessageComponentHandler {
 
 					if (data.linked_subjects?.length) {
 						linkedSubjectInput.setValue(
-							data.linked_subjects.map((name) => `[${name}]`).join(StringUtils.LineBreak)
+							data.linked_subjects.map((name) => `[${name}]`).join(StringUtils.lineBreak)
 						);
 					}
 				} else {
@@ -844,9 +844,9 @@ export abstract class ContentClusterMessageComponentHandler {
 							[
 								"This component is for users who want to suggest new events or activities that could be hosted on the server.",
 								"It's a place to share ideas that could bring the community together and create memorable experiences.",
-								StringUtils.LineBreak +
+								StringUtils.lineBreak +
 									"You can choose one of the subjects below to create a suggestion:"
-							].join(StringUtils.LineBreak)
+							].join(StringUtils.lineBreak)
 						);
 					} else {
 						nameInput.setValue("Report Centre");
@@ -854,7 +854,7 @@ export abstract class ContentClusterMessageComponentHandler {
 							[
 								"If you would like to create a report, please click an appropriate button below.",
 								`${bold("Warning:")} False reports will result in punishment!`
-							].join(StringUtils.LineBreak)
+							].join(StringUtils.lineBreak)
 						);
 					}
 

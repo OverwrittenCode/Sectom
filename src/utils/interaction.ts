@@ -52,7 +52,7 @@ type ConstructCustomIdGeneratorOutput<
 		...Prefix,
 		...Suffix
 	],
-	typeof StringUtils.CustomIDFIeldBodySeperator
+	typeof StringUtils.customIDFIeldBodySeperator
 >;
 
 type CustomIdPrefixRecordOutput<T extends string> = {
@@ -62,7 +62,7 @@ type CustomIdPrefixRecordOutput<T extends string> = {
 	};
 };
 
-type MessageComponentFlags = Omit<typeof InteractionUtils.MessageComponentIds, "Managed">;
+type MessageComponentFlags = Omit<typeof InteractionUtils.messageComponentIds, "Managed">;
 
 interface ConfirmationButtonOptions extends ReplyOptions {
 	cancelLabel?: string;
@@ -96,16 +96,16 @@ interface ReplyOptions extends InteractionReplyOptions {
 }
 
 export abstract class InteractionUtils {
-	public static MessageComponentIds = {
-		CancelAction: "cancel_action",
-		ConfirmAction: "confirm_action",
-		OneTimeUse: "one_time_use",
-		Multiplayer: "multiplayer",
-		Managed: ["pagination"]
+	public static messageComponentIds = {
+		cancelAction: "cancel_action",
+		confirmAction: "confirm_action",
+		oneTimeUse: "one_time_use",
+		multiplayer: "multiplayer",
+		managed: ["pagination"]
 	} as const;
-	public static Messages = {
-		NoData: "Nothing to view yet in this query selection.",
-		NoReason: "No reason provided."
+	public static messages = {
+		noData: "Nothing to view yet in this query selection.",
+		noReason: "No reason provided."
 	} as const;
 
 	public static async confirmationButton(
@@ -131,15 +131,15 @@ export abstract class InteractionUtils {
 		}
 
 		const [confirmButtonId, cancelButtonId] = [
-			this.MessageComponentIds.ConfirmAction,
-			this.MessageComponentIds.CancelAction
+			this.messageComponentIds.confirmAction,
+			this.messageComponentIds.cancelAction
 		].map((baseID) => {
 			const fn = this.constructCustomIdGenerator({
 				baseID,
 				messageComponentType: Enums.MessageComponentType.Button
 			});
 
-			return multiplayerWaitingLobbyText ? fn(this.MessageComponentIds.Multiplayer) : fn();
+			return multiplayerWaitingLobbyText ? fn(this.messageComponentIds.multiplayer) : fn();
 		});
 
 		const confirmationActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -156,7 +156,7 @@ export abstract class InteractionUtils {
 				[
 					`Timeout: ${time(new Date(Date.now() + confirmationTime), TimestampStyles.RelativeTime)}`,
 					embed.data.description ?? ""
-				].join(StringUtils.LineBreak.repeat(2))
+				].join(StringUtils.lineBreak.repeat(2))
 			);
 
 			Object.assign(replyOptions.embeds[confirmationTimeFooterEmbedIndex], embed);
@@ -183,7 +183,7 @@ export abstract class InteractionUtils {
 
 				collector.on("collect", async (i) => {
 					if (i.customId === cancelButtonId) {
-						reject(ValidationError.MessageTemplates.ActionCancelled);
+						reject(ValidationError.messageTemplates.ActionCancelled);
 					}
 
 					if (multiplayerWaitingLobbyText) {
@@ -196,11 +196,11 @@ export abstract class InteractionUtils {
 
 						const value = i.user.toString();
 
-						if (embed.fields![waitingLobbyFieldIndex].value === StringUtils.TabCharacter) {
+						if (embed.fields![waitingLobbyFieldIndex].value === StringUtils.tabCharacter) {
 							embed.fields![waitingLobbyFieldIndex].value = `${++count}. ${value}`;
 						} else {
 							embed.fields![waitingLobbyFieldIndex].value +=
-								StringUtils.LineBreak + `${++count}. ${value}`;
+								StringUtils.lineBreak + `${++count}. ${value}`;
 						}
 
 						await interaction.editReply({ embeds: [embed] });
@@ -209,7 +209,7 @@ export abstract class InteractionUtils {
 
 				collector.on("end", async (collection) => {
 					if (collection.size !== userIDs.length) {
-						const content = ValidationError.MessageTemplates.Timeout;
+						const content = ValidationError.messageTemplates.Timeout;
 
 						await this.disableComponents(confirmMessage, { messageEditOptions: { content, embeds: [] } });
 
@@ -246,7 +246,7 @@ export abstract class InteractionUtils {
 			].filter(Boolean);
 
 			return StringUtils.concatenate(
-				StringUtils.CustomIDFIeldBodySeperator,
+				StringUtils.customIDFIeldBodySeperator,
 				...input
 			) as ConstructCustomIdGeneratorOutput<Prefix, Suffix, Options>;
 		};
@@ -311,7 +311,7 @@ export abstract class InteractionUtils {
 
 	public static isValidEmoji(interaction: Typings.GuildInteraction, emojiIdOrSymbol: string): boolean {
 		return Boolean(
-			StringUtils.Regexes.UnicodeEmoji.test(emojiIdOrSymbol) || interaction.client.emojis.resolve(emojiIdOrSymbol)
+			StringUtils.regexes.unicodeEmoji.test(emojiIdOrSymbol) || interaction.client.emojis.resolve(emojiIdOrSymbol)
 		);
 	}
 
@@ -328,7 +328,7 @@ export abstract class InteractionUtils {
 
 	public static async replyNoData(interaction: Typings.DeferrableGuildInteraction, ephemeral: boolean = true) {
 		return await this.replyOrFollowUp(interaction, {
-			content: this.Messages.NoData,
+			content: this.messages.noData,
 			ephemeral
 		});
 	}

@@ -68,7 +68,7 @@ export class GuildInstanceMethods {
 		});
 
 		if (options.check && configuration[options.check].disabled) {
-			throw new ValidationError(ValidationError.MessageTemplates.SystemIsDisabled(options.check));
+			throw new ValidationError(ValidationError.messageTemplates.SystemIsDisabled(options.check));
 		}
 
 		return { configuration, save };

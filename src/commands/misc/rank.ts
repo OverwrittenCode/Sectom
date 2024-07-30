@@ -17,7 +17,7 @@ export abstract class Rank {
 	@Slash({ dmPermission: false, description: "View a members or your current rank" })
 	public async rank(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
 			required: false
 		})

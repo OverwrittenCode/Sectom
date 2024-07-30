@@ -41,13 +41,13 @@ export abstract class LevelingConfig {
 		})
 		level: number,
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.ROLE,
+			entityType: CommandUtils.entityType.ROLE,
 			required: false,
 			descriptionNote: "Leave blank to remove"
 		})
 		role: Role | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;
@@ -64,7 +64,7 @@ export abstract class LevelingConfig {
 
 		if (role) {
 			if (isValidIndex) {
-				throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
+				throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
 			}
 
 			targetId = role.id;
@@ -75,7 +75,7 @@ export abstract class LevelingConfig {
 			});
 		} else {
 			if (!isValidIndex) {
-				throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("given level's autorole"));
+				throw new ValidationError(ValidationError.messageTemplates.NotConfigured("given level's autorole"));
 			}
 
 			targetId = leveling.roles[index].id;
@@ -111,14 +111,14 @@ export abstract class LevelingConfig {
 		})
 		cooldown: number = 3,
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.SNOWFLAKE,
+			entityType: CommandUtils.entityType.SNOWFLAKE,
 			descriptionNote: "Applied globally if blank",
 			name: "override_for",
 			required: false
 		})
 		target: Typings.EntityObjectType | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.mutualPropertyHandler(cooldown * 1000, "cooldown", target, reason, interaction);
@@ -135,14 +135,14 @@ export abstract class LevelingConfig {
 		})
 		multiplier: number = 1,
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.SNOWFLAKE,
+			entityType: CommandUtils.entityType.SNOWFLAKE,
 			descriptionNote: "Applied globally if blank",
 			name: "override_for",
 			required: false
 		})
 		target: Typings.EntityObjectType | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.mutualPropertyHandler(multiplier, "multiplier", target, reason, interaction);
@@ -151,7 +151,7 @@ export abstract class LevelingConfig {
 	@Slash({ description: "Toggles the stackXPMultipliers true/false" })
 	public async stackxpmultipliers(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId, channelId } = interaction;
@@ -175,14 +175,14 @@ export abstract class LevelingConfig {
 				pastTense: "updated the leveling configuration",
 				pendingExecution: save
 			},
-			successContent: `updated the leveling configuration ${StringUtils.LineBreak} -> toggle ${inlineCode("stackXPMultipliers")} to ${leveling.stackXPMultipliers}`
+			successContent: `updated the leveling configuration ${StringUtils.lineBreak} -> toggle ${inlineCode("stackXPMultipliers")} to ${leveling.stackXPMultipliers}`
 		});
 	}
 
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("leveling", reason, interaction);
@@ -211,7 +211,7 @@ export abstract class LevelingConfig {
 		const isEqual = property === currentMultiplier;
 
 		if (isEqual) {
-			throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
+			throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
 		}
 
 		let actionTypeSuffix: "UPDATE" | "ADD" = "UPDATE";
@@ -295,7 +295,7 @@ export abstract class LevelingConfigMessageComponentHandler {
 							elements.push(`${bold(titleCaseLabel)}: ${valueLabel}`);
 						}
 
-						descriptionArray.push(elements.join(StringUtils.LineBreak));
+						descriptionArray.push(elements.join(StringUtils.lineBreak));
 					});
 				}
 

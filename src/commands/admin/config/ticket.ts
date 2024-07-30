@@ -92,8 +92,8 @@ export abstract class TicketConfig {
 		description: [
 			"A staff will with you shortly.",
 			"Please give as much detail as possible for this ticket.",
-			StringUtils.LineBreak + "Once this ticket is resolved, you can click the close button below:"
-		].join(StringUtils.LineBreak)
+			StringUtils.lineBreak + "Once this ticket is resolved, you can click the close button below:"
+		].join(StringUtils.lineBreak)
 	};
 
 	@Slash({ description: "Add a new ticket subject or panel" })
@@ -193,7 +193,7 @@ export abstract class TicketConfig {
 
 	@Slash({ description: "Send a ticket panel to a channel" })
 	public async send(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.CHANNEL })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.CHANNEL })
 		channel: GuildTextBasedChannel,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
@@ -208,7 +208,7 @@ export abstract class TicketConfig {
 	@Guard(AtLeastOneSlashOption, RateLimit(TIME_UNIT.seconds, 3))
 	public async settings(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.ROLE,
+			entityType: CommandUtils.entityType.ROLE,
 			name: "staff_role",
 			descriptionNote: "The staff role for tickets",
 			required: false
@@ -227,7 +227,7 @@ export abstract class TicketConfig {
 		})
 		prompt: boolean | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const updatedSettings = { staffRoleId: staffRole?.id, autoStaffMention, prompt };
@@ -254,7 +254,7 @@ export abstract class TicketConfig {
 			ObjectUtils.isValidObject(currentSettings) && _.isEqual(currentSettings, updatedSettings);
 
 		if (isEqualToCurrent) {
-			throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
+			throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
 		}
 
 		Object.assign(ticket, currentSettings, updatedSettings);
@@ -277,7 +277,7 @@ export abstract class TicketConfig {
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("ticket", reason, interaction);
@@ -302,7 +302,7 @@ export abstract class TicketConfigMessageComponentHandler {
 
 		assert(channelId && channel?.isThread());
 
-		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+		const subjectName = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 
 		const collection = await InteractionUtils.confirmationButton(interaction, {
 			content: "Are you sure you want to close this ticket?",
@@ -387,7 +387,7 @@ export abstract class TicketConfigMessageComponentHandler {
 
 		if (!(parent instanceof TextChannel)) {
 			throw new ValidationError(
-				ValidationError.MessageTemplates.InvalidChannelType("current", ChannelType.GuildText)
+				ValidationError.messageTemplates.InvalidChannelType("current", ChannelType.GuildText)
 			);
 		}
 
@@ -397,7 +397,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			throw new ValidationError("too many current tickets, please try again later");
 		}
 
-		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+		const subjectName = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 
 		const {
 			configuration: { ticket: ticketConfiguration }
@@ -407,7 +407,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		});
 
 		if (!ticketConfiguration.staffRoleId) {
-			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("ticket staff role"));
+			throw new ValidationError(ValidationError.messageTemplates.NotConfigured("ticket staff role"));
 		}
 
 		const authorTicketThreadIds = await DBConnectionManager.Prisma.ticket
@@ -481,7 +481,7 @@ export abstract class TicketConfigMessageComponentHandler {
 
 		assert(channel?.isThread());
 
-		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+		const subjectName = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 
 		if (channel.locked) {
 			throw new ValidationError("already locked");
@@ -541,7 +541,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		const rawCode = colour?.replace("#", "");
 		const hexCode = rawCode ? parseInt(`0x${rawCode}`) : null;
 
-		if (rawCode && !StringUtils.Regexes.HexCode.test(rawCode)) {
+		if (rawCode && !StringUtils.regexes.hexCode.test(rawCode)) {
 			throw new ValidationError("invalid hex code provided.");
 		}
 
@@ -562,7 +562,7 @@ export abstract class TicketConfigMessageComponentHandler {
 				id: channelId,
 				type: EntityType.CHANNEL
 			},
-			reason: reason ?? InteractionUtils.Messages.NoReason,
+			reason: reason ?? InteractionUtils.messages.noReason,
 			actionType,
 			actionOptions: {
 				pendingExecution: save
@@ -597,7 +597,7 @@ export abstract class TicketConfigMessageComponentHandler {
 			throw new ValidationError("ticket staff role not set");
 		}
 
-		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+		const subjectName = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 
 		const embeds: EmbedBuilder[] = [];
 
@@ -681,7 +681,7 @@ export abstract class TicketConfigMessageComponentHandler {
 		const openingMessage = await thread.send({
 			allowedMentions,
 			embeds,
-			content: contentArray.join(StringUtils.LineBreak),
+			content: contentArray.join(StringUtils.lineBreak),
 			components: [actionRow]
 		});
 
@@ -713,7 +713,7 @@ export abstract class TicketConfigMessageComponentHandler {
 				pendingExecution: () =>
 					DBConnectionManager.Prisma.ticket.create({
 						data: {
-							id: StringUtils.GenerateID(),
+							id: StringUtils.generateID(),
 							guild: connectGuild.guild,
 							channel: relationFieldFn(thread.id, connectGuild, EntityType.CHANNEL),
 							parent: relationFieldFn(parentId, connectGuild, EntityType.CHANNEL),

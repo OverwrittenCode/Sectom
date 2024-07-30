@@ -34,11 +34,11 @@ export abstract class Timeout {
 		})
 		target: GuildMember,
 		@DurationSlashOption({
-			transformerOptions: CommandUtils.DurationLimits.Timeout
+			transformerOptions: CommandUtils.durationLimits.Timeout
 		})
 		msDuration: number,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);
@@ -74,7 +74,7 @@ export abstract class Timeout {
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const isTimedOut = target.isCommunicationDisabled();

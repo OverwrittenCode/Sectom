@@ -28,9 +28,9 @@ export abstract class InteractionCreate {
 		}
 
 		if (interaction.isButton() || interaction.isStringSelectMenu()) {
-			const messageComponentIds = InteractionUtils.MessageComponentIds;
+			const messageComponentIds = InteractionUtils.messageComponentIds;
 
-			const isPaginationButton = messageComponentIds.Managed.some((str) =>
+			const isPaginationButton = messageComponentIds.managed.some((str) =>
 				interaction.customId.toLowerCase().includes(str)
 			);
 
@@ -39,22 +39,22 @@ export abstract class InteractionCreate {
 			}
 
 			const disableOnClickButtonArr = [
-				messageComponentIds.CancelAction,
-				messageComponentIds.ConfirmAction,
-				messageComponentIds.OneTimeUse
+				messageComponentIds.cancelAction,
+				messageComponentIds.confirmAction,
+				messageComponentIds.oneTimeUse
 			];
 
-			const customIDFields = interaction.customId.split(StringUtils.CustomIDFIeldBodySeperator);
+			const customIDFields = interaction.customId.split(StringUtils.customIDFIeldBodySeperator);
 			const disableOnClick = customIDFields.some((str) => disableOnClickButtonArr.includes(str));
 
 			if (disableOnClick) {
-				const isCancelAction = interaction.customId.startsWith(messageComponentIds.CancelAction);
+				const isCancelAction = interaction.customId.startsWith(messageComponentIds.cancelAction);
 
 				if (isCancelAction) {
 					await InteractionUtils.disableComponents(interaction.message, {
 						messageEditOptions: {
 							embeds: [],
-							content: ValidationError.MessageTemplates.ActionCancelled
+							content: ValidationError.messageTemplates.ActionCancelled
 						}
 					});
 
@@ -63,7 +63,7 @@ export abstract class InteractionCreate {
 
 				if (
 					!interaction.ephemeral &&
-					!interaction.customId.includes(InteractionUtils.MessageComponentIds.Multiplayer)
+					!interaction.customId.includes(InteractionUtils.messageComponentIds.multiplayer)
 				) {
 					await InteractionUtils.disableComponents(interaction.message, {
 						rules: {
@@ -90,8 +90,8 @@ export abstract class InteractionCreate {
 
 			if (err instanceof ValidationError && !(interaction instanceof AutocompleteInteraction)) {
 				if (
-					err.message === ValidationError.MessageTemplates.ActionCancelled ||
-					err.message === ValidationError.MessageTemplates.Timeout
+					err.message === ValidationError.messageTemplates.ActionCancelled ||
+					err.message === ValidationError.messageTemplates.Timeout
 				) {
 					return;
 				}

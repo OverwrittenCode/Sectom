@@ -65,7 +65,7 @@ export abstract class SuggestionConfig {
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("suggestion", reason, interaction);
@@ -100,7 +100,7 @@ export abstract class SuggestionConfig {
 
 	@Slash({ description: "Configure channels where suggestions are sent" })
 	public async channel(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.CHANNEL })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.CHANNEL })
 		target: GuildTextBasedChannel,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
@@ -116,14 +116,14 @@ export abstract class SuggestionConfig {
 		const { panels } = suggestion;
 
 		if (!panels.length) {
-			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured("Suggestion Panel"));
+			throw new ValidationError(ValidationError.messageTemplates.NotConfigured("Suggestion Panel"));
 		}
 
 		const customIdGenerator = InteractionUtils.constructCustomIdGenerator(
 			{
 				baseID: SuggestionConfig.customIdRecords.suggestion_channel.id,
 				messageComponentType: Enums.MessageComponentType.SelectMenu,
-				messageComponentFlags: [InteractionUtils.MessageComponentIds.OneTimeUse]
+				messageComponentFlags: [InteractionUtils.messageComponentIds.oneTimeUse]
 			},
 			target.id
 		);
@@ -141,7 +141,7 @@ export abstract class SuggestionConfig {
 
 	@Slash({ description: "Send a suggestion panel to a channel" })
 	public async send(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.CHANNEL })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.CHANNEL })
 		channel: GuildTextBasedChannel,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
@@ -168,7 +168,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 	public async selectMenuChannel(interaction: StringSelectMenuInteraction<"cached">) {
 		const { customId, values: panelNames, guildId } = interaction;
 
-		const channelId = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+		const channelId = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 
 		const {
 			configuration: { suggestion },
@@ -184,13 +184,13 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			const panelIndex = panels.findIndex((panel) => panel.name === name);
 
 			if (panelIndex === -1) {
-				throw new ValidationError(ValidationError.MessageTemplates.CannotRecall(`${name} Panel`));
+				throw new ValidationError(ValidationError.messageTemplates.CannotRecall(`${name} Panel`));
 			}
 
 			const isEqualToCurrent = panels[panelIndex].channelId === channelId;
 
 			if (isEqualToCurrent) {
-				throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
+				throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
 			}
 
 			suggestion.panels[panelIndex].channelId = channelId;
@@ -219,33 +219,33 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			check: "suggestion"
 		});
 
-		const subjectName = interaction.customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
+		const subjectName = interaction.customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
 		const isInvalidSubject = !suggestion.subjects.find(({ name }) => name === subjectName);
 
 		if (isInvalidSubject) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall(`${subjectName} Subject`));
+			throw new ValidationError(ValidationError.messageTemplates.CannotRecall(`${subjectName} Subject`));
 		}
 
 		const panelName = interaction.message.embeds[0].title!;
 		const panel = suggestion.panels.find(({ name }) => name === panelName)!;
 
 		if (!panel) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall(`${panelName} Panel`));
+			throw new ValidationError(ValidationError.messageTemplates.CannotRecall(`${panelName} Panel`));
 		}
 
 		if (!panel.channelId) {
-			throw new ValidationError(ValidationError.MessageTemplates.NotConfigured(`${panelName} Panel Channel`));
+			throw new ValidationError(ValidationError.messageTemplates.NotConfigured(`${panelName} Panel Channel`));
 		}
 
 		const channel = await interaction.guild.channels.fetch(panel.channelId ?? "");
 
 		if (!channel) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall(`${panelName} Panel Channel`));
+			throw new ValidationError(ValidationError.messageTemplates.CannotRecall(`${panelName} Panel Channel`));
 		}
 
 		if (!(channel instanceof TextChannel)) {
 			throw new ValidationError(
-				ValidationError.MessageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
+				ValidationError.messageTemplates.InvalidChannelType("Panel", ChannelType.GuildText)
 			);
 		}
 
@@ -254,7 +254,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 			messageComponentType: Enums.MessageComponentType.Modal
 		});
 
-		const modalCustomId = modalCustomIdGenerator(StringUtils.GenerateID());
+		const modalCustomId = modalCustomIdGenerator(StringUtils.generateID());
 		const contentId = "content";
 
 		const modal = new ModalBuilder()
@@ -279,7 +279,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 		const modalSubmitInteraction = await interaction
 			.awaitModalSubmit({
-				time: CommandUtils.CollectionTime,
+				time: CommandUtils.collectionTime,
 				filter: (i) => i.customId === modalCustomId
 			})
 			.catch(() => void interaction.deleteReply().catch(() => {}));
@@ -339,7 +339,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 			const { id } = await DBConnectionManager.Prisma.suggestion.create({
 				data: {
-					id: StringUtils.GenerateID(),
+					id: StringUtils.generateID(),
 					author,
 					guild: connectGuild.guild
 				},
@@ -379,7 +379,7 @@ export abstract class SuggestionConfigMessageComponentHandler {
 
 	@ButtonComponent({ id: SuggestionConfig.customIdRecords.suggestion_status.regex })
 	public async buttonStatus(interaction: ButtonInteraction<"cached">) {
-		const statusType = interaction.customId.split(StringUtils.CustomIDFIeldBodySeperator).pop() as StatusType;
+		const statusType = interaction.customId.split(StringUtils.customIDFIeldBodySeperator).pop() as StatusType;
 
 		const isVerdictBased = statusType === StatusType.Approve || statusType === StatusType.Reject;
 

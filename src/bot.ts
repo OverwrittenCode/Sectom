@@ -138,7 +138,7 @@ export abstract class Main {
 				typeof categoryAppliedCommands
 			>;
 
-			CommandUtils.CategoryGroupedData = {
+			CommandUtils.categoryGroupedData = {
 				keys: ObjectUtils.keys(categoryGroupedObj),
 				values: Object.values(categoryGroupedObj),
 				obj: categoryGroupedObj

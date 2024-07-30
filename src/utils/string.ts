@@ -8,33 +8,33 @@ import type { PascalCase, Split } from "type-fest";
 import type { SplitWords } from "type-fest/source/split-words.js";
 
 export abstract class StringUtils {
-	public static CustomIDFIeldBodySeperator = "." as const;
-	public static CustomIDFieldPrefixSeperator = "_" as const;
-	public static FieldNameSeparator = ":" as const;
-	public static LineBreak = "\n" as const;
-	public static Regexes = {
-		Snowflake: /^\d{17,20}$/,
-		HexCode: /^[0-9A-F]{6}$/i,
-		CamelCaseBoundary: /([a-z])([A-Z])/g,
-		Link: /(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?/,
-		Invite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(\.gg|(app)?\.com\/invite|\.me)\/([^ ]+)\/?/gi,
-		BotInvite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(app)?\.com\/(api\/)?oauth2\/authorize\?([^ ]+)\/?/gi,
+	public static customIDFIeldBodySeperator = "." as const;
+	public static customIDFieldPrefixSeperator = "_" as const;
+	public static fieldNameSeparator = ":" as const;
+	public static lineBreak = "\n" as const;
+	public static regexes = {
+		snowflake: /^\d{17,20}$/,
+		hexCode: /^[0-9A-F]{6}$/i,
+		camelCaseBoundary: /([a-z])([A-Z])/g,
+		link: /(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?/,
+		invite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(\.gg|(app)?\.com\/invite|\.me)\/([^ ]+)\/?/gi,
+		botInvite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(app)?\.com\/(api\/)?oauth2\/authorize\?([^ ]+)\/?/gi,
 
-		UnicodeEmoji:
+		unicodeEmoji:
 			/((\ud83c[\udde6-\uddff]){2}|([#*0-9]\u20e3)|(\u00a9|\u00ae|[\u2000-\u3300]|[\ud83c-\ud83e][\ud000-\udfff])((\ud83c[\udffb-\udfff])?(\ud83e[\uddb0-\uddb3])?(\ufe0f?\u200d([\u2000-\u3300]|[\ud83c-\ud83e][\ud000-\udfff])\ufe0f?)?)*)/g,
 
-		Number: /^\d+$/,
-		AllActionModifiers: new RegExp(
+		number: /^\d+$/,
+		allActionModifiers: new RegExp(
 			`_(${Array.from(
 				new Set<string>(Object.values(ActionType).map((actionType) => actionType.split("_").at(-1)!))
 			).join("|")})$`,
 			"g"
 		),
-		CreateBasedActionModifiers: /_(ADD|CREATE|SET|ENABLE)$/g
+		createBasedActionModifiers: /_(ADD|CREATE|SET|ENABLE)$/g
 	} as const;
-	public static TabCharacter = "⠀" as const;
+	public static tabCharacter = "⠀" as const;
 
-	public static GenerateID(len: number | Buffer = 6, buf?: Buffer): string {
+	public static generateID(len: number | Buffer = 6, buf?: Buffer): string {
 		if (Buffer.isBuffer(len)) {
 			buf = len;
 			len = 0;
@@ -77,7 +77,7 @@ export abstract class StringUtils {
 		splitBy?: S
 	): Split<T, S> extends SplitWords<T> ? Typings.Concatenate<SplitWords<PascalCase<Lowercase<T>>>, " "> : string {
 		return str
-			.replace(this.Regexes.CamelCaseBoundary, "$1 $2")
+			.replace(this.regexes.camelCaseBoundary, "$1 $2")
 			.toLowerCase()
 			.split(splitBy || " ")
 			.map(this.capitaliseFirstLetter)

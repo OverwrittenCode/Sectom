@@ -53,8 +53,8 @@ export abstract class EmbedManager {
 			}
 
 			const fields = jsonFields.map(({ name, value, inline }) => {
-				if (!name.includes(StringUtils.FieldNameSeparator)) {
-					name += StringUtils.FieldNameSeparator;
+				if (!name.includes(StringUtils.fieldNameSeparator)) {
+					name += StringUtils.fieldNameSeparator;
 				}
 
 				if (!name.startsWith("**")) {
@@ -78,10 +78,10 @@ export abstract class EmbedManager {
 
 	public static indentFieldValues(fields: Field[], options?: IndentFieldOptions): string {
 		const indentLevel = options?.indentLevel ?? 1;
-		const tab = StringUtils.TabCharacter.repeat(indentLevel);
+		const tab = StringUtils.tabCharacter.repeat(indentLevel);
 		const isBold = options?.bold ?? true;
 
-		let seperator = options?.seperator ?? StringUtils.FieldNameSeparator;
+		let seperator = options?.seperator ?? StringUtils.fieldNameSeparator;
 
 		seperator += " ";
 
@@ -103,9 +103,9 @@ export abstract class EmbedManager {
 
 					const subFieldString: string = this.indentFieldValues(subFields, newOptions);
 
-					return tab + formattedFieldName + StringUtils.LineBreak + subFieldString;
+					return tab + formattedFieldName + StringUtils.lineBreak + subFieldString;
 				}
 			})
-			.join(StringUtils.LineBreak);
+			.join(StringUtils.lineBreak);
 	}
 }

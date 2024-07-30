@@ -114,13 +114,13 @@ export abstract class Config {
 
 				const type = data.logChannelType ?? "DEFAULT";
 
-				const generalisedPunishment = type.replace(StringUtils.Regexes.AllActionModifiers, "");
+				const generalisedPunishment = type.replace(StringUtils.regexes.allActionModifiers, "");
 				const titleCasePunishment = StringUtils.convertToTitleCase(generalisedPunishment, "_");
 
 				return `${bold(`${titleCasePunishment}:`)} ${channel}`;
 			});
 
-			embed.setDescription(descriptionArray.join(StringUtils.LineBreak));
+			embed.setDescription(descriptionArray.join(StringUtils.lineBreak));
 
 			paginationPages.push({ embeds: [embed] });
 		}
@@ -292,7 +292,7 @@ export abstract class Config {
 								);
 							});
 
-							descriptionArray.push(StringUtils.LineBreak + "Select which component to view");
+							descriptionArray.push(StringUtils.lineBreak + "Select which component to view");
 						}
 					}
 
@@ -310,7 +310,7 @@ export abstract class Config {
 
 			configurationValues.push(pageText);
 
-			embed.setDescription(descriptionArray.join(StringUtils.LineBreak));
+			embed.setDescription(descriptionArray.join(StringUtils.lineBreak));
 
 			paginationPages.push({ embeds: EmbedManager.formatEmbeds([embed]), components: actionRows });
 		}

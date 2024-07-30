@@ -28,7 +28,7 @@ export abstract class Kick {
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);

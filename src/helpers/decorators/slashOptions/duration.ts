@@ -35,14 +35,14 @@ export function DurationSlashOption(options: DurationOptions) {
 
 					const isOnlyDisabled =
 						autoCompleteData.length === 1 &&
-						autoCompleteData[0].value === CommandUtils.SlashOptions.DisableChoice;
+						autoCompleteData[0].value === CommandUtils.slashOptions.DisableChoice;
 
 					const activeSearch = interaction.options.getFocused();
 					const isZero = activeSearch.startsWith("0");
 
 					if (isOnlyDisabled || isZero) {
 						interaction.respond(
-							autoCompleteData.filter(({ value }) => value === CommandUtils.SlashOptions.DisableChoice)
+							autoCompleteData.filter(({ value }) => value === CommandUtils.slashOptions.DisableChoice)
 						);
 					} else {
 						const wildcardMatch = autoCompleteData.filter(({ name }) =>

@@ -20,15 +20,15 @@ interface CategoryGroupedData {
 }
 
 export abstract class CommandUtils {
-	public static CategoryGroupedData: CategoryGroupedData;
-	public static CollectionTime = ms("10m");
-	public static DurationLimits = {
+	public static categoryGroupedData: CategoryGroupedData;
+	public static collectionTime = ms("10m");
+	public static durationLimits = {
 		Timeout: { min: "5s", max: "28d" },
 		Warn: { min: "1m", max: "90d" },
 		Ban: { max: "7d" }
 	} as const;
-	public static EntityType = { ...EntityType, SNOWFLAKE: "SNOWFLAKE" as const };
-	public static SlashOptions = {
+	public static entityType = { ...EntityType, SNOWFLAKE: "SNOWFLAKE" as const };
+	public static slashOptions = {
 		ChannelPermissionName: "in_channel",
 		DisableChoice: "disable"
 	} as const;

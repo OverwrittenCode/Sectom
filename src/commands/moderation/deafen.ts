@@ -30,7 +30,7 @@ export abstract class Deafen {
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { voice } = target;
@@ -79,7 +79,7 @@ export abstract class Deafen {
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { voice } = target;

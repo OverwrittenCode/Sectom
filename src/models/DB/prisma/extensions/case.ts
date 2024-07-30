@@ -123,6 +123,6 @@ export class CaseInstanceMethods {
 		return `${time(timestamp, TimestampStyles.LongDateTime)} (${time(
 			timestamp,
 			TimestampStyles.RelativeTime
-		)}) ${StringUtils.TabCharacter}`;
+		)}) ${StringUtils.tabCharacter}`;
 	}
 }

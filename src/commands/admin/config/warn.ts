@@ -47,7 +47,7 @@ export abstract class WarnConfig {
 		})
 		multiplier: number | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;
@@ -123,7 +123,7 @@ export abstract class WarnConfig {
 				actionTypeData: {
 					[WarnConfig.thresholdPunishmentChoices.timeout]: {
 						allowDisableOption: true,
-						...CommandUtils.DurationLimits.Timeout
+						...CommandUtils.durationLimits.Timeout
 					},
 					[WarnConfig.thresholdPunishmentChoices.ban]: { forceDisableOption: true },
 					[WarnConfig.thresholdPunishmentChoices.kick]: { forceDisableOption: true }
@@ -134,7 +134,7 @@ export abstract class WarnConfig {
 		})
 		msDuration: number | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId, channelId } = interaction;
@@ -192,7 +192,7 @@ export abstract class WarnConfig {
 			!!currentThresholds.length && currentThresholds.some((t) => _.isEqual(t, newThreshold));
 
 		if (isDuplicateThreshold) {
-			throw new ValidationError(ValidationError.MessageTemplates.AlreadyMatched);
+			throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
 		}
 
 		const isWithoutTimeoutDuration =
@@ -229,7 +229,7 @@ export abstract class WarnConfig {
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("warning", reason, interaction);

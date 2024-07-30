@@ -111,7 +111,7 @@ export class EntityInstanceMethods {
 		const moderativeLogChannel = moderativeLogChannelId ? await guild.channels.fetch(moderativeLogChannelId) : null;
 
 		if (moderativeLogChannel && !(moderativeLogChannel instanceof TextChannel)) {
-			throw new ValidationError(ValidationError.MessageTemplates.CannotRecall("log channel"));
+			throw new ValidationError(ValidationError.messageTemplates.CannotRecall("log channel"));
 		}
 
 		return moderativeLogChannel;

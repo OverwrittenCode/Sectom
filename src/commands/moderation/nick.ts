@@ -38,7 +38,7 @@ export abstract class Nick {
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		if (!target.nickname) {
@@ -77,7 +77,7 @@ export abstract class Nick {
 		})
 		nickname: string,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);

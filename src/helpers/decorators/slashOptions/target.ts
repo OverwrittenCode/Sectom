@@ -11,7 +11,7 @@ import type { SlashOptionOptions } from "discordx";
 interface TargetSlashOptionArguments {
 	channelTypes?: ChannelType[];
 	descriptionNote?: string;
-	entityType: keyof typeof CommandUtils.EntityType;
+	entityType: keyof typeof CommandUtils.entityType;
 	flags?: Enums.CommandSlashOptionTargetFlags[];
 	name?: Lowercase<string>;
 	required?: boolean;
@@ -24,8 +24,8 @@ export function GivenChannelSlashOption(
 
 	return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
 		TargetSlashOption({
-			entityType: CommandUtils.EntityType.CHANNEL,
-			name: CommandUtils.SlashOptions.ChannelPermissionName,
+			entityType: CommandUtils.entityType.CHANNEL,
+			name: CommandUtils.slashOptions.ChannelPermissionName,
 			descriptionNote,
 			required,
 			channelTypes

@@ -51,7 +51,7 @@ export abstract class TicTacToe {
 	@Slash({ dmPermission: false, description: "Play TicTacToe" })
 	public async ttt(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
 			name: "opponent",
 			required: false
@@ -107,7 +107,7 @@ export abstract class TicTacToe {
 							return new ButtonBuilder()
 								.setCustomId(customIdGenerator())
 								.setStyle(ButtonStyle.Secondary)
-								.setLabel(StringUtils.TabCharacter);
+								.setLabel(StringUtils.tabCharacter);
 						})
 					)
 					.toJSON() as GameControllerComponent
@@ -174,7 +174,7 @@ export abstract class TicTacToe {
 			}
 		];
 
-		const regex = new RegExp(`^(\\d+)_(\\d+)\\${StringUtils.CustomIDFIeldBodySeperator}`);
+		const regex = new RegExp(`^(\\d+)_(\\d+)\\${StringUtils.customIDFIeldBodySeperator}`);
 
 		const getMatrixLocation = (customId: string): [row: number, column: number] => {
 			const match = customId.match(regex);
@@ -260,7 +260,7 @@ export abstract class TicTacToe {
 								player
 							).score;
 
-							buttons[row * N + column].label = StringUtils.TabCharacter;
+							buttons[row * N + column].label = StringUtils.tabCharacter;
 
 							if (score >= beta.score) {
 								return { index: "", score: beta.score };
@@ -336,7 +336,7 @@ export abstract class TicTacToe {
 							) {
 								buttons[row * N + column].label = isSwapMove ? currentComputerTeam : opposingTeam;
 							} else {
-								buttons[row * N + column].label = StringUtils.TabCharacter;
+								buttons[row * N + column].label = StringUtils.tabCharacter;
 							}
 
 							result = { ...result, index: move };
@@ -389,7 +389,7 @@ export abstract class TicTacToe {
 									!button.disabled &&
 									(controller.specialRule === Enums.GameMode.Overrule
 										? button.label !== currentComputerTeam
-										: button.label === StringUtils.TabCharacter)
+										: button.label === StringUtils.tabCharacter)
 							)
 							.map((button) => button.custom_id);
 					};
@@ -448,7 +448,7 @@ export abstract class TicTacToe {
 
 							if (cell === team) {
 								count++;
-							} else if (cell === StringUtils.TabCharacter) {
+							} else if (cell === StringUtils.tabCharacter) {
 								emptyCount++;
 							} else {
 								count = 0;
@@ -470,7 +470,7 @@ export abstract class TicTacToe {
 
 						for (let i = 0; i < N; i++) {
 							for (let j = 0; j < N; j++) {
-								if (buttons[i * N + j].label === StringUtils.TabCharacter) {
+								if (buttons[i * N + j].label === StringUtils.tabCharacter) {
 									buttons[i * N + j].label = team;
 
 									let winningMoves = 0;
@@ -492,7 +492,7 @@ export abstract class TicTacToe {
 										twoWayWins++;
 									}
 
-									buttons[i * N + j].label = StringUtils.TabCharacter;
+									buttons[i * N + j].label = StringUtils.tabCharacter;
 								}
 							}
 						}
@@ -556,7 +556,7 @@ export abstract class TicTacToe {
 
 						const isWin = isWinning(allButtons, currentComputerTeam);
 
-						allButtons[row * N + column].label = StringUtils.TabCharacter;
+						allButtons[row * N + column].label = StringUtils.tabCharacter;
 
 						return isWin;
 					});
@@ -625,7 +625,7 @@ export abstract class TicTacToe {
 				controller.components[row].components[column] = button.toJSON() as APIButtonComponentWithCustomId;
 
 				const allButtons = getAllButtons(controller);
-				const allUsedButtons = allButtons.filter((button) => button.label !== StringUtils.TabCharacter);
+				const allUsedButtons = allButtons.filter((button) => button.label !== StringUtils.tabCharacter);
 
 				if (allUsedButtons.length < N) {
 					return;

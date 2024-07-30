@@ -70,7 +70,7 @@ export abstract class Rps {
 	@Slash({ dmPermission: false, description: `Play ${Rps.weapons.join(", ")}` })
 	public async rps(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
 			name: "opponent",
 			required: false

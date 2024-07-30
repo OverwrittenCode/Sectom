@@ -27,7 +27,7 @@ export function ClientRequiredPermissions<T = CommandInteraction>(
 		if (interaction.isChatInputCommand()) {
 			permissionChannelId =
 				CommandUtils.retrieveCommandInteractionOptions(interaction)
-					.find((data) => data.name === CommandUtils.SlashOptions.ChannelPermissionName)
+					.find((data) => data.name === CommandUtils.slashOptions.ChannelPermissionName)
 					?.value?.toString() ?? interaction.channelId;
 		}
 

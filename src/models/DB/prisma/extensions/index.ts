@@ -257,7 +257,7 @@ export abstract class PrismaExtensions {
 							}
 
 							if (!shadowDoc && "validationError" in options && options.validationError) {
-								throw new ValidationError(InteractionUtils.Messages.NoData);
+								throw new ValidationError(InteractionUtils.messages.noData);
 							}
 
 							if (shadowDoc && !Array.isArray(shadowDoc)) {

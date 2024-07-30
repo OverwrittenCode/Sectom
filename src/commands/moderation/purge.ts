@@ -71,10 +71,10 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		if (!StringUtils.Regexes.Snowflake.test(messageId)) {
+		if (!StringUtils.regexes.snowflake.test(messageId)) {
 			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
 		}
 
@@ -107,7 +107,7 @@ export abstract class Purge {
 		@Purge.CountSlashOption()
 		count: number = Purge.defaultMessageFetchLimit,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -126,7 +126,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -154,10 +154,10 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		if (!StringUtils.Regexes.Snowflake.test(messageId)) {
+		if (!StringUtils.regexes.snowflake.test(messageId)) {
 			throw new ValidationError("Argument Error: invalid snowflakeId provided, please check your input.");
 		}
 
@@ -186,7 +186,7 @@ export abstract class Purge {
 	@Slash({ description: "Purge all or a specific bot's messages in the current or given channel" })
 	public bots(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
 			required: false
 		})
@@ -198,7 +198,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -219,7 +219,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -240,7 +240,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -249,7 +249,7 @@ export abstract class Purge {
 			channel,
 			inverse,
 			messageFilter: (msg) =>
-				[FormattingPatterns.Emoji, StringUtils.Regexes.UnicodeEmoji].some((regex) => regex.test(msg.content))
+				[FormattingPatterns.Emoji, StringUtils.regexes.unicodeEmoji].some((regex) => regex.test(msg.content))
 		});
 	}
 
@@ -272,7 +272,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -293,7 +293,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -302,7 +302,7 @@ export abstract class Purge {
 			channel,
 			inverse,
 			messageFilter: (msg) =>
-				[StringUtils.Regexes.Invite, StringUtils.Regexes.BotInvite].some((regex) => regex.test(msg.content))
+				[StringUtils.regexes.invite, StringUtils.regexes.botInvite].some((regex) => regex.test(msg.content))
 		});
 	}
 
@@ -315,7 +315,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -323,14 +323,14 @@ export abstract class Purge {
 			reason,
 			channel,
 			inverse,
-			messageFilter: (msg) => StringUtils.Regexes.Link.test(msg.content)
+			messageFilter: (msg) => StringUtils.regexes.link.test(msg.content)
 		});
 	}
 
 	@Slash({ description: "Purge all or specific snowflake mention messages in the current or given channel" })
 	public mentions(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.SNOWFLAKE,
+			entityType: CommandUtils.entityType.SNOWFLAKE,
 			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.Passive],
 			required: false
 		})
@@ -348,7 +348,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const messageMentionRegexArray: RegExp[] = [
@@ -374,7 +374,7 @@ export abstract class Purge {
 	@Slash({ description: "Purge all messages of users with a given role in the current or given channel" })
 	public role(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.ROLE,
+			entityType: CommandUtils.entityType.ROLE,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive]
 		})
 		target: Role,
@@ -385,7 +385,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -417,7 +417,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -432,7 +432,7 @@ export abstract class Purge {
 	@Slash({ description: "Purge all or a specific user's messages in the current or given channel" })
 	public users(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
 			required: false
 		})
@@ -444,7 +444,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -475,7 +475,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -595,7 +595,7 @@ export abstract class Purge {
 				actionType: ActionType.PURGE_MESSAGES_SET,
 				target: {
 					id: purgeChannel.id,
-					type: CommandUtils.EntityType.CHANNEL
+					type: CommandUtils.entityType.CHANNEL
 				},
 				successContent: messageContent
 			});

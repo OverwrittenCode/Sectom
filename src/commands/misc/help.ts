@@ -47,24 +47,24 @@ export abstract class Help {
 						.setDescription(
 							[
 								"Here you can select a category of commands to view by selecting a category below:" +
-									StringUtils.LineBreak,
+									StringUtils.lineBreak,
 								unorderedList(
-									CommandUtils.CategoryGroupedData.keys.map((categoryName) => {
+									CommandUtils.categoryGroupedData.keys.map((categoryName) => {
 										pageTextArray.push(`${categoryName} Commands`);
 
 										return bold(categoryName);
 									})
 								)
-							].join(StringUtils.LineBreak)
+							].join(StringUtils.lineBreak)
 						)
 				]
 			}
 		].concat(
-			CommandUtils.CategoryGroupedData.values.map((data, i) => {
+			CommandUtils.categoryGroupedData.values.map((data, i) => {
 				const boldNames: string[] = [];
 				const selectMenuOptions: StringSelectMenuOptionBuilder[] = [];
 
-				const categoryName = CommandUtils.CategoryGroupedData.keys[i];
+				const categoryName = CommandUtils.categoryGroupedData.keys[i];
 
 				data.forEach(({ name, description }) => {
 					boldNames.push(bold(`/${name}`));
@@ -79,7 +79,7 @@ export abstract class Help {
 				const embed = new EmbedBuilder()
 					.setTitle(`${embedTitle} | ${categoryName} Commands`)
 					.setColor(LIGHT_GOLD)
-					.setDescription(boldNames.join(StringUtils.LineBreak));
+					.setDescription(boldNames.join(StringUtils.lineBreak));
 
 				const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
 					new StringSelectMenuBuilder()
@@ -113,16 +113,16 @@ export abstract class HelpMessageComponentHandler {
 	public async selectMenuCommandView(interaction: StringSelectMenuInteraction<"cached">) {
 		const { customId, values } = interaction;
 
-		const categoryName = customId.split(StringUtils.CustomIDFIeldBodySeperator).at(-1)! as Enums.CommandCategory;
+		const categoryName = customId.split(StringUtils.customIDFIeldBodySeperator).at(-1)! as Enums.CommandCategory;
 		const commandName = values[0];
 
-		const { options, ...data } = CommandUtils.CategoryGroupedData.obj[categoryName].find(
+		const { options, ...data } = CommandUtils.categoryGroupedData.obj[categoryName].find(
 			({ name }) => name === commandName
 		)!;
 
 		const description = ObjectUtils.entries(data)
 			.map(([key, value]) => `${bold(StringUtils.capitaliseFirstLetter(key))}: ${value}`)
-			.join(StringUtils.LineBreak);
+			.join(StringUtils.lineBreak);
 
 		const embed = new EmbedBuilder()
 			.setTitle(`${interaction.guild.name} | Command Info`)

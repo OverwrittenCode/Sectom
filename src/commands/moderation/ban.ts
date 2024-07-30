@@ -27,17 +27,17 @@ export abstract class Ban {
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Ban.mutualPermissions))
 	public async ban(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
 		target: User | GuildMember,
 		@DurationSlashOption({
-			transformerOptions: CommandUtils.DurationLimits.Ban,
+			transformerOptions: CommandUtils.durationLimits.Ban,
 			name: "prune_messages_duration",
 			descriptionPrefix: "The duration the prune messages",
 			required: false
 		})
 		msDuration: number | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		await this.validateBanStatus(interaction, target, false);
@@ -69,16 +69,16 @@ export abstract class Ban {
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Ban.mutualPermissions))
 	public async softban(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
 		target: User | GuildMember,
 		@DurationSlashOption({
-			transformerOptions: CommandUtils.DurationLimits.Ban,
+			transformerOptions: CommandUtils.durationLimits.Ban,
 			name: "prune_messages_duration",
 			descriptionPrefix: "The duration to prune messages"
 		})
 		msDuration: number,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		await this.validateBanStatus(interaction, target, false);
@@ -116,10 +116,10 @@ export abstract class Ban {
 	})
 	@Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(Ban.mutualPermissions))
 	public async unban(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
 		target: User | GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		await this.validateBanStatus(interaction, target, true);

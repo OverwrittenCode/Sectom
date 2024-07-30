@@ -30,12 +30,12 @@ export abstract class Warn {
 	@Slash({ description: "Warn a user" })
 	public async add(
 		@TargetSlashOption({
-			entityType: CommandUtils.EntityType.USER,
+			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;
@@ -91,7 +91,7 @@ export abstract class Warn {
 					const punishmentDuration = firstThreshold?.duration
 						? Math.min(
 								warningConfiguration!.durationMultiplier ** repeatedOffences * firstThreshold.duration,
-								ms(CommandUtils.DurationLimits.Timeout.max)
+								ms(CommandUtils.durationLimits.Timeout.max)
 							)
 						: undefined;
 
@@ -156,7 +156,7 @@ export abstract class Warn {
 
 	@Slash({ description: "Lists the warnings of a user" })
 	public list(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
 		target: User | GuildMember,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
@@ -171,7 +171,7 @@ export abstract class Warn {
 
 	@Slash({ description: "Remove a warn from a user" })
 	public async remove(
-		@TargetSlashOption({ entityType: CommandUtils.EntityType.USER })
+		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
 		target: User | GuildMember,
 		@SlashOption({
 			description: "The warn case id. Defaults to the most recent",
@@ -180,7 +180,7 @@ export abstract class Warn {
 		})
 		caseID: string | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.Messages.NoReason,
+		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const caseRecord = await DBConnectionManager.Prisma.case.retrieveCase({
