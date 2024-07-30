@@ -305,11 +305,13 @@ export abstract class TicketConfigMessageComponentHandler {
 		const subjectName = customId.split(StringUtils.CustomIDFIeldBodySeperator).pop()!;
 
 		const collection = await InteractionUtils.confirmationButton(interaction, {
-			content: "Are you sure you want to close this ticket?"
+			content: "Are you sure you want to close this ticket?",
+			preferFollowUp: true
 		});
 
 		await InteractionUtils.replyOrFollowUp(collection.first()!, {
-			content: "Please wait: generating transcript."
+			content: "Please wait: generating transcript.",
+			preferFollowUp: true
 		});
 
 		const cacheChannelId = process.env.DISCORD_CACHE_CHANNEL;

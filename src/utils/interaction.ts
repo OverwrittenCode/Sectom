@@ -63,8 +63,6 @@ type CustomIdPrefixRecordOutput<T extends string> = {
 
 type MessageComponentFlags = Omit<typeof InteractionUtils.MessageComponentIds, "Managed">;
 
-type ReplyOptions = Typings.DisplaceObjects<InteractionReplyOptions, { ephemeral?: boolean | null }>;
-
 interface ConfirmationButtonOptions extends ReplyOptions {
 	cancelLabel?: string;
 	confirmLabel?: string;
@@ -90,6 +88,10 @@ interface DisableComponentOptions {
 interface DisableComponentRules {
 	customIds?: string[];
 	delete?: boolean;
+}
+
+interface ReplyOptions extends InteractionReplyOptions {
+	preferFollowUp?: boolean;
 }
 
 export abstract class InteractionUtils {
@@ -343,18 +345,16 @@ export abstract class InteractionUtils {
 		replyOptions: ReplyOptions
 	): Promise<Message | InteractionResponse> {
 		try {
-			if (replyOptions.ephemeral === null) {
-				replyOptions.ephemeral = interaction.ephemeral;
-			}
-
-			const options = replyOptions as InteractionReplyOptions;
+			const { preferFollowUp, ...options } = replyOptions;
 
 			if (interaction.replied) {
 				return await interaction.followUp(options);
 			}
 
 			if (interaction.deferred) {
-				if (!interaction.ephemeral && replyOptions.ephemeral) {
+				const isForcedFollowUp = !interaction.ephemeral && replyOptions.ephemeral;
+
+				if (preferFollowUp || isForcedFollowUp) {
 					return await interaction.followUp(options);
 				}
 
