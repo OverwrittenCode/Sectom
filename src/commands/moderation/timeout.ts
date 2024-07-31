@@ -18,8 +18,7 @@ import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Timeout {
 	private static readonly mutualPermissions = [PermissionFlagsBits.ModerateMembers];
-
-	private checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
+	private static readonly checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
 
 	@Slash({
 		dmPermission: false,
@@ -55,7 +54,7 @@ export abstract class Timeout {
 			actionType,
 			actionOptions: {
 				pastTense: "timed out",
-				checkPossible: this.checkPossible,
+				checkPossible: Timeout.checkPossible,
 				pendingExecution: () => target.timeout(msDuration, auditReason)
 			}
 		});
@@ -98,7 +97,7 @@ export abstract class Timeout {
 			actionType: ActionType.TIME_OUT_USER_REMOVE,
 			actionOptions: {
 				pastTense: "removed the timed out from",
-				checkPossible: this.checkPossible,
+				checkPossible: Timeout.checkPossible,
 				pendingExecution: () => target.timeout(null, auditReason)
 			}
 		});
