@@ -60,7 +60,7 @@
 		"@neplex/vectorizer": "^0.0.4",
 		"@prisma/client": "^5.17.0",
 		"@prisma/extension-accelerate": "^1.0.0",
-		"@prisma/extension-pulse": "^1.0.2",
+		"@prisma/extension-pulse": "^1.2.0",
 		"@supabase/supabase-js": "^2.42.0",
 		"@types/lodash": "^4.17.0",
 		"@typescript-eslint/eslint-plugin": "^7.16.1",
