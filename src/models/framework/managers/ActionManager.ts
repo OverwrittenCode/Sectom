@@ -701,6 +701,6 @@ export abstract class ActionManager {
 	}
 
 	private static getUserHyperlink(userId: string): string {
-		return `https://discordapp.com/users/${userId}`;
+		return discordBuilders.hyperlink(userId, `https://discordapp.com/users/${userId}`);
 	}
 }
