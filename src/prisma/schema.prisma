@@ -17,7 +17,7 @@ datasource db {
 }
 
 model Entity {
-    id                String       @id @unique
+    id                String       @id
     createdAt         DateTime     @default(now()) @db.Timestamptz()
     updatedAt         DateTime     @updatedAt @db.Timestamptz()
     type              EntityType
