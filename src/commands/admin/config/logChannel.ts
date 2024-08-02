@@ -1,8 +1,9 @@
 import { Category, EnumChoice, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, EntityType } from "@prisma/client";
 import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
-import { Discord, Guard, Slash, SlashChoice, SlashGroup, SlashOption } from "discordx";
+import { Discord, Guard, Slash, SlashChoice, SlashGroup } from "discordx";
 
+import { AutoCompleteSlashOption } from "~/helpers/decorators/slashOptions/autocomplete.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { GivenChannelSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
@@ -16,6 +17,8 @@ import { Enums } from "~/ts/Enums.js";
 import type { Prisma, PrismaPromise } from "@prisma/client";
 import type { ChatInputCommandInteraction, TextChannel } from "discord.js";
 
+type ActionTypeChoice = ActionType | "DEFAULT";
+
 @Discord()
 @Category(Enums.CommandCategory.Admin)
 @SlashGroup({
@@ -25,7 +28,7 @@ import type { ChatInputCommandInteraction, TextChannel } from "discord.js";
 })
 @SlashGroup("logchannel", "config")
 export abstract class LogChannelConfig {
-	public static readonly choices = ActionManager.createBasedTypes.reduce(
+	private static readonly choices = ActionManager.createBasedTypes.reduce(
 		(acc, actionType) => {
 			const formattedKey = StringUtils.concatenate(
 				" ",
@@ -40,20 +43,14 @@ export abstract class LogChannelConfig {
 
 			return acc;
 		},
-		{} as Record<string, string>
+		{ Default: "DEFAULT" } as Record<string, ActionTypeChoice>
 	);
 
 	@Slash({ description: "Removes a log channel" })
 	public async remove(
-		@SlashChoice({ name: "Default", value: "DEFAULT" })
 		@SlashChoice(...EnumChoice(LogChannelConfig.choices))
-		@SlashOption({
-			description: "The action type group",
-			name: "action_type",
-			type: ApplicationCommandOptionType.String,
-			required: true
-		})
-		actionTypeChoice: ActionType | "DEFAULT",
+		@LogChannelConfig.ActionChoiceSlashOption(true)
+		actionTypeChoice: ActionTypeChoice,
 		@ReasonSlashOption()
 		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
@@ -105,14 +102,8 @@ export abstract class LogChannelConfig {
 	public async set(
 		@GivenChannelSlashOption()
 		channel: TextChannel,
-		@SlashChoice({ name: "Default", value: "DEFAULT" })
-		@SlashChoice(...EnumChoice(LogChannelConfig.choices))
-		@SlashOption({
-			description: "The action type group",
-			name: "action_type",
-			type: ApplicationCommandOptionType.String
-		})
-		actionTypeChoice: ActionType | "DEFAULT" | undefined,
+		@LogChannelConfig.ActionChoiceSlashOption()
+		actionTypeChoice: ActionTypeChoice | undefined,
 		@ReasonSlashOption()
 		reason: string = InteractionUtils.messages.noReason,
 		interaction: ChatInputCommandInteraction<"cached">
@@ -197,5 +188,17 @@ export abstract class LogChannelConfig {
 				pendingExecution: () => DBConnectionManager.Prisma.$transaction(prismaTransaction)
 			}
 		});
+	}
+
+	private static ActionChoiceSlashOption(required?: boolean) {
+		return AutoCompleteSlashOption(
+			{
+				description: "The action type group",
+				name: "action_type",
+				type: ApplicationCommandOptionType.String,
+				required
+			},
+			LogChannelConfig.choices
+		);
 	}
 }
