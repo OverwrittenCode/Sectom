@@ -9,6 +9,7 @@ module.exports = {
 	root: true,
 	parserOptions: {
 		ecmaVersion: "latest",
+		project: ["tsconfig.json"],
 		sourceType: "module"
 	},
 	rules: {
@@ -25,6 +26,7 @@ module.exports = {
 			}
 		],
 		"@typescript-eslint/consistent-type-imports": "error",
+		"@typescript-eslint/prefer-readonly": "error",
 		"@typescript-eslint/no-dupe-class-members": "off",
 
 		"@stylistic/padding-line-between-statements": [
