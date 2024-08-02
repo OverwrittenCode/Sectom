@@ -548,6 +548,12 @@ export abstract class Purge {
 
 					let bool = isDeletable && !isOlderThanTwoWeeksAgo;
 
+					const isMutuallyExclusive = !!lastDeletedMessageId && !!after;
+
+					if (isMutuallyExclusive) {
+						bool &&= msg.id > after;
+					}
+
 					if (messageFilter) {
 						bool &&= !!inverse !== messageFilter(msg);
 					}
