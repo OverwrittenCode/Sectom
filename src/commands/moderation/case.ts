@@ -14,6 +14,7 @@ import {
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 
+import { AutoCompleteSlashOption } from "~/helpers/decorators/slashOptions/autocomplete.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
@@ -34,18 +35,24 @@ import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember, User 
 @SlashGroup({ dmPermission: false, description: "Container of all cases in the server", name: "case" })
 @SlashGroup("case")
 export abstract class Case {
-	@Slash({ description: "Edit a case reason" })
-	public async edit(
-		@SlashOption({
-			description: "The case id",
-			name: "case_id",
-			type: ApplicationCommandOptionType.String,
-			required: true
-		})
+	public static IDSlashOption() {
+		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
+			SlashOption({
+				description: "The case id",
+				name: "case_id",
+				type: ApplicationCommandOptionType.String,
+				required: true,
+				minLength: 6,
+				maxLength: 6
+			})(target, propertyKey, parameterIndex);
+		};
+	}
+
+	public static async modify(
 		caseID: string,
-		@ReasonSlashOption({ isAmmendedReason: true, required: true })
-		newReason: string,
-		interaction: ChatInputCommandInteraction<"cached">
+		reason: string,
+		interaction: ChatInputCommandInteraction<"cached">,
+		type: "edit" | "remove"
 	) {
 		const { guildId } = interaction;
 
@@ -54,14 +61,20 @@ export abstract class Case {
 			caseID
 		});
 
+		if (caseData.action.endsWith("EDIT")) {
+			throw new ValidationError(
+				"This case is readonly as the action type is reserved for editing cases. If you are trying to edit a case again, please find the original case id and use that instead."
+			);
+		}
+
 		const actionTypeStem = caseData.action.replace(StringUtils.regexes.allActionModifiers, "");
 
-		const actionTypes = Object.values(ActionType);
+		const actionType = Object.values(ActionType).find(
+			(actionType) => actionType === `${actionTypeStem}_${type.toUpperCase()}`
+		);
 
-		const actionTypeEdit = actionTypes.find((actionType) => actionType === `${actionTypeStem}_EDIT`);
-
-		if (caseData.action.endsWith("EDIT") || !actionTypeEdit) {
-			throw new ValidationError("you may not edit cases under this group");
+		if (!actionType) {
+			throw new ValidationError(`you may not ${type} cases under this group`);
 		}
 
 		const isInsufficientPermission =
@@ -118,67 +131,88 @@ export abstract class Case {
 		const entityType = EntityType[sentenceCaseEntityType.toUpperCase() as EntityType];
 		const targetId = hyperlinkedTargetId.split("(")[0].slice(1, -1);
 
-		if (typeof retrievedTimestampFieldIndex === "number") {
-			timestampFieldIndex = retrievedTimestampFieldIndex;
-		}
+		switch (type) {
+			case "remove": {
+				await DBConnectionManager.Prisma.case.delete({
+					where: { id: caseData.id },
+					select: {
+						id: true
+					}
+				});
 
-		if (newReasonFieldIndex) {
-			updatedEmbed.fields[newReasonFieldIndex].value = newReason;
-		} else {
-			updatedEmbed.fields.push({ name: "New Reason", value: newReason });
-		}
-
-		if (typeof timestampFieldIndex === "number") {
-			updatedEmbed.fields[timestampFieldIndex] = ActionManager.generateTimestampField({
-				createdAt: caseData.createdAt,
-				updatedAt: new Date()
-			});
-		}
-
-		updatedEmbeds.unshift(updatedEmbed);
-
-		const newAPIEmbeds = EmbedManager.formatEmbeds(updatedEmbeds).map((embed) => embed.toJSON());
-
-		if (caseRecordChannel instanceof TextChannel) {
-			const caseRecordLogMessage = await caseRecordChannel.messages
-				.fetch(retrievedMessageId ?? "")
-				.catch(() => {});
-
-			if (caseRecordLogMessage?.editable) {
-				await caseRecordLogMessage
-					.edit({
-						embeds: newAPIEmbeds
-					})
-					.catch(() => {});
-			} else {
-				const message = await caseRecordChannel.send({ embeds: newAPIEmbeds });
-
-				messageURL = messageLink(caseRecordChannel.id, message.id, guildId);
+				break;
 			}
 
-			assert(messageURL);
+			case "edit":
+				{
+					if (typeof retrievedTimestampFieldIndex === "number") {
+						timestampFieldIndex = retrievedTimestampFieldIndex;
+					}
 
-			const messageURLButton = new ButtonBuilder()
-				.setLabel(`CASE ${caseData.id}`)
-				.setStyle(ButtonStyle.Link)
-				.setURL(messageURL);
+					if (newReasonFieldIndex) {
+						updatedEmbed.fields[newReasonFieldIndex].value = reason;
+					} else {
+						updatedEmbed.fields.push({ name: "New Reason", value: reason });
+					}
 
-			const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
+					if (typeof timestampFieldIndex === "number") {
+						updatedEmbed.fields[timestampFieldIndex] = ActionManager.generateTimestampField({
+							createdAt: caseData.createdAt,
+							updatedAt: new Date()
+						});
+					}
 
-			buttonActionRows.push(buttonActionRow);
+					updatedEmbeds.unshift(updatedEmbed);
+
+					const newAPIEmbeds = EmbedManager.formatEmbeds(updatedEmbeds).map((embed) => embed.toJSON());
+
+					if (caseRecordChannel instanceof TextChannel) {
+						const caseRecordLogMessage = await caseRecordChannel.messages
+							.fetch(retrievedMessageId ?? "")
+							.catch(() => {});
+
+						if (caseRecordLogMessage?.editable) {
+							await caseRecordLogMessage
+								.edit({
+									embeds: newAPIEmbeds
+								})
+								.catch(() => {});
+						} else {
+							const message = await caseRecordChannel.send({ embeds: newAPIEmbeds });
+
+							messageURL = messageLink(caseRecordChannel.id, message.id, guildId);
+						}
+
+						assert(messageURL);
+
+						const messageURLButton = new ButtonBuilder()
+							.setLabel(`CASE ${caseData.id}`)
+							.setStyle(ButtonStyle.Link)
+							.setURL(messageURL);
+
+						const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
+
+						buttonActionRows.push(buttonActionRow);
+					}
+
+					await DBConnectionManager.Prisma.case.update({
+						where: { id: caseData.id },
+						data: {
+							messageURL,
+							apiEmbeds: newAPIEmbeds,
+							reason: reason
+						},
+						select: {
+							id: true
+						}
+					});
+				}
+
+				break;
+
+			default:
+				throw new Error("Unexpected type");
 		}
-
-		await DBConnectionManager.Prisma.case.update({
-			where: { id: caseData.id },
-			data: {
-				messageURL,
-				apiEmbeds: newAPIEmbeds,
-				reason: newReason
-			},
-			select: {
-				id: true
-			}
-		});
 
 		return await ActionManager.logCase({
 			interaction,
@@ -186,27 +220,40 @@ export abstract class Case {
 				id: targetId,
 				type: entityType
 			},
-			actionType: actionTypeEdit,
+			actionType,
 			actionOptions: {
 				notifyIfUser: false
 			},
-			successContent: `edited the reason for case ${inlineCode(caseData.id)}`,
+			successContent: `${type === "edit" ? "edited the reason for" : "removed"} case ${inlineCode(caseData.id)}`,
 			buttonActionRows
 		});
 	}
 
-	@Slash({ description: "View a specific, or all cases, on the server" })
-	public async view(
-		@SlashOption({
-			description: "The case ID",
-			name: "case_id",
-			type: ApplicationCommandOptionType.String
-		})
-		id: string | undefined,
+	@Slash({ description: "Edit a case reason" })
+	public async edit(
+		@Case.IDSlashOption()
+		caseID: string,
+		@ReasonSlashOption({ isAmmendedReason: true, required: true })
+		newReason: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Case.modify(caseID, newReason, interaction, "edit");
+	}
+
+	@Slash({ description: "List and filter all cases on the server" })
+	public async list(
+		@AutoCompleteSlashOption(
+			{
+				description: "The action type",
+				name: "action_type",
+				type: ApplicationCommandOptionType.String
+			},
+			ActionType
+		)
+		action: ActionType | undefined,
 		@TargetSlashOption({
 			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
-			descriptionNote: "This is ignored if case_id is provided",
 			name: "perpetrator",
 			required: false
 		})
@@ -214,7 +261,6 @@ export abstract class Case {
 		@TargetSlashOption({
 			entityType: CommandUtils.entityType.USER,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
-			descriptionNote: "This is ignored if case_id is provided",
 			name: "target",
 			required: false
 		})
@@ -222,20 +268,25 @@ export abstract class Case {
 		@TargetSlashOption({
 			entityType: CommandUtils.entityType.CHANNEL,
 			flags: [Enums.CommandSlashOptionTargetFlags.Passive],
-			descriptionNote: "This is ignored if case_id is provided",
 			required: false
 		})
 		channel: GuildBasedChannel | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		if (!id) {
-			return ActionManager.listCases(interaction, {
-				perpetratorId: perpetrator?.valueOf(),
-				targetId: target?.valueOf(),
-				channelId: channel?.valueOf()
-			});
-		}
+		return ActionManager.listCases(interaction, {
+			action,
+			perpetratorId: perpetrator?.valueOf(),
+			targetId: target?.valueOf(),
+			channelId: channel?.valueOf()
+		});
+	}
 
+	@Slash({ description: "View a specific case on the server" })
+	public async view(
+		@Case.IDSlashOption()
+		id: string | undefined,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
 		const { guildId } = interaction;
 
 		const { doc } = await DBConnectionManager.Prisma.case.fetchFirstOrThrow({
