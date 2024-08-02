@@ -582,7 +582,7 @@ export abstract class Purge {
 		let messageContent =
 			deletedSuccessCount === 0
 				? "No messages were deleted"
-				: `Successfully deleted ${deletedSuccessCount} / ${count} messages`;
+				: `deleted ${deletedSuccessCount} / ${count} messages`;
 
 		if (purgeChannel.id !== interaction.channelId) {
 			messageContent += ` in ${purgeChannel.toString()}`;
