@@ -495,7 +495,7 @@ export abstract class Purge {
 		};
 	}
 
-	private static MessageIDSlashOption(namePrefix: Lowercase<string> = "") {
+	private static MessageIDSlashOption(namePrefix?: Lowercase<string>) {
 		let name: Lowercase<string> = "message_id";
 
 		if (namePrefix) {
