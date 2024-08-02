@@ -11,14 +11,14 @@ interface FetchValidConfigurationOptions {
 
 @singleton()
 export class GuildInstanceMethods {
-	private static defaultContentClusterManagerComponents = {
+	private static readonly defaultContentClusterManagerComponents = {
 		panels: [],
 		subjects: []
 	};
 
-	private client: FetchExtendedClient;
+	private readonly client: FetchExtendedClient;
 
-	public static defaultConfiguration: PrismaJson.Configuration = {
+	public static readonly defaultConfiguration: PrismaJson.Configuration = {
 		warning: {
 			durationMultiplier: 1,
 			thresholds: []

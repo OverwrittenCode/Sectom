@@ -10,8 +10,9 @@ type IDFields<M extends Prisma.ModelName> =
 	Typings.Database.SimpleUniqueWhereId<M> extends infer T ? (T extends string ? ["id"] : Array<keyof T>) : never;
 
 export class RedisDataService<const M extends Prisma.ModelName> {
-	public idFields: IDFields<M>;
-	public modelName: M;
+	protected readonly modelName: M;
+
+	public readonly idFields: IDFields<M>;
 
 	constructor(modelName: M) {
 		this.modelName = modelName;

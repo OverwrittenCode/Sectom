@@ -26,7 +26,7 @@ type ThresholdPunishmentType =
 @SlashGroup({ description: "Warning configuration", name: "warn", root: "config" })
 @SlashGroup("warn", "config")
 export abstract class WarnConfig {
-	public static thresholdPunishmentChoices = {
+	public static readonly thresholdPunishmentChoices = {
 		disable: "disable",
 		timeout: ActionType.TIME_OUT_USER_ADD,
 		kick: ActionType.KICK_USER_SET,

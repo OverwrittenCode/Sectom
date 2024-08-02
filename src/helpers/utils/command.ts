@@ -21,14 +21,14 @@ interface CategoryGroupedData {
 
 export abstract class CommandUtils {
 	public static categoryGroupedData: CategoryGroupedData;
-	public static collectionTime = ms("10m");
-	public static durationLimits = {
+	public static readonly collectionTime = ms("10m");
+	public static readonly durationLimits = {
 		Timeout: { min: "5s", max: "28d" },
 		Warn: { min: "1m", max: "90d" },
 		Ban: { max: "7d" }
 	} as const;
-	public static entityType = { ...EntityType, SNOWFLAKE: "SNOWFLAKE" as const };
-	public static slashOptions = {
+	public static readonly entityType = { ...EntityType, SNOWFLAKE: "SNOWFLAKE" as const };
+	public static readonly slashOptions = {
 		ChannelPermissionName: "in_channel",
 		DisableChoice: "disable"
 	} as const;

@@ -96,14 +96,14 @@ interface ReplyOptions extends InteractionReplyOptions {
 }
 
 export abstract class InteractionUtils {
-	public static messageComponentIds = {
+	public static readonly messageComponentIds = {
 		cancelAction: "cancel_action",
 		confirmAction: "confirm_action",
 		oneTimeUse: "one_time_use",
 		multiplayer: "multiplayer",
 		managed: ["pagination"]
 	} as const;
-	public static messages = {
+	public static readonly messages = {
 		noData: "Nothing to view yet in this query selection.",
 		noReason: "No reason provided."
 	} as const;

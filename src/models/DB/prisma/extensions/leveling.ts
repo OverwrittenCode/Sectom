@@ -46,10 +46,10 @@ canvacord.Font.loadDefault();
 
 @singleton()
 export class LevelingInstanceMethods {
-	private static MAX_XP = 45 as const;
-	private static MIN_XP = 10 as const;
+	private static readonly MAX_XP = 45;
+	private static readonly MIN_XP = 10;
 
-	private client: FetchExtendedClient;
+	private readonly client: FetchExtendedClient;
 
 	constructor(
 		@inject(Beans.IPrismaFetchClientToken)

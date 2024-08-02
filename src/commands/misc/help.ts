@@ -26,7 +26,7 @@ import type { StringSelectMenuInteraction } from "discord.js";
 @Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Help {
-	public static customIdRecords = InteractionUtils.customIdPrefixRecords("help_command_view");
+	public static readonly customIdRecords = InteractionUtils.customIdPrefixRecords("help_command_view");
 
 	@Slash({ dmPermission: false, description: "Get help on commands and categories" })
 	public async help(interaction: ChatInputCommandInteraction<"cached">) {

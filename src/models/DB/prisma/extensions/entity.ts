@@ -33,7 +33,7 @@ interface WhereOption {
 
 @singleton()
 export class EntityInstanceMethods {
-	private client: FetchExtendedClient;
+	private readonly client: FetchExtendedClient;
 
 	constructor(
 		@inject(Beans.IPrismaFetchClientToken)

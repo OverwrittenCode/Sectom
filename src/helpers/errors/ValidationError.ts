@@ -4,7 +4,7 @@ import { ObjectUtils } from "~/helpers/utils/object.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 
 export class ValidationError extends Error {
-	public static messageTemplates = {
+	public static readonly messageTemplates = {
 		NotConfigured: (name: string) => `the ${name} configuration has not been setup yet`,
 		SystemIsDisabled: (name: string) => `the ${name} system is disabled`,
 		InvalidChannelType: (reference: string, requiredType: ChannelType) =>

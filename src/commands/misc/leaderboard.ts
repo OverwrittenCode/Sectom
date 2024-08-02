@@ -12,7 +12,7 @@ import { Enums } from "~/ts/Enums.js";
 @Category(Enums.CommandCategory.Misc)
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 export abstract class Leaderboard {
-	private static topDisplayedUsers = 5;
+	private static readonly topDisplayedUsers = 5;
 
 	@Slash({ dmPermission: false, description: "View the leaderboard for the leveling system" })
 	public async leaderboard(interaction: ChatInputCommandInteraction<"cached">) {

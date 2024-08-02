@@ -21,11 +21,11 @@ export abstract class RedisCacheManager<
 > extends RedisDataService<M> {
 	private readonly queryClient: Query;
 
-	public readonly collection: Typings.Database.Redis.ModelCollection<M>;
-	public readonly modelName: M;
-	public readonly prismaModel: (typeof DBConnectionManager.Prisma)[Lowercase<M>];
+	protected override readonly modelName: M;
 
-	public indexes = {} as Typings.Database.Redis.IndexObject<M, IndexList[number]>;
+	public readonly collection: Typings.Database.Redis.ModelCollection<M>;
+	public readonly prismaModel: (typeof DBConnectionManager.Prisma)[Lowercase<M>];
+	public readonly indexes = {} as Typings.Database.Redis.IndexObject<M, IndexList[number]>;
 
 	constructor(prismaModelName: M, indexList?: IndexList) {
 		super(prismaModelName);

@@ -33,8 +33,8 @@ interface RetrieveCaseOptions {
 
 @singleton()
 export class CaseInstanceMethods {
-	private client: FetchExtendedClient;
-	private retrieveCaseSelect = {
+	private readonly client: FetchExtendedClient;
+	private readonly retrieveCaseSelect = {
 		id: true,
 		perpetratorId: true,
 		createdAt: true,

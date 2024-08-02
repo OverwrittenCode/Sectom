@@ -155,7 +155,7 @@ export abstract class SuggestionConfig {
 
 @Discord()
 export abstract class SuggestionConfigMessageComponentHandler {
-	private progressBar = {
+	private readonly progressBar = {
 		leftEmpty: "<:leftEmpty:1236061837775339611>",
 		middleEmpty: "<:middleEmpty:1236061836483493991>",
 		rightEmpty: "<:rightEmpty:1236061834520301599>",

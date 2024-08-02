@@ -36,7 +36,7 @@ import type { Simplify } from "type-fest";
 type Doc<M extends Prisma.ModelName = Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
 
 export abstract class PrismaExtensions {
-	public static clientMethods = Prisma.defineExtension((client) => {
+	public static readonly clientMethods = Prisma.defineExtension((client) => {
 		return client.$extends({
 			name: "client-methods-extension",
 			client: {
@@ -68,7 +68,7 @@ export abstract class PrismaExtensions {
 			}
 		});
 	});
-	public static modelMethods = Prisma.defineExtension((client) => {
+	public static readonly modelMethods = Prisma.defineExtension((client) => {
 		const fetchOperations = [
 			"fetchFirst",
 			"fetchFirstOrThrow",
@@ -304,15 +304,15 @@ export abstract class PrismaExtensions {
 }
 
 class WithSave<TModel> implements IWithSave<TModel> {
-	private idFields: PrismaJson.IDLink;
+	private readonly idFields: PrismaJson.IDLink;
 	/**
 	 * - If the model has relations, Prisma will throw an error if id fields are provided in update#data
 	 * - and we don't want to modify the createdAt/updatedAt information, let the database handle that
 	 */
-	private nonUpdatedFields: PrismaJson.IDLink & Pick<Doc, "createdAt" | "updatedAt">;
-	private shadowCtx: ModelCTX<any, true>;
+	private readonly nonUpdatedFields: PrismaJson.IDLink & Pick<Doc, "createdAt" | "updatedAt">;
+	private readonly shadowCtx: ModelCTX<any, true>;
 
-	public doc: Doc<RetrieveModelName<TModel>>;
+	public readonly doc: Doc<RetrieveModelName<TModel>>;
 
 	constructor(doc: Doc<RetrieveModelName<TModel>>, ctx: ModelCTX<any, true>) {
 		this.idFields = RedisCache[ctx.$name.toLowerCase() as Lowercase<ShadowCTXName>].pickIDFields(doc);

@@ -8,18 +8,17 @@ import type { PascalCase, Split } from "type-fest";
 import type { SplitWords } from "type-fest/source/split-words.js";
 
 export abstract class StringUtils {
-	public static customIDFIeldBodySeperator = "." as const;
-	public static customIDFieldPrefixSeperator = "_" as const;
-	public static fieldNameSeparator = ":" as const;
-	public static lineBreak = "\n" as const;
-	public static regexes = {
+	public static readonly customIDFIeldBodySeperator = ".";
+	public static readonly customIDFieldPrefixSeperator = "_";
+	public static readonly fieldNameSeparator = ":";
+	public static readonly lineBreak = "\n";
+	public static readonly regexes = {
 		snowflake: /^\d{17,20}$/,
 		hexCode: /^[0-9A-F]{6}$/i,
 		camelCaseBoundary: /([a-z])([A-Z])/g,
 		link: /(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?/,
 		invite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(\.gg|(app)?\.com\/invite|\.me)\/([^ ]+)\/?/gi,
 		botInvite: /(https?:\/\/)?(www\.|canary\.|ptb\.)?discord(app)?\.com\/(api\/)?oauth2\/authorize\?([^ ]+)\/?/gi,
-
 		unicodeEmoji:
 			/((\ud83c[\udde6-\uddff]){2}|([#*0-9]\u20e3)|(\u00a9|\u00ae|[\u2000-\u3300]|[\ud83c-\ud83e][\ud000-\udfff])((\ud83c[\udffb-\udfff])?(\ud83e[\uddb0-\uddb3])?(\ufe0f?\u200d([\u2000-\u3300]|[\ud83c-\ud83e][\ud000-\udfff])\ufe0f?)?)*)/g,
 
@@ -32,22 +31,7 @@ export abstract class StringUtils {
 		),
 		createBasedActionModifiers: /_(ADD|CREATE|SET|ENABLE)$/g
 	} as const;
-	public static tabCharacter = "⠀" as const;
-
-	public static generateID(len: number | Buffer = 6, buf?: Buffer): string {
-		if (Buffer.isBuffer(len)) {
-			buf = len;
-			len = 0;
-		}
-
-		if (!Buffer.isBuffer(buf)) {
-			const numBytes = Math.ceil(Math.log(Math.pow(64, len)) / Math.log(2) / 8);
-
-			buf = crypto.randomBytes(numBytes);
-		}
-
-		return buf.toString("hex").slice(0, len);
-	}
+	public static readonly tabCharacter = "⠀";
 
 	public static capitaliseFirstLetter<const T extends string>(str: T): Capitalize<T> {
 		const value = str.charAt(0).toUpperCase() + str.slice(1);
@@ -82,6 +66,21 @@ export abstract class StringUtils {
 			.split(splitBy || " ")
 			.map(this.capitaliseFirstLetter)
 			.join(" ") as Typings.Concatenate<SplitWords<PascalCase<Lowercase<T>>>, " ">;
+	}
+
+	public static generateID(len: number | Buffer = 6, buf?: Buffer): string {
+		if (Buffer.isBuffer(len)) {
+			buf = len;
+			len = 0;
+		}
+
+		if (!Buffer.isBuffer(buf)) {
+			const numBytes = Math.ceil(Math.log(Math.pow(64, len)) / Math.log(2) / 8);
+
+			buf = crypto.randomBytes(numBytes);
+		}
+
+		return buf.toString("hex").slice(0, len);
 	}
 
 	public static isValidString(str: any): str is string {

@@ -16,7 +16,7 @@ import type { ChatInputCommandInteraction } from "discord.js";
 @SlashGroup({ dmPermission: false, description: "Display the avatar of a user", name: "avatar" })
 @SlashGroup("avatar")
 export abstract class Avatar {
-	private sizeURLSuffix = "?size=4096";
+	private static readonly sizeURLSuffix = "?size=4096";
 
 	@Slash({ description: "Display the global avatar of a user" })
 	public global(
@@ -43,7 +43,7 @@ export abstract class Avatar {
 		const embed = new EmbedBuilder()
 			.setAuthor({ name, iconURL })
 			.setColor(colour)
-			.setImage(iconURL + this.sizeURLSuffix);
+			.setImage(iconURL + Avatar.sizeURLSuffix);
 
 		return InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed]
@@ -69,7 +69,7 @@ export abstract class Avatar {
 		const embed = new EmbedBuilder()
 			.setAuthor({ name, iconURL })
 			.setColor(target.displayHexColor)
-			.setImage(iconURL + this.sizeURLSuffix);
+			.setImage(iconURL + Avatar.sizeURLSuffix);
 
 		return InteractionUtils.replyOrFollowUp(interaction, {
 			embeds: [embed]
