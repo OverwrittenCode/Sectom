@@ -5,9 +5,9 @@ import {
 	ChannelType,
 	Constants,
 	FormattingPatterns,
-	inlineCode,
 	MessageMentions,
-	PermissionFlagsBits
+	PermissionFlagsBits,
+	inlineCode
 } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
 

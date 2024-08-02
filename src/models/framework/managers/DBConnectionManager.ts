@@ -1,7 +1,8 @@
+import assert from "assert";
+
 import { PrismaClient } from "@prisma/client";
 import { withPulse } from "@prisma/extension-pulse";
 import { Redis as RedisClient } from "@upstash/redis";
-import assert from "assert";
 
 import { PrismaExtensions } from "~/models/DB/prisma/extensions/index.js";
 
@@ -62,8 +63,10 @@ export abstract class DBConnectionManager {
 
 		const client = new PrismaClient({ errorFormat: "pretty" });
 
-		const withExtensions = client.$extends(PrismaExtensions.modelMethods).$extends(PrismaExtensions.clientMethods)
-		.$extends(withPulse({ apiKey: process.env.PULSE_API_KEY }));
+		const withExtensions = client
+			.$extends(PrismaExtensions.modelMethods)
+			.$extends(PrismaExtensions.clientMethods)
+			.$extends(withPulse({ apiKey: process.env.PULSE_API_KEY }));
 		// .$extends(withAccelerate())
 
 		return withExtensions;
