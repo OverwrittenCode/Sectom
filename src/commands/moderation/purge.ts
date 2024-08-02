@@ -141,6 +141,34 @@ export abstract class Purge {
 		});
 	}
 
+	@Slash({
+		description: "Purge all messages inclusively between two given messageIds in the current or given channel"
+	})
+	public async between(
+		@Purge.MessageIDSlashOption("start")
+		startMessageId: string,
+		@Purge.MessageIDSlashOption("end")
+		endMessageId: string,
+		@GivenChannelSlashOption()
+		channel: GuildTextBasedChannel | undefined,
+		@Purge.CountSlashOption()
+		count: number = Purge.defaultMessageFetchLimit,
+		@Purge.InverseFilterSlashOption()
+		inverse: boolean = false,
+		@ReasonSlashOption()
+		reason: string = InteractionUtils.messages.noReason,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler(interaction, {
+			count,
+			reason,
+			channel,
+			inverse,
+			before: String(BigInt(endMessageId) + 1n),
+			after: String(BigInt(startMessageId) - 1n)
+		});
+	}
+
 	@Slash({ description: "Purge all or a specific bot's messages in the current or given channel" })
 	public bots(
 		@TargetSlashOption({
