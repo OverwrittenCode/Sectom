@@ -44,7 +44,7 @@ export abstract class Warn {
 
 		try {
 			await DBConnectionManager.Prisma.$transaction(async (tx) => {
-				const actionedCase = await ActionManager.logCase({
+				await ActionManager.logCase({
 					interaction,
 					target: {
 						id: target.id,
@@ -57,10 +57,6 @@ export abstract class Warn {
 					},
 					tx
 				});
-
-				if (!actionedCase) {
-					return;
-				}
 
 				const warnings = await ActionManager.getCases(interaction, {
 					guildId,
