@@ -11,7 +11,7 @@ interface ReasonOptions {
 export function ReasonSlashOption(options: ReasonOptions = {}) {
 	const { isAmmendedReason, required = false } = options;
 
-	const description = isAmmendedReason ? "The updated case reason" : "The reason for using this command";
+	const description = isAmmendedReason ? "The updated case reason" : "The reason";
 
 	const name = isAmmendedReason ? "new_reason" : "reason";
 

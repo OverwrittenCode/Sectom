@@ -16,7 +16,7 @@ import { Enums } from "~/ts/Enums.js";
 @Guard(RateLimit(TIME_UNIT.seconds, 3), ClientRequiredPermissions(ModNote.mutualPermissions))
 @SlashGroup({
 	dmPermission: false,
-	description: "Modify the notes of a member for moderators to view",
+	description: "Modify or list the notes of a user for moderators to view",
 	name: "modnote",
 	defaultMemberPermissions: ModNote.mutualPermissions
 })
@@ -24,7 +24,7 @@ import { Enums } from "~/ts/Enums.js";
 export abstract class ModNote {
 	private static readonly mutualPermissions = [PermissionFlagsBits.KickMembers];
 
-	@Slash({ dmPermission: false, description: "Add a modnote to a member" })
+	@Slash({ description: "Add a modnote to a member" })
 	public async add(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
@@ -50,7 +50,7 @@ export abstract class ModNote {
 		});
 	}
 
-	@Slash({ dmPermission: false, description: "Edit a modnote from a user. Internally called /case edit" })
+	@Slash({ description: "Edit a modnote case. Internally calls /case edit" })
 	public async edit(
 		@Case.IDSlashOption()
 		caseID: string,
@@ -61,7 +61,7 @@ export abstract class ModNote {
 		return Case.modify({ interaction, caseID, type: CaseModifyType.EDIT, reason: newModnote });
 	}
 
-	@Slash({ dmPermission: false, description: "Remove a modnote from a user" })
+	@Slash({ description: "Remove a modnote case" })
 	public async remove(
 		@Case.IDSlashOption()
 		caseID: string,
@@ -72,7 +72,7 @@ export abstract class ModNote {
 		return Case.modify({ interaction, caseID, type: CaseModifyType.REMOVE, reason: modnote });
 	}
 
-	@Slash({ description: "Lists the modnotes of a user" })
+	@Slash({ description: "Lists the modnotes of a user. Internally calls /case list" })
 	public list(
 		@TargetSlashOption({
 			entityType: CommandUtils.entityType.USER,

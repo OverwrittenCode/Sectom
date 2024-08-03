@@ -20,7 +20,7 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 @Guard(RateLimit(TIME_UNIT.seconds, 3))
 @SlashGroup({
 	dmPermission: false,
-	description: "Hand out infractions to members in the server",
+	description: "Modify or list the infractions of a member in the server",
 	name: "warn",
 	defaultMemberPermissions: [PermissionFlagsBits.KickMembers]
 })
@@ -28,7 +28,7 @@ import type { ChatInputCommandInteraction, GuildMember, User } from "discord.js"
 export abstract class Warn {
 	public static readonly minThreshold = 3;
 
-	@Slash({ description: "Warn a user" })
+	@Slash({ description: "Warn a member" })
 	public async add(
 		@TargetSlashOption({
 			entityType: CommandUtils.entityType.USER,
@@ -151,7 +151,7 @@ export abstract class Warn {
 		}
 	}
 
-	@Slash({ description: "Lists the warnings of a user" })
+	@Slash({ description: "List the warnings of a user. Internally calls /case list" })
 	public list(
 		@TargetSlashOption({
 			entityType: CommandUtils.entityType.USER,
