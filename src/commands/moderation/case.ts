@@ -150,89 +150,6 @@ export abstract class Case {
 		const entityType = EntityType[sentenceCaseEntityType.toUpperCase() as EntityType];
 		const targetId = hyperlinkedTargetId.split("(")[0].slice(1, -1);
 
-		switch (type) {
-			case "remove": {
-				await DBConnectionManager.Prisma.case.delete({
-					where: { id: caseData.id },
-					select: {
-						id: true
-					}
-				});
-
-				break;
-			}
-
-			case "edit":
-				{
-					if (typeof retrievedTimestampFieldIndex === "number") {
-						timestampFieldIndex = retrievedTimestampFieldIndex;
-					}
-
-					if (newReasonFieldIndex) {
-						updatedEmbed.fields[newReasonFieldIndex].value = reason;
-					} else {
-						updatedEmbed.fields.push({ name: "New Reason", value: reason });
-					}
-
-					if (typeof timestampFieldIndex === "number") {
-						updatedEmbed.fields[timestampFieldIndex] = ActionManager.generateTimestampField({
-							createdAt: caseData.createdAt,
-							updatedAt: new Date()
-						});
-					}
-
-					updatedEmbeds.unshift(updatedEmbed);
-
-					const newAPIEmbeds = EmbedManager.formatEmbeds(updatedEmbeds).map((embed) => embed.toJSON());
-
-					if (caseRecordChannel instanceof TextChannel) {
-						const caseRecordLogMessage = await caseRecordChannel.messages
-							.fetch(retrievedMessageId ?? "")
-							.catch(() => {});
-
-						if (caseRecordLogMessage?.editable) {
-							await caseRecordLogMessage
-								.edit({
-									embeds: newAPIEmbeds
-								})
-								.catch(() => {});
-						} else {
-							const message = await caseRecordChannel.send({ embeds: newAPIEmbeds });
-
-							messageURL = messageLink(caseRecordChannel.id, message.id, guildId);
-						}
-
-						assert(messageURL);
-
-						const messageURLButton = new ButtonBuilder()
-							.setLabel(`CASE ${caseData.id}`)
-							.setStyle(ButtonStyle.Link)
-							.setURL(messageURL);
-
-						const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(messageURLButton);
-
-						buttonActionRows.push(buttonActionRow);
-					}
-
-					await DBConnectionManager.Prisma.case.update({
-						where: { id: caseData.id },
-						data: {
-							messageURL,
-							apiEmbeds: newAPIEmbeds,
-							reason: reason
-						},
-						select: {
-							id: true
-						}
-					});
-				}
-
-				break;
-
-			default:
-				throw new Error("Unexpected type");
-		}
-
 		return await ActionManager.logCase({
 			interaction,
 			target: {
@@ -242,7 +159,97 @@ export abstract class Case {
 			actionType,
 			reason,
 			actionOptions: {
-				notifyIfUser: false
+				notifyIfUser: false,
+				pendingExecution: async () => {
+					assert(updatedEmbed.fields);
+
+					switch (type) {
+						case CaseModifyType.REMOVE: {
+							await DBConnectionManager.Prisma.case.delete({
+								where: { id: caseData.id },
+								select: {
+									id: true
+								}
+							});
+
+							break;
+						}
+
+						case CaseModifyType.EDIT:
+							{
+								if (typeof retrievedTimestampFieldIndex === "number") {
+									timestampFieldIndex = retrievedTimestampFieldIndex;
+								}
+
+								if (newReasonFieldIndex) {
+									updatedEmbed.fields[newReasonFieldIndex].value = reason;
+								} else {
+									updatedEmbed.fields.push({ name: "New Reason", value: reason });
+								}
+
+								if (typeof timestampFieldIndex === "number") {
+									updatedEmbed.fields[timestampFieldIndex] = ActionManager.generateTimestampField({
+										createdAt: caseData.createdAt,
+										updatedAt: new Date()
+									});
+								}
+
+								updatedEmbeds.unshift(updatedEmbed);
+
+								const newAPIEmbeds = EmbedManager.formatEmbeds(updatedEmbeds).map((embed) =>
+									embed.toJSON()
+								);
+
+								if (caseRecordChannel instanceof TextChannel) {
+									const caseRecordLogMessage = await caseRecordChannel.messages
+										.fetch(retrievedMessageId ?? "")
+										.catch(() => {});
+
+									if (caseRecordLogMessage?.editable) {
+										await caseRecordLogMessage
+											.edit({
+												embeds: newAPIEmbeds
+											})
+											.catch(() => {});
+									} else {
+										const message = await caseRecordChannel.send({ embeds: newAPIEmbeds });
+
+										messageURL = messageLink(caseRecordChannel.id, message.id, guildId);
+									}
+
+									assert(messageURL);
+
+									const messageURLButton = new ButtonBuilder()
+										.setLabel(`CASE ${caseData.id}`)
+										.setStyle(ButtonStyle.Link)
+										.setURL(messageURL);
+
+									const buttonActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+										messageURLButton
+									);
+
+									buttonActionRows.push(buttonActionRow);
+								}
+
+								await DBConnectionManager.Prisma.case.update({
+									where: { id: caseData.id },
+									data: {
+										messageURL,
+										apiEmbeds: newAPIEmbeds,
+										reason: reason
+									},
+									select: {
+										id: true
+									}
+								});
+							}
+
+							break;
+
+						default:
+							throw new Error("Unexpected type");
+					}
+				}
 			},
 			successContent: `${type === "edit" ? "edited the reason for" : "removed"} case ${inlineCode(caseData.id)}`,
 			buttonActionRows
