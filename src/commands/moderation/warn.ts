@@ -151,6 +151,22 @@ export abstract class Warn {
 		}
 	}
 
+	@Slash({ description: "Edit a warn case. Internally calls /case edit" })
+	public async edit(
+		@Case.IDSlashOption()
+		caseID: string | undefined,
+		@ReasonSlashOption({ isAmmendedReason: true, required: true })
+		newReason: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Case.modify({
+			interaction,
+			caseID,
+			type: CaseModifyType.EDIT,
+			reason: newReason
+		});
+	}
+
 	@Slash({ description: "List the warnings of a user. Internally calls /case list" })
 	public list(
 		@TargetSlashOption({
