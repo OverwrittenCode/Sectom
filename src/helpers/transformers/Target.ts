@@ -31,6 +31,13 @@ export function TargetTransformer(flags: Enums.CommandSlashOptionTargetFlags[] =
 			throw new ValidationError("given user does not exist in the server");
 		}
 
+		if (
+			flags.includes(Enums.CommandSlashOptionTargetFlags.NoBot) &&
+			(target instanceof GuildMember ? target.user : target instanceof User ? target : null)?.bot
+		) {
+			throw new ValidationError("bots are not allowed to be used here");
+		}
+
 		if (!flags.includes(Enums.CommandSlashOptionTargetFlags.Passive)) {
 			let punishmentReflexivePronoun: string | null = null;
 

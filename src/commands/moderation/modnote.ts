@@ -28,7 +28,7 @@ export abstract class ModNote {
 	public async add(
 		@TargetSlashOption({
 			entityType: EntityType.USER,
-			flags: [Enums.CommandSlashOptionTargetFlags.Guild]
+			flags: [Enums.CommandSlashOptionTargetFlags.Guild, Enums.CommandSlashOptionTargetFlags.NoBot]
 		})
 		target: GuildMember,
 		@ReasonSlashOption({ required: true })
@@ -74,7 +74,10 @@ export abstract class ModNote {
 
 	@Slash({ description: "Lists the modnotes of a user" })
 	public list(
-		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
+		@TargetSlashOption({
+			entityType: CommandUtils.entityType.USER,
+			flags: [Enums.CommandSlashOptionTargetFlags.Passive, Enums.CommandSlashOptionTargetFlags.NoBot]
+		})
 		target: User | GuildMember,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {

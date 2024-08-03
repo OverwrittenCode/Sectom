@@ -8,7 +8,8 @@ export namespace Enums {
 
 	export enum CommandSlashOptionTargetFlags {
 		Guild = "guild",
-		Passive = "passive"
+		Passive = "passive",
+		NoBot = "no_bot"
 	}
 
 	export enum ContentClusterPropertyType {
