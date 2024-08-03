@@ -17,7 +17,7 @@ export function AutoCompleteSlashOption(
 ) {
 	const cleanRegex = /[\s_\-\.,]/g;
 
-	const list = Array.isArray(glossary) ? glossary : Object.values(glossary);
+	const list = Array.isArray(glossary) ? glossary : Object.keys(glossary);
 
 	const choiceData: ApplicationCommandOptionChoiceData[] = list.map((value) => ({
 		name: value.toString(),
