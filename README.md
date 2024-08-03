@@ -20,7 +20,7 @@ Sectom offers a variety of slash commands across different categories:
 | Category   | Commands |
 |------------|----------|
 | 🔑 Admin      | config |
-| 🛠️ Moderation | mute, unmute, timeout, untimeout, kick, deafen, undeafen, ban, softban, unban, warn, nick, purge, case |
+| 🛠️ Moderation | mute, unmute, timeout, untimeout, kick, deafen, undeafen, ban, softban, unban, warn, nick, purge, case, modnote |
 | 🎭 Misc       | ping, leaderboard, help, rank, avatar |
 | 🎲 Games      | rps, ttt |
 
