@@ -240,6 +240,7 @@ export abstract class Case {
 				type: entityType
 			},
 			actionType,
+			reason,
 			actionOptions: {
 				notifyIfUser: false
 			},
