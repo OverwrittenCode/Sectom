@@ -3,7 +3,7 @@ import { ActionType, EntityType } from "@prisma/client";
 import { type ChatInputCommandInteraction, type GuildMember, PermissionFlagsBits, User } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup } from "discordx";
 
-import { Case } from "~/commands/moderation/case.js";
+import { Case, CaseModifyType } from "~/commands/moderation/case.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
@@ -58,7 +58,7 @@ export abstract class ModNote {
 		newModnote: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		return Case.modify(caseID, newModnote, interaction, "edit");
+		return Case.modify({ interaction, caseID, type: CaseModifyType.EDIT, reason: newModnote });
 	}
 
 	@Slash({ dmPermission: false, description: "Remove a modnote from a user" })
@@ -69,7 +69,7 @@ export abstract class ModNote {
 		modnote: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		return Case.modify(caseID, modnote, interaction, "remove");
+		return Case.modify({ interaction, caseID, type: CaseModifyType.REMOVE, reason: modnote });
 	}
 
 	@Slash({ description: "Lists the modnotes of a user" })
@@ -78,10 +78,8 @@ export abstract class ModNote {
 		target: User | GuildMember,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const { guildId } = interaction;
-
 		return ActionManager.listCases(interaction, {
-			guildId,
+			guildId: interaction.guildId,
 			targetId: target.id,
 			action: ActionType.MOD_NOTE_ADD
 		});

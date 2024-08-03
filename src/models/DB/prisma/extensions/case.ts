@@ -3,6 +3,7 @@ import { TimestampStyles, time } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 import type { FetchExtendedClient } from "~/models/DB/prisma/extensions/types/index.js";
 import { Beans } from "~/models/framework/DI/Beans.js";
@@ -10,7 +11,7 @@ import type { Typings } from "~/ts/Typings.js";
 
 import { EntityInstanceMethods } from "./entity.js";
 
-import type { ActionType, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { Simplify } from "type-fest";
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;
@@ -24,11 +25,9 @@ interface RelationFieldOptions {
 	targetId: string;
 }
 
-interface RetrieveCaseOptions {
-	allowedActions?: ActionType[];
+export interface RetrieveCaseOptions {
 	caseID?: string;
 	interaction: Typings.CachedGuildInteraction;
-	targetId?: string;
 }
 
 @singleton()
@@ -55,45 +54,23 @@ export class CaseInstanceMethods {
 		this: T,
 		options: RetrieveCaseOptions
 	): Promise<Simplify<Pick<Doc, keyof CaseInstanceMethods["retrieveCaseSelect"]>>> {
-		const { interaction, allowedActions, caseID, targetId } = options;
+		const { interaction, caseID } = options;
 		const { guildId } = interaction;
-
-		let caseDoc: Pick<Doc, keyof CaseInstanceMethods["retrieveCaseSelect"]> | undefined | null = null;
 
 		const clazz = container.resolve(CaseInstanceMethods);
 
-		if (caseID) {
-			caseDoc = await clazz.client.case
-				.fetchFirst({
-					where: {
-						guildId,
-						id: caseID
-					},
-					select: clazz.retrieveCaseSelect
-				})
-				.then((v) => v?.doc);
-		} else {
-			caseDoc = await clazz.client.case
-				.fetchFirst({
-					where: {
-						guildId,
-						targetId,
-						action: allowedActions
-							? {
-									in: allowedActions
-								}
-							: undefined
-					},
-					orderBy: {
-						createdAt: "desc"
-					},
-					select: clazz.retrieveCaseSelect
-				})
-				.then((v) => v?.doc);
-		}
+		const caseDoc = await clazz.client.case
+			.fetchFirst({
+				where: {
+					guildId,
+					id: caseID
+				},
+				select: clazz.retrieveCaseSelect
+			})
+			.then((v) => v?.doc);
 
 		if (!caseDoc) {
-			throw new ValidationError("no case records were found against the filter");
+			throw new ValidationError(InteractionUtils.messages.noData);
 		}
 
 		return caseDoc;

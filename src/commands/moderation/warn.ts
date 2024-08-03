@@ -1,9 +1,10 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType, CaseType, EntityType } from "@prisma/client";
-import { ApplicationCommandOptionType, PermissionFlagsBits, inlineCode } from "discord.js";
-import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
+import { PermissionFlagsBits, inlineCode } from "discord.js";
+import { Discord, Guard, Slash, SlashGroup } from "discordx";
 import ms from "ms";
 
+import { Case, CaseModifyType } from "~/commands/moderation/case.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
@@ -160,10 +161,8 @@ export abstract class Warn {
 		target: User | GuildMember,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const { guildId } = interaction;
-
 		return ActionManager.listCases(interaction, {
-			guildId,
+			guildId: interaction.guildId,
 			targetId: target.id,
 			action: ActionType.WARN_USER_ADD
 		});
@@ -171,43 +170,17 @@ export abstract class Warn {
 
 	@Slash({ description: "Remove a warn from a user" })
 	public async remove(
-		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
-		target: User | GuildMember,
-		@SlashOption({
-			description: "The warn case id. Defaults to the most recent",
-			name: "case_id",
-			type: ApplicationCommandOptionType.String
-		})
+		@Case.IDSlashOption()
 		caseID: string | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string | undefined,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const caseRecord = await DBConnectionManager.Prisma.case.retrieveCase({
+		return Case.modify({
 			interaction,
-			allowedActions: [ActionType.WARN_USER_ADD],
 			caseID,
-			targetId: target.id
-		});
-
-		return await ActionManager.logCase({
-			interaction,
-			target: {
-				id: target.id,
-				type: EntityType.USER
-			},
-			reason,
-			actionType: ActionType.WARN_USER_REMOVE,
-			actionOptions: {
-				pastTense: "removed the warning from",
-				pendingExecution: async () => {
-					await DBConnectionManager.Prisma.case.delete({
-						where: {
-							id: caseRecord.id
-						}
-					});
-				}
-			}
+			type: CaseModifyType.REMOVE,
+			reason
 		});
 	}
 }

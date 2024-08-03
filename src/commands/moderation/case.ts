@@ -23,11 +23,33 @@ import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ObjectUtils } from "~/helpers/utils/object.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
+import { RetrieveCaseOptions } from "~/models/DB/prisma/extensions/case.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { EmbedManager } from "~/models/framework/managers/EmbedManager.js";
 import { Enums } from "~/ts/Enums.js";
+import { Typings } from "~/ts/Typings.js";
 
 import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember, User } from "discord.js";
+
+interface BaseCaseModifyOptions
+	extends Typings.DisplaceObjects<RetrieveCaseOptions, { interaction: ChatInputCommandInteraction<"cached"> }> {}
+
+interface CaseEditOptions extends BaseCaseModifyOptions {
+	type: CaseModifyType.EDIT;
+	reason: string;
+}
+
+interface CaseRemoveOptions extends BaseCaseModifyOptions {
+	type: CaseModifyType.REMOVE;
+	reason?: string;
+}
+
+type CaseModifyOptions = CaseEditOptions | CaseRemoveOptions;
+
+export enum CaseModifyType {
+	EDIT = "edit",
+	REMOVE = "remove"
+}
 
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
@@ -48,12 +70,9 @@ export abstract class Case {
 		};
 	}
 
-	public static async modify(
-		caseID: string,
-		reason: string,
-		interaction: ChatInputCommandInteraction<"cached">,
-		type: "edit" | "remove"
-	) {
+	public static async modify(options: CaseModifyOptions) {
+		const { interaction, caseID, type, reason = InteractionUtils.messages.noReason } = options;
+
 		const { guildId } = interaction;
 
 		const caseData = await DBConnectionManager.Prisma.case.retrieveCase({
@@ -237,7 +256,12 @@ export abstract class Case {
 		newReason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		return Case.modify(caseID, newReason, interaction, "edit");
+		return Case.modify({
+			interaction,
+			caseID,
+			type: CaseModifyType.EDIT,
+			reason: newReason
+		});
 	}
 
 	@Slash({ description: "List and filter all cases on the server" })
