@@ -29,8 +29,8 @@ export function AutoCompleteSlashOption(
 		return str.replace(cleanRegex, "").toLowerCase();
 	};
 
-	const transformer = (v: AutocompleteValue, _interaction: ChatInputCommandInteraction) => {
-		if (list.findIndex((value) => value === v) === -1) {
+	const transformer = (v: AutocompleteValue | undefined, _interaction: ChatInputCommandInteraction) => {
+		if (typeof v !== "undefined" && list.findIndex((value) => value === v) === -1) {
 			throw new ValidationError("Unsupported input, you must choose an option from the list provided");
 		}
 
