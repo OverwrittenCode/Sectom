@@ -269,14 +269,6 @@ export class GameController {
 			embeds: [confirmationEmbed]
 		});
 
-		console.log("[GAME START] > Started new game", {
-			deuce,
-			title,
-			rounds,
-			maxDecisionTime,
-			gameMode
-		});
-
 		while (true) {
 			const playerActions = await this.requestPlayerActions();
 
@@ -302,7 +294,6 @@ export class GameController {
 
 					if (isGameRenew) {
 						this.components = this.blankBoard;
-						console.log("[GAME UPDATE] > Board has been cleared");
 					}
 				}
 
@@ -312,11 +303,6 @@ export class GameController {
 				});
 
 				if (isGameRenew) {
-					console.log("[GAME RENEW] > Nobody has won yet", {
-						winThreshold: this.winThreshold,
-						scores: this.scores
-					});
-
 					this.gameStatus = null;
 				}
 
@@ -329,8 +315,6 @@ export class GameController {
 				break;
 			}
 		}
-
-		console.log("[GAME END] > Game concluded.");
 
 		const endGameEmbed = new EmbedBuilder().setFooter({
 			text: `Final Score: ${this.scores.join(" - ")}`
@@ -377,21 +361,15 @@ export class GameController {
 
 		if (this.settings.disableOnClick) {
 			this.enabledButtonIDs = this.resetEnabledButtons();
-
-			console.log("[GAME UPDATE] > All buttons have been enabled");
 		}
 
 		if (this.settings.turnBased) {
 			this.currentPlayerIndex = -1;
-
-			console.log("[GAME UPDATE] > Set the current player index back to -1");
 		}
 
 		if (this.teamList.length) {
 			this.players.forEach((player) => player.resetTeam());
 			this.teamList = Object.values(this.settings.teams ?? {});
-
-			console.log("[GAME UPDATE] > Teams have been reset");
 		}
 
 		if (typeof data === "string") {
@@ -451,17 +429,6 @@ export class GameController {
 
 		this.playerActionsPerGame.set(action.customId, action);
 		this.playerActionsPerRound.set(action.customId, action);
-
-		console.log(
-			[
-				"[PLAYER RECORD]",
-				` > [BUTTON PRESSED] > ${action.customId}`,
-				` > [ACTION BY] > ${action.profile.member.displayName}`,
-				` > [TEAM / LABEL DISPLAY] > ${action.profile.team}`,
-				` > [MOVE#] > ${this.playerActionsPerGame.size}`,
-				` > [SPECIAL RULE] > ${this.specialRule}`
-			].join(StringUtils.lineBreak)
-		);
 
 		return this.playerActionsPerRound;
 	}
@@ -566,8 +533,6 @@ export class GameController {
 
 			if (isBelowThreshold) {
 				this.specialRule = null;
-			} else {
-				console.log(`[SPECIAL RULE] > ${this.specialRule} has been chosen for this round`);
 			}
 		} else {
 			this.specialRule = null;
@@ -576,14 +541,6 @@ export class GameController {
 		const incrementValue = +(this.specialRule === Enums.GameMode["Skip Turn"]) + 1;
 
 		this.currentPlayerIndex = (previousPlayerIndex + incrementValue) % this.players.length;
-
-		console.log("[TURN DECISION] > Updated", {
-			incrementValue,
-			previousPlayer: this.players[Math.max(previousPlayerIndex, 0)].member.displayName,
-			currentPlayer: this.players[this.currentPlayerIndex].member.displayName,
-			previousPlayerIndex,
-			totalActions
-		});
 
 		if (this.specialRule === Enums.GameMode.Jumble) {
 			this.enabledButtonIDs.clear();
@@ -640,10 +597,6 @@ export class GameController {
 
 			this.players.forEach((player, i) => {
 				const newTeam = this.teamList[i];
-
-				console.log(
-					`[PLAYER SWITCH TEAM] > Player ${player.member.displayName} moving from [${player.team}] to [${newTeam}]`
-				);
 
 				player.setTeam(newTeam);
 			});

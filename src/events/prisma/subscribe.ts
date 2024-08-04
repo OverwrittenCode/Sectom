@@ -25,18 +25,12 @@ abstract class Subscriptions {
 
 		const subscriptions = await Promise.all(prismaModels.map((model) => model.subscribe()));
 
-		type Subscription = (typeof subscriptions)[number];
-
-		const subscriptionTask = async (subscription: Subscription) => {
+		const subscriptionTask = async (subscription: (typeof subscriptions)[number]) => {
 			if (subscription instanceof Error) {
 				throw subscription;
 			}
 
-			subscription;
-
 			for await (const event of subscription) {
-				console.log({ event });
-
 				const eventData = event as PulseEventData<Prisma.ModelName>;
 
 				const cacheModel = RedisCache[eventData.modelName.toLowerCase() as Lowercase<Prisma.ModelName>];
@@ -68,7 +62,7 @@ abstract class Subscriptions {
 
 							break;
 					}
-				} catch (_) {}
+				} catch {}
 			}
 		};
 

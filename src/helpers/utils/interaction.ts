@@ -147,8 +147,6 @@ export abstract class InteractionUtils {
 			new ButtonBuilder().setLabel(cancelLabel).setStyle(ButtonStyle.Secondary).setCustomId(cancelButtonId)
 		);
 
-		console.log({ confirmationTimeFooterEmbedIndex, replyOptions });
-
 		if (confirmationTimeFooterEmbedIndex !== null && replyOptions.embeds?.length) {
 			const embed = EmbedBuilder.from(replyOptions.embeds[confirmationTimeFooterEmbedIndex]);
 
@@ -160,8 +158,6 @@ export abstract class InteractionUtils {
 			);
 
 			Object.assign(replyOptions.embeds[confirmationTimeFooterEmbedIndex], embed);
-
-			console.log(replyOptions.embeds[0]);
 		}
 
 		const confirmMessage = await this.replyOrFollowUp(interaction, {

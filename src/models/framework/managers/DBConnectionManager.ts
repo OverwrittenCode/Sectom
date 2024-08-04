@@ -9,30 +9,13 @@ import { PrismaExtensions } from "~/models/DB/prisma/extensions/index.js";
 export abstract class DBConnectionManager {
 	public static Prisma: ReturnType<typeof DBConnectionManager.createPrismaClient>;
 	public static Redis: RedisClient;
-	public static connectionDates: {
-		redis?: Date;
-		prisma?: Date;
-	} = {};
 
 	public static async initPrisma(): Promise<"OK"> {
 		if (!this.Prisma) {
-			console.group("[PRISMA]");
-
 			const prisma = this.createPrismaClient();
-
-			console.log("> > Connecting...");
 			await prisma.$connect();
 
 			this.Prisma = prisma;
-
-			this.connectionDates.prisma = new Date();
-
-			console.log("> >> Connected", this.connectionDates.prisma);
-
-			// import("~/events/prisma/subscribe.js");
-
-			// console.log("> Started Model Subscriptions")
-			console.groupEnd();
 		}
 
 		return "OK";
@@ -40,19 +23,12 @@ export abstract class DBConnectionManager {
 
 	public static async initRedis(): Promise<"OK"> {
 		if (!this.Redis) {
-			console.group("[REDIS]");
-			console.log("> > Connecting...");
-
 			const redisClient = RedisClient.fromEnv({
 				automaticDeserialization: false,
 				latencyLogging: true
 			});
 
 			this.Redis = redisClient;
-			this.connectionDates.redis = new Date();
-
-			console.log("> >> Connected", this.connectionDates.redis);
-			console.groupEnd();
 		}
 
 		return "OK";

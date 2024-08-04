@@ -58,41 +58,21 @@ export abstract class Main {
 		}
 	});
 
-	public static connectionDates: {
-		loggedIn?: Date;
-		readyAt?: Date;
-	} = {};
-
 	public static async start() {
 		try {
 			assert(BOT_TOKEN, "BOT_TOKEN is not set in the environment variables.");
 
 			DIService.engine = tsyringeDependencyRegistryEngine.setInjector(container);
-			console.log("---------------------[START]--------------------");
-			console.group("[DATABASE]");
+
 			await DBConnectionManager.initRedis();
 			await DBConnectionManager.initPrisma();
 
-			console.groupEnd();
-
 			container.registerInstance<Client>(Beans.ISectomToken, this.bot);
 
-			console.group("[FILES]");
-			console.log("> Importing files...");
 			await importx(`${dirname(import.meta.url)}/{events,commands}/**/*.{ts,js}`);
-			console.log("> > Success");
-			console.groupEnd();
-
-			console.group("[DISCORD BOT]");
-
-			console.group("[LOGIN]");
-			console.log("> Logging in...");
-
-			console.group("[DISCORDX INFO]");
 
 			await this.bot.login(BOT_TOKEN);
 		} catch (err) {
-			console.error(err);
 			throw err;
 		}
 	}
@@ -102,16 +82,6 @@ export abstract class Main {
 	})
 	private async init([client]: ArgsOf<Events.ClientReady>): Promise<void> {
 		try {
-			console.groupEnd();
-
-			Main.connectionDates.loggedIn = new Date();
-			console.log(`> > Logged in as ${client.user.tag}`, Main.connectionDates.loggedIn);
-			console.groupEnd();
-
-			console.group("[APPLICATION COMMANDS]");
-			console.log("> Initialising application commands...");
-
-			console.group("[DISCORDX INFO]");
 			await Main.bot.initApplicationCommands();
 
 			const commandSlashes = _.cloneDeep(
@@ -143,40 +113,7 @@ export abstract class Main {
 				values: Object.values(categoryGroupedObj),
 				obj: categoryGroupedObj
 			};
-
-			console.groupEnd();
-
-			console.log("> > Success");
-			console.groupEnd();
-
-			Main.connectionDates.readyAt = new Date();
-			console.log("> Bot is ready.", Main.connectionDates.readyAt);
-			console.groupEnd();
-
-			console.group("[TIMING]");
-
-			const { prisma, redis } = DBConnectionManager.connectionDates;
-			const { loggedIn, readyAt } = Main.connectionDates;
-
-			const timings = {
-				Databases: {
-					prisma,
-					redis
-				},
-				DiscordBot: {
-					loggedIn,
-					readyAt
-				}
-			};
-
-			const discordBotTimeDifference = readyAt.getTime() - loggedIn.getTime();
-
-			console.log(timings);
-			console.log("> > Ready in", discordBotTimeDifference, "ms");
-			console.groupEnd();
-			console.log("---------------------[END]--------------------");
 		} catch (err) {
-			console.error(err);
 			throw err;
 		}
 	}
