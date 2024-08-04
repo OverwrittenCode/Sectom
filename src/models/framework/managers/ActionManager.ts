@@ -56,6 +56,8 @@ type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn:
 		: never
 	: never;
 
+type CommandMentionArgs = [commandName: string, subcommandGroupName: string, subcommandName: string, commandId: string];
+
 interface ActionOptions {
 	checkPossible?: (guildMember: GuildMember) => boolean;
 	notifyIfUser?: boolean;
@@ -418,12 +420,10 @@ export abstract class ActionManager {
 				}
 			}
 
-			const commandMentionArgs = commandString.slice(1).split(" ").concat(commandInteraction.commandId) as [
-				commandName: string,
-				subcommandGroupName: string,
-				subcommandName: string,
-				commandId: string
-			];
+			const commandMentionArgs = commandString
+				.slice(1)
+				.split(" ")
+				.concat(commandInteraction.commandId) as CommandMentionArgs;
 
 			const nestedCommandOption = commandOption.options?.[0];
 
@@ -467,9 +467,15 @@ export abstract class ActionManager {
 		} else if (interaction.isModalSubmit() && interaction.isFromMessage() && interaction.message.interaction) {
 			const { commandName } = interaction.message.interaction;
 
-			const { id } = interaction.guild.commands.cache.find(({ name }) => name === commandName) ?? { id: "???" };
+			const commandElements = commandName.split(" ").slice(0, 3);
 
-			commandInputEmbed.setDescription(discordBuilders.chatInputApplicationCommandMention(commandName, id));
+			const { id } = interaction.guild.commands.cache.find(({ name }) => name === commandElements[0]) ?? {
+				id: "???"
+			};
+
+			const commandMentionArgs = commandElements.concat(id) as CommandMentionArgs;
+
+			commandInputEmbed.setDescription(discordBuilders.chatInputApplicationCommandMention(...commandMentionArgs));
 
 			embeds.push(commandInputEmbed);
 		}
