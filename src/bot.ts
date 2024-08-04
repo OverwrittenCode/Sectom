@@ -80,7 +80,7 @@ export abstract class Main {
 	@On({
 		event: Events.ClientReady
 	})
-	private async init([client]: ArgsOf<Events.ClientReady>): Promise<void> {
+	private async init([_client]: ArgsOf<Events.ClientReady>): Promise<void> {
 		try {
 			await Main.bot.initApplicationCommands();
 
