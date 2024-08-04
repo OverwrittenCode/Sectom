@@ -203,7 +203,7 @@ export abstract class ContentClusterManager {
 					baseID: customIdRecords[`${componentType}_setup`].id,
 					messageComponentType: Enums.MessageComponentType.Button
 				},
-
+				Enums.MessageComponentType.Modal,
 				modifierType
 			);
 
