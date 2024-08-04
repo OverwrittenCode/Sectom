@@ -17,7 +17,7 @@ import type {
 	AutocompleteInteraction,
 	ChatInputCommandInteraction
 } from "discord.js";
-import type { ParameterDecoratorEx, SlashOptionOptions } from "discordx";
+import type { ParameterDecoratorEx, SlashOptionOptions, TransformerFunction } from "discordx";
 
 interface DurationOptions {
 	descriptionPrefix?: string;
@@ -124,7 +124,10 @@ export function DurationSlashOption(options: DurationOptions): ParameterDecorato
 		}
 	} as SlashOptionOptions<Lowercase<string>, string>;
 
-	const transformer = (msDurationStr: string | undefined, interaction: ChatInputCommandInteraction) => {
+	const transformer: TransformerFunction = (
+		msDurationStr: string | undefined,
+		interaction: ChatInputCommandInteraction
+	) => {
 		assert(interaction.inCachedGuild());
 
 		const rangeValue = DurationGetRangeValue(interaction, transformerOptions);

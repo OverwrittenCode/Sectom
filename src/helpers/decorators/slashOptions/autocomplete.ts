@@ -8,7 +8,7 @@ import type {
 	AutocompleteInteraction,
 	ChatInputCommandInteraction
 } from "discord.js";
-import type { ParameterDecoratorEx, SlashOptionOptions } from "discordx";
+import type { ParameterDecoratorEx, SlashOptionOptions, TransformerFunction } from "discordx";
 
 type AutocompleteValue = ApplicationCommandOptionChoiceData["value"];
 
@@ -29,7 +29,10 @@ export function AutoCompleteSlashOption(
 		return str.replace(cleanRegex, "").toLowerCase();
 	};
 
-	const transformer = (v: AutocompleteValue | undefined, _interaction: ChatInputCommandInteraction) => {
+	const transformer: TransformerFunction = (
+		v: AutocompleteValue | undefined,
+		_interaction: ChatInputCommandInteraction
+	) => {
 		if (typeof v !== "undefined" && list.findIndex((value) => value === v) === -1) {
 			throw new ValidationError("Unsupported input, you must choose an option from the list provided");
 		}

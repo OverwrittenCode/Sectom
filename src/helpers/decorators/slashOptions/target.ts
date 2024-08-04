@@ -10,7 +10,7 @@ import { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 
 import type { ChatInputCommandInteraction } from "discord.js";
-import type { ParameterDecoratorEx, SlashOptionOptions } from "discordx";
+import type { ParameterDecoratorEx, SlashOptionOptions, TransformerFunction } from "discordx";
 
 interface TargetSlashOptionArguments {
 	channelTypes?: ChannelType[];
@@ -65,7 +65,7 @@ export function TargetSlashOption(args: TargetSlashOptionArguments): ParameterDe
 		channelTypes
 	} as SlashOptionOptions<Lowercase<string>, string>;
 
-	const transformer = (
+	const transformer: TransformerFunction = (
 		target: Typings.EntityObjectType | string | undefined,
 		interaction: ChatInputCommandInteraction
 	): Typings.EntityObjectType<true> | undefined => {

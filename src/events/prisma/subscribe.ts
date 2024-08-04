@@ -27,7 +27,7 @@ abstract class Subscriptions {
 
 		const subscriptionTask = async (subscription: (typeof subscriptions)[number]) => {
 			if (subscription instanceof Error) {
-				throw subscription;
+				return console.error(subscription);
 			}
 
 			for await (const event of subscription) {
@@ -35,34 +35,32 @@ abstract class Subscriptions {
 
 				const cacheModel = RedisCache[eventData.modelName.toLowerCase() as Lowercase<Prisma.ModelName>];
 
-				try {
-					switch (eventData.action) {
-						case "create":
-							{
-								const { created } = eventData;
+				switch (eventData.action) {
+					case "create":
+						{
+							const { created } = eventData;
 
-								await cacheModel.set(created as never);
-							}
+							await cacheModel.set(created as never);
+						}
 
-							break;
-						case "update":
-							{
-								const { after } = eventData;
+						break;
+					case "update":
+						{
+							const { after } = eventData;
 
-								await cacheModel.update(after as never);
-							}
+							await cacheModel.update(after as never);
+						}
 
-							break;
-						case "delete":
-							{
-								const { deleted } = eventData;
+						break;
+					case "delete":
+						{
+							const { deleted } = eventData;
 
-								await cacheModel.delete(deleted.id);
-							}
+							await cacheModel.delete(deleted.id);
+						}
 
-							break;
-					}
-				} catch {}
+						break;
+				}
 			}
 		};
 

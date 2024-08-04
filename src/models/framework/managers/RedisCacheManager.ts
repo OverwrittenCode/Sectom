@@ -138,16 +138,21 @@ export abstract class RedisCacheManager<
 		);
 	}
 
-	public async set(input: TDoc<M>): Promise<"OK"> {
-		const doc = this.withIDField(input);
-
+	public async set(input: TDoc<M>, doc = this.withIDField(input)): Promise<"OK"> {
 		await this.collection.set(doc.id, doc as PrismaDoc<M>);
+
 		return "OK";
 	}
 
-	public async update(after: TDoc<M>) {
+	public async update(after: TDoc<M>): Promise<"OK"> {
 		const doc = this.withIDField(after);
 
-		return await this.collection.update(doc.id, doc as PrismaDoc<M>);
+		try {
+			await this.collection.update(doc.id, doc as PrismaDoc<M>);
+		} catch {
+			await this.set(after, doc);
+		}
+
+		return "OK";
 	}
 }
