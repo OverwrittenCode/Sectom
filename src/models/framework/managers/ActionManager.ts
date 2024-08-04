@@ -295,7 +295,16 @@ export abstract class ActionManager {
 	}
 
 	public static async logCase(options: LogCaseOptions) {
-		const { interaction, target, reason, actionType, caseType, actionOptions, successContent, tx } = options;
+		const {
+			interaction,
+			target,
+			reason = InteractionUtils.messages.noReason,
+			actionType,
+			caseType,
+			actionOptions,
+			successContent,
+			tx
+		} = options;
 
 		let { buttonActionRows = [] } = options;
 

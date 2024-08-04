@@ -227,7 +227,7 @@ export abstract class TicketConfig {
 		})
 		prompt: boolean | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const updatedSettings = { staffRoleId: staffRole?.id, autoStaffMention, prompt };
@@ -277,7 +277,7 @@ export abstract class TicketConfig {
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("ticket", reason, interaction);
@@ -562,7 +562,7 @@ export abstract class TicketConfigMessageComponentHandler {
 				id: channelId,
 				type: EntityType.CHANNEL
 			},
-			reason: reason ?? InteractionUtils.messages.noReason,
+			reason,
 			actionType,
 			actionOptions: {
 				pendingExecution: save

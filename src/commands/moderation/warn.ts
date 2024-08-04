@@ -36,7 +36,7 @@ export abstract class Warn {
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;
@@ -188,7 +188,7 @@ export abstract class Warn {
 		@Case.IDSlashOption()
 		caseID: string | undefined,
 		@ReasonSlashOption()
-		reason: string | undefined,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Case.modify({

@@ -68,7 +68,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -87,7 +87,7 @@ export abstract class Purge {
 		@Purge.CountSlashOption()
 		count: number = Purge.defaultMessageFetchLimit,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -106,7 +106,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -129,7 +129,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -156,7 +156,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -184,7 +184,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -205,7 +205,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -226,7 +226,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -258,7 +258,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -279,7 +279,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -301,7 +301,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -334,7 +334,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const messageMentionRegexArray: RegExp[] = [
@@ -371,7 +371,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -403,7 +403,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -430,7 +430,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {
@@ -461,7 +461,7 @@ export abstract class Purge {
 		@Purge.InverseFilterSlashOption()
 		inverse: boolean = false,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.handler(interaction, {

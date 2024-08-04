@@ -367,7 +367,8 @@ export abstract class ContentClusterMessageComponentHandler {
 
 		const subjects = componentConfiguration.subjects;
 
-		const continuousTense = modifierType.slice(0, -1) + "ing";
+		const continuousTense =
+			modifierType.slice(0, modifierType === Enums.ModifierType.Add ? modifierType.length : -1) + "ing";
 
 		const [name, description, reason, emoji, colour, linkedSubject] = [
 			BaseTextInputField.Name,
@@ -477,7 +478,7 @@ export abstract class ContentClusterMessageComponentHandler {
 				id: channelId,
 				type: EntityType.CHANNEL
 			},
-			reason: reason ?? InteractionUtils.messages.noReason,
+			reason,
 			actionType,
 			actionOptions: {
 				pendingExecution: () =>

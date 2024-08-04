@@ -37,7 +37,7 @@ export abstract class Timeout {
 		})
 		msDuration: number,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const auditReason = ActionManager.generateAuditReason(interaction, reason);
@@ -73,7 +73,7 @@ export abstract class Timeout {
 		})
 		target: GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const isTimedOut = target.isCommunicationDisabled();

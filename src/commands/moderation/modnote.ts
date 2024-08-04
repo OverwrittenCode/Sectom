@@ -66,7 +66,7 @@ export abstract class ModNote {
 		@Case.IDSlashOption()
 		caseID: string,
 		@ReasonSlashOption()
-		modnote: string | undefined,
+		modnote: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Case.modify({ interaction, caseID, type: CaseModifyType.REMOVE, reason: modnote });

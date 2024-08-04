@@ -9,7 +9,6 @@ import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
-import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { Enums } from "~/ts/Enums.js";
 
@@ -37,7 +36,7 @@ export abstract class Ban {
 		})
 		msDuration: number | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		await this.validateBanStatus(interaction, target, false);
@@ -78,7 +77,7 @@ export abstract class Ban {
 		})
 		msDuration: number,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		await this.validateBanStatus(interaction, target, false);
@@ -119,7 +118,7 @@ export abstract class Ban {
 		@TargetSlashOption({ entityType: CommandUtils.entityType.USER })
 		target: User | GuildMember,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		await this.validateBanStatus(interaction, target, true);

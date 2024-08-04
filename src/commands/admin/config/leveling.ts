@@ -9,7 +9,6 @@ import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
-import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ObjectUtils } from "~/helpers/utils/object.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
@@ -47,7 +46,7 @@ export abstract class LevelingConfig {
 		})
 		role: Role | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;
@@ -118,7 +117,7 @@ export abstract class LevelingConfig {
 		})
 		target: Typings.EntityObjectType | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.mutualPropertyHandler(cooldown * 1000, "cooldown", target, reason, interaction);
@@ -142,7 +141,7 @@ export abstract class LevelingConfig {
 		})
 		target: Typings.EntityObjectType | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return this.mutualPropertyHandler(multiplier, "multiplier", target, reason, interaction);
@@ -151,7 +150,7 @@ export abstract class LevelingConfig {
 	@Slash({ description: "Toggles the stackXPMultipliers true/false" })
 	public async stackxpmultipliers(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId, channelId } = interaction;
@@ -182,7 +181,7 @@ export abstract class LevelingConfig {
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("leveling", reason, interaction);

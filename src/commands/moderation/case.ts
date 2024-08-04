@@ -31,20 +31,11 @@ import { Typings } from "~/ts/Typings.js";
 
 import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember, User } from "discord.js";
 
-interface BaseCaseModifyOptions
-	extends Typings.DisplaceObjects<RetrieveCaseOptions, { interaction: ChatInputCommandInteraction<"cached"> }> {}
-
-interface CaseEditOptions extends BaseCaseModifyOptions {
-	type: CaseModifyType.EDIT;
+interface CaseModifyOptions
+	extends Typings.DisplaceObjects<RetrieveCaseOptions, { interaction: ChatInputCommandInteraction<"cached"> }> {
+	type: CaseModifyType;
 	reason: string;
 }
-
-interface CaseRemoveOptions extends BaseCaseModifyOptions {
-	type: CaseModifyType.REMOVE;
-	reason?: string;
-}
-
-type CaseModifyOptions = CaseEditOptions | CaseRemoveOptions;
 
 export enum CaseModifyType {
 	EDIT = "edit",
@@ -71,7 +62,7 @@ export abstract class Case {
 	}
 
 	public static async modify(options: CaseModifyOptions) {
-		const { interaction, caseID, type, reason = InteractionUtils.messages.noReason } = options;
+		const { interaction, caseID, type, reason } = options;
 
 		const { guildId } = interaction;
 

@@ -8,7 +8,6 @@ import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { GivenChannelSlashOption } from "~/helpers/decorators/slashOptions/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
-import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
@@ -52,7 +51,7 @@ export abstract class LogChannelConfig {
 		@LogChannelConfig.ActionChoiceSlashOption(true)
 		actionTypeChoice: ActionTypeChoice,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const actionTypeGroup = actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
@@ -105,7 +104,7 @@ export abstract class LogChannelConfig {
 		@LogChannelConfig.ActionChoiceSlashOption()
 		actionTypeChoice: ActionTypeChoice | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;

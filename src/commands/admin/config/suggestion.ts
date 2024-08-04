@@ -65,7 +65,7 @@ export abstract class SuggestionConfig {
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("suggestion", reason, interaction);

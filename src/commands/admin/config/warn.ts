@@ -11,7 +11,6 @@ import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
-import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
@@ -47,7 +46,7 @@ export abstract class WarnConfig {
 		})
 		multiplier: number | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId } = interaction;
@@ -134,7 +133,7 @@ export abstract class WarnConfig {
 		})
 		msDuration: number | undefined,
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		const { guildId, channelId } = interaction;
@@ -229,7 +228,7 @@ export abstract class WarnConfig {
 	@Slash({ description: "Enables/disables this configuration " })
 	public toggle(
 		@ReasonSlashOption()
-		reason: string = InteractionUtils.messages.noReason,
+		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
 		return Config.togglestate("warning", reason, interaction);
