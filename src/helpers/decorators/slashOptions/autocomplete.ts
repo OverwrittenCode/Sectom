@@ -1,5 +1,6 @@
 import { SlashOption } from "discordx";
 
+import { MAX_AUTOCOMPLETE_OPTION_LIMIT } from "~/constants.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 
 import type {
@@ -7,14 +8,14 @@ import type {
 	AutocompleteInteraction,
 	ChatInputCommandInteraction
 } from "discord.js";
-import type { SlashOptionOptions } from "discordx";
+import type { ParameterDecoratorEx, SlashOptionOptions } from "discordx";
 
 type AutocompleteValue = ApplicationCommandOptionChoiceData["value"];
 
 export function AutoCompleteSlashOption(
 	slashOptions: SlashOptionOptions<Lowercase<string>, string>,
 	glossary: AutocompleteValue[] | Record<AutocompleteValue, AutocompleteValue>
-) {
+): ParameterDecoratorEx {
 	const cleanRegex = /[\s_\-\.,]/g;
 
 	const list = Array.isArray(glossary) ? glossary : Object.keys(glossary);
@@ -45,7 +46,7 @@ export function AutoCompleteSlashOption(
 
 		const choiceArr = filteredChoices.length ? filteredChoices : choiceData;
 
-		interaction.respond(choiceArr.slice(0, 25));
+		interaction.respond(choiceArr.slice(0, MAX_AUTOCOMPLETE_OPTION_LIMIT));
 	};
 
 	return function (target: Record<string, any>, propertyKey: string, parameterIndex: number) {

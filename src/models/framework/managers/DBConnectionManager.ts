@@ -13,6 +13,7 @@ export abstract class DBConnectionManager {
 	public static async initPrisma(): Promise<"OK"> {
 		if (!this.Prisma) {
 			const prisma = this.createPrismaClient();
+
 			await prisma.$connect();
 
 			this.Prisma = prisma;
