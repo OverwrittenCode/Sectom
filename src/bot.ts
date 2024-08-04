@@ -29,7 +29,7 @@ import type { Typings } from "~/ts/Typings.js";
 const { BOT_TOKEN } = process.env;
 
 @Discord()
-export abstract class Main {
+abstract class Main {
 	public static readonly bot = new Client({
 		botId: BOT_ID,
 		botGuilds: GUILD_IDS,
