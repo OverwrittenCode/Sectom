@@ -485,7 +485,10 @@ export abstract class ActionManager {
 							targetType === "USER"
 								? this.getUserHyperlink(targetId)
 								: targetType === "CHANNEL"
-									? discordBuilders.channelLink(channelId, guildId)
+									? discordBuilders.hyperlink(
+											channelId,
+											discordBuilders.channelLink(channelId, guildId)
+										)
 									: targetId
 					},
 					{
