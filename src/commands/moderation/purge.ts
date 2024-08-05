@@ -627,11 +627,21 @@ export abstract class Purge {
 				? "No messages were deleted"
 				: `deleted ${deletedSuccessCount} / ${count} messages`;
 
+		const buttonLabel = StringUtils.capitaliseFirstLetter(messageContent);
+
 		if (purgeChannel.id !== interaction.channelId) {
 			messageContent += ` in ${purgeChannel.toString()}`;
 		}
 
 		if (deletedSuccessCount) {
+			const button = new ButtonBuilder()
+				.setCustomId("_purgeCount")
+				.setStyle(ButtonStyle.Secondary)
+				.setLabel(buttonLabel)
+				.setDisabled(true);
+
+			const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
 			return await ActionManager.logCase({
 				interaction,
 				reason,
@@ -640,7 +650,8 @@ export abstract class Purge {
 					id: purgeChannel.id,
 					type: CommandUtils.entityType.CHANNEL
 				},
-				successContent: messageContent
+				successContent: messageContent,
+				logBasedButtonActionRows: [actionRow]
 			});
 		}
 

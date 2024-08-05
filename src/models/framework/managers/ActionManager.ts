@@ -69,6 +69,7 @@ interface BaseLogCaseOptions {
 	actionOptions?: ActionOptions;
 	actionType: ActionType;
 	buttonActionRows?: ActionRowBuilder<ButtonBuilder>[];
+	logBasedButtonActionRows?: ActionRowBuilder<ButtonBuilder>[];
 	caseType?: CaseType;
 	reason?: string;
 	successContent?: string;
@@ -300,6 +301,7 @@ export abstract class ActionManager {
 			target,
 			reason = InteractionUtils.messages.noReason,
 			actionType,
+			logBasedButtonActionRows,
 			caseType,
 			actionOptions,
 			successContent,
@@ -570,7 +572,9 @@ export abstract class ActionManager {
 
 		if (moderativeLogChannel) {
 			try {
-				logMessage = await moderativeLogChannel.send({ embeds: formattedEmbeds, components: buttonActionRows });
+				const components = logBasedButtonActionRows ?? buttonActionRows;
+
+				logMessage = await moderativeLogChannel.send({ embeds: formattedEmbeds, components });
 				messageURL = logMessage.url;
 			} catch (err) {
 				if (!InteractionUtils.isPermissionError(err)) {
