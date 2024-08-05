@@ -1,19 +1,17 @@
-import { SlashOption } from "discordx";
-
 import { MAX_AUTOCOMPLETE_OPTION_LIMIT } from "~/constants.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
+import type { Typings } from "~/ts/Typings.js";
 
-import type {
-	ApplicationCommandOptionChoiceData,
-	AutocompleteInteraction,
-	ChatInputCommandInteraction
-} from "discord.js";
-import type { ParameterDecoratorEx, SlashOptionOptions, TransformerFunction } from "discordx";
+import type { ApplicationCommandOptionChoiceData } from "discord.js";
+import type { ParameterDecoratorEx, SlashOptionAutoCompleteOptions } from "discordx";
 
-type AutocompleteValue = ApplicationCommandOptionChoiceData["value"];
+type SlashOptionOptions = SlashOptionAutoCompleteOptions<Lowercase<string>, string>;
+
+type AutocompleteValue = NonNullable<Typings.SlashOptionTransformerValueParam<SlashOptionOptions>>;
 
 export function AutoCompleteSlashOption(
-	slashOptions: SlashOptionOptions<Lowercase<string>, string>,
+	options: SlashOptionOptions,
 	glossary: AutocompleteValue[] | Record<AutocompleteValue, AutocompleteValue>
 ): ParameterDecoratorEx {
 	const cleanRegex = /[\s_\-\.,]/g;
@@ -29,18 +27,7 @@ export function AutoCompleteSlashOption(
 		return str.replace(cleanRegex, "").toLowerCase();
 	};
 
-	const transformer: TransformerFunction = (
-		v: AutocompleteValue | undefined,
-		_interaction: ChatInputCommandInteraction
-	) => {
-		if (typeof v !== "undefined" && list.findIndex((value) => value === v) === -1) {
-			throw new ValidationError("Unsupported input, you must choose an option from the list provided");
-		}
-
-		return v;
-	};
-
-	slashOptions.autocomplete ??= (interaction: AutocompleteInteraction) => {
+	options.autocomplete ??= (interaction) => {
 		const activeSearch = interaction.options.getFocused();
 
 		const filteredChoices = choiceData.filter((choice) =>
@@ -52,7 +39,14 @@ export function AutoCompleteSlashOption(
 		interaction.respond(choiceArr.slice(0, MAX_AUTOCOMPLETE_OPTION_LIMIT));
 	};
 
-	return function (target: Record<string, any>, propertyKey: string, parameterIndex: number) {
-		SlashOption(slashOptions, transformer)(target, propertyKey, parameterIndex);
-	};
+	return CommandUtils.constructSlashOption({
+		options,
+		transformer(value) {
+			if (typeof value !== "undefined" && list.findIndex((v) => v === value) === -1) {
+				throw new ValidationError("Unsupported input, you must choose an option from the list provided");
+			}
+
+			return value;
+		}
+	});
 }

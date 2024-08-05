@@ -6,9 +6,12 @@ import type { ICategory } from "@discordx/utilities";
 import type { Index, Query } from "@upstash/query";
 import type { ImageSource } from "canvacord";
 import type {
+	ApplicationCommandOptionType,
+	Attachment,
 	AutocompleteInteraction,
 	ButtonInteraction,
 	CacheType,
+	Channel,
 	ChannelSelectMenuInteraction,
 	CommandInteraction,
 	ContextMenuCommandInteraction,
@@ -24,7 +27,7 @@ import type {
 	User,
 	UserSelectMenuInteraction
 } from "discord.js";
-import type { DApplicationCommand } from "discordx";
+import type { DApplicationCommand, NotEmpty, SlashOptionOptions, VerifyName } from "discordx";
 import type { Join, Simplify } from "type-fest";
 
 export namespace Typings {
@@ -248,4 +251,51 @@ export namespace Typings {
 	export type CanvacordImage = Extract<ImageSource, { mime: string }>;
 
 	export type DSlashCommand = DApplicationCommand & ICategory<Enums.CommandCategory>;
+
+	export type SlashOption = {
+		[K in keyof SlashOptionOptions<VerifyName<string>, NotEmpty<string>>]: SlashOptionOptions<
+			VerifyName<string>,
+			NotEmpty<string>
+		>[K];
+	};
+
+	export type SlashOptionTransformerChannelType<T extends SlashOption> = Extract<
+		Channel,
+		{
+			type: T["channelTypes"] extends infer U
+				? U extends U
+					? U extends any[]
+						? U["length"] extends 0
+							? any
+							: U[number]
+						: any
+					: never
+				: never;
+		}
+	>;
+
+	export type SlashOptionTransformerValueParam<T extends SlashOption> = {
+		[ApplicationCommandOptionType.String]: string;
+		[ApplicationCommandOptionType.Integer]: number;
+		[ApplicationCommandOptionType.Number]: number;
+		[ApplicationCommandOptionType.Boolean]: boolean;
+		[ApplicationCommandOptionType.User]: GuildMember | User | string;
+		[ApplicationCommandOptionType.Role]: Role;
+		[ApplicationCommandOptionType.Channel]: SlashOptionTransformerChannelType<T>;
+		[ApplicationCommandOptionType.Mentionable]:
+			| GuildMember
+			| User
+			| string
+			| Role
+			| SlashOptionTransformerChannelType<T>;
+		[ApplicationCommandOptionType.Attachment]: Attachment;
+	}[T["type"]] extends infer V
+		? T extends { required: infer Required extends boolean }
+			? boolean extends Required
+				? V | undefined
+				: true extends Required
+					? V
+					: V | undefined
+			: V | undefined
+		: never;
 }

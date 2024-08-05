@@ -11,7 +11,7 @@ import {
 	inlineCode,
 	messageLink
 } from "discord.js";
-import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
+import { Discord, Guard, ParameterDecoratorEx, Slash, SlashGroup } from "discordx";
 
 import { AutoCompleteSlashOption } from "~/helpers/decorators/slashOptions/autocomplete.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
@@ -47,17 +47,17 @@ export enum CaseModifyType {
 @SlashGroup({ dmPermission: false, description: "Container of all cases in the server", name: "case" })
 @SlashGroup("case")
 export abstract class Case {
-	public static IDSlashOption() {
-		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
-			SlashOption({
+	public static IDSlashOption(): ParameterDecoratorEx {
+		return CommandUtils.constructSlashOption({
+			options: {
 				description: "The case id",
 				name: "case_id",
 				type: ApplicationCommandOptionType.String,
 				required: true,
 				minLength: 6,
 				maxLength: 6
-			})(target, propertyKey, parameterIndex);
-		};
+			}
+		});
 	}
 
 	public static async modify(options: CaseModifyOptions) {

@@ -1,7 +1,6 @@
 import assert from "assert";
 
 import { ApplicationCommandOptionType } from "discord.js";
-import { SlashOption } from "discordx";
 import ms from "ms";
 import prettyMilliseconds from "pretty-ms";
 
@@ -17,7 +16,7 @@ import type {
 	AutocompleteInteraction,
 	ChatInputCommandInteraction
 } from "discord.js";
-import type { ParameterDecoratorEx, SlashOptionOptions, TransformerFunction } from "discordx";
+import type { ParameterDecoratorEx } from "discordx";
 
 interface DurationOptions {
 	descriptionPrefix?: string;
@@ -96,80 +95,78 @@ export function DurationSlashOption(options: DurationOptions): ParameterDecorato
 		required = !transformerOptions?.allowDisableOption
 	} = options;
 
-	const slashOptionObj = {
-		description: `${descriptionPrefix}. Ex: (30m, 1h, 1 day)`,
-		name,
-		type: ApplicationCommandOptionType.String,
-		required,
-		autocomplete: (interaction: AutocompleteInteraction) => {
-			const autoCompleteData = DurationGenerateAutoComplete(interaction, transformerOptions);
+	return CommandUtils.constructSlashOption({
+		options: {
+			description: `${descriptionPrefix}. Ex: (30m, 1h, 1 day)`,
+			name,
+			type: ApplicationCommandOptionType.String,
+			required,
+			autocomplete(interaction) {
+				const autoCompleteData = DurationGenerateAutoComplete(interaction, transformerOptions);
 
-			const isOnlyDisabled =
-				autoCompleteData.length === 1 && autoCompleteData[0].value === CommandUtils.slashOptions.DisableChoice;
+				const isOnlyDisabled =
+					autoCompleteData.length === 1 &&
+					autoCompleteData[0].value === CommandUtils.slashOptions.DisableChoice;
 
-			const activeSearch = interaction.options.getFocused();
-			const isZero = activeSearch.startsWith("0");
+				const activeSearch = interaction.options.getFocused();
+				const isZero = activeSearch.startsWith("0");
 
-			if (isOnlyDisabled || isZero) {
-				interaction.respond(
-					autoCompleteData.filter(({ value }) => value === CommandUtils.slashOptions.DisableChoice)
-				);
-			} else {
-				const wildcardMatch = autoCompleteData.filter(({ name }) => name.includes(activeSearch.toLowerCase()));
+				if (isOnlyDisabled || isZero) {
+					interaction.respond(
+						autoCompleteData.filter(({ value }) => value === CommandUtils.slashOptions.DisableChoice)
+					);
+				} else {
+					const wildcardMatch = autoCompleteData.filter(({ name }) =>
+						name.includes(activeSearch.toLowerCase())
+					);
 
-				const responder = wildcardMatch.length ? wildcardMatch : autoCompleteData;
+					const responder = wildcardMatch.length ? wildcardMatch : autoCompleteData;
 
-				interaction.respond(responder.slice(0, MAX_AUTOCOMPLETE_OPTION_LIMIT));
+					interaction.respond(responder.slice(0, MAX_AUTOCOMPLETE_OPTION_LIMIT));
+				}
 			}
+		},
+		transformer(value, interaction) {
+			assert(interaction.inCachedGuild());
+
+			const rangeValue = DurationGetRangeValue(interaction, transformerOptions);
+
+			const isDisabled =
+				typeof value === "undefined" ||
+				(transformerOptions.allowDisableOption && value === CommandUtils.slashOptions.DisableChoice);
+
+			if (!rangeValue || isDisabled) {
+				return;
+			}
+
+			const msDuration = ms(value);
+
+			const isInvalidDuration = isNaN(msDuration);
+
+			if (isInvalidDuration) {
+				throw new ValidationError("invalid duration provided, please check your input");
+			}
+
+			const { min, max } = rangeValue;
+
+			let isInvalidRange = msDuration < min;
+
+			if (max) {
+				isInvalidRange ||= msDuration > max;
+			}
+
+			if (isInvalidRange) {
+				const minVerbose = min === 0 ? "0 seconds" : prettyMilliseconds(min, { verbose: true });
+				const maxVerbose = max ? prettyMilliseconds(max, { verbose: true }) : undefined;
+
+				const disallowedRange = `less than ${minVerbose}${maxVerbose ? ` or more than ${maxVerbose}` : ""}`;
+
+				throw new ValidationError(`duration cannot be ${disallowedRange}`);
+			}
+
+			return msDuration;
 		}
-	} as SlashOptionOptions<Lowercase<string>, string>;
-
-	const transformer: TransformerFunction = (
-		msDurationStr: string | undefined,
-		interaction: ChatInputCommandInteraction
-	) => {
-		assert(interaction.inCachedGuild());
-
-		const rangeValue = DurationGetRangeValue(interaction, transformerOptions);
-
-		const isDisabled =
-			typeof msDurationStr === "undefined" ||
-			(transformerOptions.allowDisableOption && msDurationStr === CommandUtils.slashOptions.DisableChoice);
-
-		if (!rangeValue || isDisabled) {
-			return;
-		}
-
-		const msDuration = ms(msDurationStr);
-
-		const isInvalidDuration = isNaN(msDuration);
-
-		if (isInvalidDuration) {
-			throw new ValidationError("invalid duration provided, please check your input");
-		}
-
-		const { min, max } = rangeValue;
-
-		let isInvalidRange = msDuration < min;
-
-		if (max) {
-			isInvalidRange ||= msDuration > max;
-		}
-
-		if (isInvalidRange) {
-			const minVerbose = min === 0 ? "0 seconds" : prettyMilliseconds(min, { verbose: true });
-			const maxVerbose = max ? prettyMilliseconds(max, { verbose: true }) : undefined;
-
-			const disallowedRange = `less than ${minVerbose}${maxVerbose ? ` or more than ${maxVerbose}` : ""}`;
-
-			throw new ValidationError(`duration cannot be ${disallowedRange}`);
-		}
-
-		return msDuration;
-	};
-
-	return (target: Record<string, any>, propertyKey: string, parameterIndex: number) =>
-		SlashOption(slashOptionObj, transformer)(target, propertyKey, parameterIndex);
+	});
 }
 
 function DurationGenerateAutoComplete(

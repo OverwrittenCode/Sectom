@@ -1,7 +1,10 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { ActionType } from "@prisma/client";
 import {
+	ActionRowBuilder,
 	ApplicationCommandOptionType,
+	ButtonBuilder,
+	ButtonStyle,
 	ChannelType,
 	Constants,
 	FormattingPatterns,
@@ -9,7 +12,7 @@ import {
 	PermissionFlagsBits,
 	inlineCode
 } from "discord.js";
-import { Discord, Guard, Slash, SlashGroup, SlashOption } from "discordx";
+import { Discord, Guard, ParameterDecoratorEx, Slash, SlashGroup, SlashOption } from "discordx";
 
 import { MAX_MESSAGE_FETCH_LIMIT, MAX_PURGE_COUNT_LIMIT } from "~/constants";
 import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
@@ -473,76 +476,74 @@ export abstract class Purge {
 		});
 	}
 
-	private static CountSlashOption() {
-		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
-			SlashOption({
+	private static CountSlashOption(): ParameterDecoratorEx {
+		return CommandUtils.constructSlashOption({
+			options: {
 				description: `The number of messages to purge from 3 to ${MAX_PURGE_COUNT_LIMIT} inclusive. Default is ${Purge.defaultMessageFetchLimit}`,
 				name: "count",
 				type: ApplicationCommandOptionType.Integer,
 				minValue: 3,
 				maxValue: MAX_PURGE_COUNT_LIMIT
-			})(target, propertyKey, parameterIndex);
-		};
+			}
+		});
 	}
 
-	private static InverseFilterSlashOption() {
-		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
-			SlashOption({
+	private static InverseFilterSlashOption(): ParameterDecoratorEx {
+		return CommandUtils.constructSlashOption({
+			options: {
 				description: "If the filter should be inversed",
 				name: "with_inverse_filter",
 				type: ApplicationCommandOptionType.Boolean
-			})(target, propertyKey, parameterIndex);
-		};
+			}
+		});
 	}
 
-	private static MessageIDSlashOption(namePrefix?: Lowercase<string>) {
+	private static MessageIDSlashOption(namePrefix?: Lowercase<string>): ParameterDecoratorEx {
 		let name: Lowercase<string> = "message_id";
 
 		if (namePrefix) {
 			name = `${namePrefix}_${name}` as Lowercase<string>;
 		}
 
-		return (target: Record<string, any>, propertyKey: string, parameterIndex: number) => {
-			SlashOption(
-				{
-					description: "The messageId to match",
-					name,
-					type: ApplicationCommandOptionType.String,
-					required: true
-				},
-				async function (messageId: string, interaction: ChatInputCommandInteraction) {
-					const channel =
-						interaction.options.getChannel(CommandUtils.slashOptions.ChannelPermissionName, false, [
-							ChannelType.GuildText
-						]) ?? interaction.channel!;
+		return CommandUtils.constructSlashOption({
+			options: {
+				description: "The messageId to match",
+				name,
+				type: ApplicationCommandOptionType.String,
+				required: true
+			},
+			async transformer(value, interaction) {
+				const channel =
+					interaction.options.getChannel(CommandUtils.slashOptions.ChannelPermissionName, false, [
+						ChannelType.GuildText
+					]) ?? interaction.channel!;
 
-					const inlineMessageId = inlineCode(messageId);
+				const inlineMessageId = inlineCode(value);
 
-					if (!StringUtils.regexes.snowflake.test(messageId)) {
-						throw new ValidationError(
-							`Argument Error: invalid snowflakeId provided ${inlineMessageId}, please check your input.`
-						);
-					}
-
-					const message = await channel.messages.fetch(messageId).catch(() => {});
-
-					if (!message) {
-						throw new ValidationError(`I cannot perform this action: message ${inlineMessageId} not found`);
-					}
-
-					const twoWeeksAgo = Date.now() - Constants.MaxBulkDeletableMessageAge;
-					const isOlderThanTwoWeeksAgo = message.createdTimestamp < twoWeeksAgo;
-
-					if (isOlderThanTwoWeeksAgo) {
-						throw new ValidationError(
-							`I cannot perform this action: message ${inlineMessageId} is older than 14 days`
-						);
-					}
-
-					return messageId;
+				if (!StringUtils.regexes.snowflake.test(value)) {
+					throw new ValidationError(
+						`Argument Error: invalid snowflakeId provided ${inlineMessageId}, please check your input.`
+					);
 				}
-			)(target, propertyKey, parameterIndex);
-		};
+
+				const message = await channel.messages.fetch(value).catch(() => {});
+
+				if (!message) {
+					throw new ValidationError(`I cannot perform this action: message ${inlineMessageId} not found`);
+				}
+
+				const twoWeeksAgo = Date.now() - Constants.MaxBulkDeletableMessageAge;
+				const isOlderThanTwoWeeksAgo = message.createdTimestamp < twoWeeksAgo;
+
+				if (isOlderThanTwoWeeksAgo) {
+					throw new ValidationError(
+						`I cannot perform this action: message ${inlineMessageId} is older than 14 days`
+					);
+				}
+
+				return value;
+			}
+		});
 	}
 
 	private async handler(interaction: ChatInputCommandInteraction<"cached">, options: PurgeHandlerOptions) {

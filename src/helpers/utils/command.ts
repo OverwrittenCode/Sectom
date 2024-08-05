@@ -1,10 +1,12 @@
 import { EntityType } from "@prisma/client";
+import { SlashOption } from "discordx";
 import ms from "ms";
 
 import type { Enums } from "~/ts/Enums.js";
 import type { Typings } from "~/ts/Typings.js";
 
-import type { CommandInteraction, CommandInteractionOption } from "discord.js";
+import type { ChatInputCommandInteraction, CommandInteraction, CommandInteractionOption } from "discord.js";
+import type { NotEmpty, ParameterDecoratorEx, SlashOptionOptions, VerifyName } from "discordx";
 import type { Simplify } from "type-fest";
 
 type CategoryGroupedDataKey = Enums.CommandCategory;
@@ -17,6 +19,14 @@ interface CategoryGroupedData {
 	keys: CategoryGroupedDataKey[];
 	obj: Record<CategoryGroupedDataKey, CategoryGroupedDataValue>;
 	values: CategoryGroupedDataValue[];
+}
+
+interface ConstructSlashOptionOptions<SlashObj extends Typings.SlashOption> {
+	options: SlashObj;
+	transformer?: (
+		value: Typings.SlashOptionTransformerValueParam<SlashObj>,
+		interaction: ChatInputCommandInteraction
+	) => Awaited<any>;
 }
 
 export abstract class CommandUtils {
@@ -41,5 +51,15 @@ export abstract class CommandUtils {
 					: data.options
 				: [data]
 		);
+	}
+
+	public static constructSlashOption<SlashObj extends Typings.SlashOption>(
+		options: ConstructSlashOptionOptions<SlashObj>
+	): ParameterDecoratorEx {
+		return (target, propertyKey, parameterIndex) =>
+			SlashOption(
+				options.options as SlashOptionOptions<VerifyName<string>, NotEmpty<string>>,
+				options.transformer
+			)(target, propertyKey, parameterIndex);
 	}
 }

@@ -1,10 +1,10 @@
 import { ApplicationCommandOptionType } from "discord.js";
-import { SlashOption } from "discordx";
 
 import { MAX_REASON_STRING_LENGTH } from "~/constants.js";
+import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";
 
-import type { ParameterDecoratorEx, SlashOptionOptions, TransformerFunction } from "discordx";
+import type { ParameterDecoratorEx } from "discordx";
 
 interface ReasonOptions {
 	isAmmended?: boolean;
@@ -18,16 +18,16 @@ export function ReasonSlashOption(options: ReasonOptions = {}): ParameterDecorat
 
 	const name = isAmmended ? "new_reason" : "reason";
 
-	const slashObj = {
-		description,
-		name,
-		type: ApplicationCommandOptionType.String,
-		maxLength: MAX_REASON_STRING_LENGTH,
-		required
-	} as SlashOptionOptions<Lowercase<string>, string>;
-
-	const transformer: TransformerFunction = (reason: string = InteractionUtils.messages.noReason) => reason;
-
-	return (target: Record<string, any>, propertyKey: string, parameterIndex: number) =>
-		SlashOption(slashObj, transformer)(target, propertyKey, parameterIndex);
+	return CommandUtils.constructSlashOption({
+		options: {
+			description,
+			name,
+			type: ApplicationCommandOptionType.String,
+			maxLength: MAX_REASON_STRING_LENGTH,
+			required
+		},
+		transformer(value = InteractionUtils.messages.noReason) {
+			return value;
+		}
+	});
 }
