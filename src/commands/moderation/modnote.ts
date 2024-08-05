@@ -54,7 +54,7 @@ export abstract class ModNote {
 	public async edit(
 		@Case.IDSlashOption()
 		caseID: string,
-		@ReasonSlashOption({ isAmmendedReason: true, required: true })
+		@ReasonSlashOption({ isAmmended: true, required: true })
 		newModnote: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {

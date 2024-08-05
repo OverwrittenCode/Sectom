@@ -7,16 +7,16 @@ import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import type { ParameterDecoratorEx, SlashOptionOptions, TransformerFunction } from "discordx";
 
 interface ReasonOptions {
-	isAmmendedReason?: boolean;
+	isAmmended?: boolean;
 	required?: boolean;
 }
 
 export function ReasonSlashOption(options: ReasonOptions = {}): ParameterDecoratorEx {
-	const { isAmmendedReason, required = false } = options;
+	const { isAmmended, required } = options;
 
-	const description = isAmmendedReason ? "The updated case reason" : "The reason";
+	const description = isAmmended ? "The updated case reason" : "The reason";
 
-	const name = isAmmendedReason ? "new_reason" : "reason";
+	const name = isAmmended ? "new_reason" : "reason";
 
 	const slashObj = {
 		description,

@@ -155,7 +155,7 @@ export abstract class Warn {
 	public async edit(
 		@Case.IDSlashOption()
 		caseID: string | undefined,
-		@ReasonSlashOption({ isAmmendedReason: true, required: true })
+		@ReasonSlashOption({ isAmmended: true, required: true })
 		newReason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
