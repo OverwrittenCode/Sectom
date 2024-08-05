@@ -7,7 +7,6 @@ import {
 	ApplicationCommandOptionType,
 	ButtonBuilder,
 	ButtonStyle,
-	PermissionFlagsBits,
 	TextChannel,
 	inlineCode,
 	messageLink
@@ -87,12 +86,10 @@ export abstract class Case {
 			throw new ValidationError(`you may not ${type} cases under this group`);
 		}
 
-		const isInsufficientPermission =
-			caseData.perpetratorId !== interaction.user.id &&
-			!interaction.memberPermissions.has(PermissionFlagsBits.Administrator);
+		const isNotPerpertrator = caseData.perpetratorId !== interaction.user.id;
 
-		if (isInsufficientPermission) {
-			throw new ValidationError("administrator permission required to edit cases not initiated by you");
+		if (isNotPerpertrator) {
+			throw new ValidationError("you are not the perpetrator of this case");
 		}
 
 		const [apiEmbed, ...updatedEmbeds] = caseData.apiEmbeds;
