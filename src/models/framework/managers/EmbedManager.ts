@@ -1,4 +1,4 @@
-import { type APIEmbedField, bold } from "discord.js";
+import { type APIEmbedField, bold as _bold } from "discord.js";
 import { EmbedBuilder } from "discord.js";
 
 import { StringUtils } from "~/helpers/utils/string.js";
@@ -12,9 +12,7 @@ interface Field extends Pick<APIEmbedField, "name"> {
 }
 
 interface IndentFieldOptions {
-	bold?: boolean;
 	indentLevel?: number;
-	seperator?: string;
 }
 
 interface MutualField {
@@ -58,7 +56,7 @@ export abstract class EmbedManager {
 				}
 
 				if (!name.startsWith("**")) {
-					name = bold(name);
+					name = _bold(name);
 				}
 
 				return {
@@ -76,26 +74,23 @@ export abstract class EmbedManager {
 		return formattedEmbeds;
 	}
 
-	public static indentFieldValues(fields: Field[], options?: IndentFieldOptions): string {
-		const indentLevel = options?.indentLevel ?? 1;
+	public static indentFieldValues(fields: Field[], options: IndentFieldOptions = {}): string {
+		const { indentLevel = 1 } = options;
+
 		const tab = StringUtils.tabCharacter.repeat(indentLevel);
-		const isBold = options?.bold ?? true;
 
-		let seperator = options?.seperator ?? StringUtils.fieldNameSeparator;
-
-		seperator += " ";
+		const seperator = StringUtils.fieldNameSeparator + " ";
 
 		return fields
 			.map((field) => {
 				const seperatedFieldName = field.name + seperator;
-				const formattedFieldName = isBold ? bold(seperatedFieldName) : seperatedFieldName;
+				const formattedFieldName = _bold(seperatedFieldName)
 
 				if (typeof field.value === "string") {
 					return tab + formattedFieldName + field.value;
 				} else {
 					const newOptions = {
 						indentLevel: indentLevel * 2,
-						bold: isBold,
 						seperator: seperator.slice(0, -1)
 					};
 
