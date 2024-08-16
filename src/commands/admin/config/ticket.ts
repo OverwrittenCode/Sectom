@@ -128,7 +128,7 @@ export abstract class TicketConfig {
 		const titleInput = new TextInputBuilder()
 			.setCustomId(EmbedTextInputField.Title)
 			.setLabel("What is the title of the embed?")
-			.setPlaceholder("Provide some text (optional)")
+			.setPlaceholder("Provide some text")
 			.setValue(TicketConfig.embedDefaults.title)
 			.setMaxLength(50)
 			.setStyle(TextInputStyle.Short)
