@@ -57,8 +57,8 @@ interface PurgeHandlerOptions extends Pick<FetchMessagesOptions, "before" | "aft
 })
 @SlashGroup("purge")
 export abstract class Purge {
-	private static readonly mutualPermissions = [PermissionFlagsBits.ManageMessages];
 	private static readonly defaultMessageFetchLimit = 50;
+	private static readonly mutualPermissions = [PermissionFlagsBits.ManageMessages];
 
 	@Slash({ description: "Purge all messages after a given messageId in the current or given channel" })
 	public async after(

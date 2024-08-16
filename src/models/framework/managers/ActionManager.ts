@@ -43,7 +43,8 @@ import type { Simplify } from "type-fest";
 
 type AuditFields = Record<
 	string,
-	string | Typings.SetNullableCase<Typings.ExactlyOneOf<{ name: string; username: string }> & { id: string }, false>
+	| string
+	| Typings.SetNullableCase<Typings.ExactlyOneOf<{ name: string; username: string }> & { id: string }, false, true>
 >;
 
 type Doc = Typings.Database.Prisma.RetrieveModelDocument<"Case">;

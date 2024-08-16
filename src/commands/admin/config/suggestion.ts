@@ -62,39 +62,12 @@ export abstract class SuggestionConfig {
 		"status"
 	);
 
-	@Slash({ description: "Enables/disables this configuration " })
-	public toggle(
-		@ReasonSlashOption()
-		reason: string,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return Config.togglestate("suggestion", reason, interaction);
-	}
-
 	@Slash({ description: "Add a suggestion subject or panel" })
 	public async add(interaction: ChatInputCommandInteraction<"cached">) {
 		return ContentClusterManager.setupModifyComponent({
 			interaction,
 			componentType: SuggestionConfig.componentType,
 			modifierType: Enums.ModifierType.Add
-		});
-	}
-
-	@Slash({ description: "Update a suggestion subject or panel" })
-	public async update(interaction: ChatInputCommandInteraction<"cached">) {
-		return ContentClusterManager.setupModifyComponent({
-			interaction,
-			componentType: SuggestionConfig.componentType,
-			modifierType: Enums.ModifierType.Update
-		});
-	}
-
-	@Slash({ description: "Remove a suggestion subject or panel" })
-	public async remove(interaction: ChatInputCommandInteraction<"cached">) {
-		return ContentClusterManager.setupModifyComponent({
-			interaction,
-			componentType: SuggestionConfig.componentType,
-			modifierType: Enums.ModifierType.Remove
 		});
 	}
 
@@ -139,6 +112,15 @@ export abstract class SuggestionConfig {
 		await InteractionUtils.replyOrFollowUp(interaction, { components: [actionRow] });
 	}
 
+	@Slash({ description: "Remove a suggestion subject or panel" })
+	public async remove(interaction: ChatInputCommandInteraction<"cached">) {
+		return ContentClusterManager.setupModifyComponent({
+			interaction,
+			componentType: SuggestionConfig.componentType,
+			modifierType: Enums.ModifierType.Remove
+		});
+	}
+
 	@Slash({ description: "Send a suggestion panel to a channel" })
 	public async send(
 		@TargetSlashOption({ entityType: CommandUtils.entityType.CHANNEL })
@@ -149,6 +131,24 @@ export abstract class SuggestionConfig {
 			interaction,
 			channel,
 			componentType: SuggestionConfig.componentType
+		});
+	}
+
+	@Slash({ description: "Enables/disables this configuration " })
+	public toggle(
+		@ReasonSlashOption()
+		reason: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Config.togglestate("suggestion", reason, interaction);
+	}
+
+	@Slash({ description: "Update a suggestion subject or panel" })
+	public async update(interaction: ChatInputCommandInteraction<"cached">) {
+		return ContentClusterManager.setupModifyComponent({
+			interaction,
+			componentType: SuggestionConfig.componentType,
+			modifierType: Enums.ModifierType.Update
 		});
 	}
 }
@@ -163,52 +163,6 @@ export abstract class SuggestionConfigMessageComponentHandler {
 		middleFull: "<:middleFull:1236061831290687529>",
 		rightFull: "<:rightFull:1236061830036848760>"
 	} as const;
-
-	@SelectMenuComponent({ id: SuggestionConfig.customIdRecords.suggestion_channel.regex })
-	public async selectMenuChannel(interaction: StringSelectMenuInteraction<"cached">) {
-		const { customId, values: panelNames, guildId } = interaction;
-
-		const channelId = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
-
-		const {
-			configuration: { suggestion },
-			save
-		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
-			guildId,
-			check: "suggestion"
-		});
-
-		const { panels } = suggestion;
-
-		panelNames.forEach((name) => {
-			const panelIndex = panels.findIndex((panel) => panel.name === name);
-
-			if (panelIndex === -1) {
-				throw new ValidationError(ValidationError.messageTemplates.CannotRecall(`${name} Panel`));
-			}
-
-			const isEqualToCurrent = panels[panelIndex].channelId === channelId;
-
-			if (isEqualToCurrent) {
-				throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
-			}
-
-			suggestion.panels[panelIndex].channelId = channelId;
-		});
-
-		return await ActionManager.logCase({
-			interaction,
-			target: {
-				id: channelId,
-				type: EntityType.CHANNEL
-			},
-			actionType: ActionType.CONFIG_SUGGESTION_PANEL_UPDATE,
-			actionOptions: {
-				pendingExecution: save
-			},
-			successContent: `updated all panels' channels to ${channelMention(channelId)}`
-		});
-	}
 
 	@ButtonComponent({ id: SuggestionConfig.customIdRecords.suggestion_create.regex })
 	public async buttonCreate(interaction: ButtonInteraction<"cached">) {
@@ -452,6 +406,52 @@ export abstract class SuggestionConfigMessageComponentHandler {
 		return await InteractionUtils.replyOrFollowUp(interaction, {
 			content: `Suggestion ${suggestionId} successfully ${perfectTenseAction}!`,
 			ephemeral: true
+		});
+	}
+
+	@SelectMenuComponent({ id: SuggestionConfig.customIdRecords.suggestion_channel.regex })
+	public async selectMenuChannel(interaction: StringSelectMenuInteraction<"cached">) {
+		const { customId, values: panelNames, guildId } = interaction;
+
+		const channelId = customId.split(StringUtils.customIDFIeldBodySeperator).pop()!;
+
+		const {
+			configuration: { suggestion },
+			save
+		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({
+			guildId,
+			check: "suggestion"
+		});
+
+		const { panels } = suggestion;
+
+		panelNames.forEach((name) => {
+			const panelIndex = panels.findIndex((panel) => panel.name === name);
+
+			if (panelIndex === -1) {
+				throw new ValidationError(ValidationError.messageTemplates.CannotRecall(`${name} Panel`));
+			}
+
+			const isEqualToCurrent = panels[panelIndex].channelId === channelId;
+
+			if (isEqualToCurrent) {
+				throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
+			}
+
+			suggestion.panels[panelIndex].channelId = channelId;
+		});
+
+		return await ActionManager.logCase({
+			interaction,
+			target: {
+				id: channelId,
+				type: EntityType.CHANNEL
+			},
+			actionType: ActionType.CONFIG_SUGGESTION_PANEL_UPDATE,
+			actionOptions: {
+				pendingExecution: save
+			},
+			successContent: `updated all panels' channels to ${channelMention(channelId)}`
 		});
 	}
 

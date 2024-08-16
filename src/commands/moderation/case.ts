@@ -32,8 +32,8 @@ import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember, User 
 
 interface CaseModifyOptions
 	extends Typings.DisplaceObjects<RetrieveCaseOptions, { interaction: ChatInputCommandInteraction<"cached"> }> {
-	type: CaseModifyType;
 	reason: string;
+	type: CaseModifyType;
 }
 
 export enum CaseModifyType {
@@ -70,7 +70,7 @@ export abstract class Case {
 			caseID
 		});
 
-		if (caseData.action.endsWith("EDIT")) {
+		if (caseData.action.endsWith(CaseModifyType.EDIT.toUpperCase())) {
 			throw new ValidationError(
 				"This case is readonly as the action type is reserved for editing cases. If you are trying to edit a case again, please find the original case id and use that instead."
 			);
@@ -78,9 +78,9 @@ export abstract class Case {
 
 		const actionTypeStem = caseData.action.replace(StringUtils.regexes.allActionModifiers, "");
 
-		const actionType = Object.values(ActionType).find(
-			(actionType) => actionType === `${actionTypeStem}_${type.toUpperCase()}`
-		);
+		const actionTypeMatch = [actionTypeStem, `${actionTypeStem}_${type.toUpperCase()}`];
+
+		const actionType = ActionManager.types.find((actionType) => actionTypeMatch.includes(actionType));
 
 		if (!actionType) {
 			throw new ValidationError(`you may not ${type} cases under this group`);

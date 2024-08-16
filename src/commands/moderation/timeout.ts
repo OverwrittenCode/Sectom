@@ -17,8 +17,8 @@ import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 @Discord()
 @Category(Enums.CommandCategory.Moderation)
 export abstract class Timeout {
-	private static readonly mutualPermissions = [PermissionFlagsBits.ModerateMembers];
 	private static readonly checkPossible = (guildMember: GuildMember) => guildMember.moderatable;
+	private static readonly mutualPermissions = [PermissionFlagsBits.ModerateMembers];
 
 	@Slash({
 		dmPermission: false,

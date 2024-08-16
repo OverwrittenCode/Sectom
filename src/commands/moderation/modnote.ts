@@ -61,17 +61,6 @@ export abstract class ModNote {
 		return Case.modify({ interaction, caseID, type: CaseModifyType.EDIT, reason: newModnote });
 	}
 
-	@Slash({ description: "Remove a modnote case" })
-	public async remove(
-		@Case.IDSlashOption()
-		caseID: string,
-		@ReasonSlashOption()
-		modnote: string,
-		interaction: ChatInputCommandInteraction<"cached">
-	) {
-		return Case.modify({ interaction, caseID, type: CaseModifyType.REMOVE, reason: modnote });
-	}
-
 	@Slash({ description: "Lists the modnotes of a user. Internally calls /case list" })
 	public list(
 		@TargetSlashOption({
@@ -86,5 +75,16 @@ export abstract class ModNote {
 			targetId: target.id,
 			action: ActionType.MOD_NOTE_ADD
 		});
+	}
+
+	@Slash({ description: "Remove a modnote case" })
+	public async remove(
+		@Case.IDSlashOption()
+		caseID: string,
+		@ReasonSlashOption()
+		modnote: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return Case.modify({ interaction, caseID, type: CaseModifyType.REMOVE, reason: modnote });
 	}
 }

@@ -30,7 +30,6 @@ interface ConstructSlashOptionOptions<SlashObj extends Typings.SlashOption> {
 }
 
 export abstract class CommandUtils {
-	public static categoryGroupedData: CategoryGroupedData;
 	public static readonly collectionTime = ms("10m");
 	public static readonly durationLimits = {
 		Timeout: { min: "5s", max: "28d" },
@@ -43,6 +42,17 @@ export abstract class CommandUtils {
 		DisableChoice: "disable"
 	} as const;
 
+	public static categoryGroupedData: CategoryGroupedData;
+
+	public static constructSlashOption<SlashObj extends Typings.SlashOption>(
+		options: ConstructSlashOptionOptions<SlashObj>
+	): ParameterDecoratorEx {
+		return SlashOption(
+			options.options as SlashOptionOptions<VerifyName<string>, NotEmpty<string>>,
+			options.transformer
+		);
+	}
+
 	public static retrieveCommandInteractionOptions(interaction: CommandInteraction): CommandInteractionOption[] {
 		return interaction.options.data.flatMap((data) =>
 			data.options
@@ -51,15 +61,5 @@ export abstract class CommandUtils {
 					: data.options
 				: [data]
 		);
-	}
-
-	public static constructSlashOption<SlashObj extends Typings.SlashOption>(
-		options: ConstructSlashOptionOptions<SlashObj>
-	): ParameterDecoratorEx {
-		return (target, propertyKey, parameterIndex) =>
-			SlashOption(
-				options.options as SlashOptionOptions<VerifyName<string>, NotEmpty<string>>,
-				options.transformer
-			)(target, propertyKey, parameterIndex);
 	}
 }
