@@ -299,7 +299,7 @@ export abstract class Config {
 					break;
 
 				default:
-					throw new Error("Unexpected configuration entry");
+					throw new TypeError("Unexpected configuration entry", { cause: name });
 			}
 
 			if (!descriptionArray.length) {

@@ -310,7 +310,7 @@ export abstract class LevelingConfigMessageComponentHandler {
 
 				break;
 			default:
-				throw new Error("Unexpected option", option);
+				throw new TypeError("Unexpected option", { cause: option });
 		}
 
 		const embedTitle = `${guild.name} | Leveling | ${StringUtils.convertToTitleCase(option)}`;

@@ -121,7 +121,7 @@ export abstract class Warn {
 
 								break;
 							default:
-								throw new Error("Unexpected punishment");
+								throw new TypeError("Unexpected punishment", { cause: firstThreshold.punishment });
 						}
 
 						return await ActionManager.logCase({
