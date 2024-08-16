@@ -42,6 +42,11 @@ export abstract class ObjectUtils {
 		return result as EntriesOutput<T, Options>;
 	}
 
+	public static functionStack<T extends (...args: any[]) => any>(...funcs: T[]): T {
+		const fn = (...args: any[]) => funcs.forEach((func) => func(...args));
+
+		return fn as unknown as T;
+	}
 	public static isDateString(str: unknown): boolean {
 		if (typeof str !== "string") {
 			return false;
