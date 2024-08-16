@@ -140,30 +140,14 @@ export namespace Typings {
 				>
 			: never;
 
-		export type SimpleWhere<
-			M extends _Prisma.ModelName = _Prisma.ModelName,
-			State extends "retrievable" | "wildcard" | "union" = "union"
-		> = M extends M
-			? OnlyFilterableTypes<Prisma.RetrieveModelDocument<M>> extends infer T
+		export type SimpleWhere<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
+			? OnlyFilterableTypes<Prisma.RetrieveModelDocument<M>> extends infer U
 				? {
-						[K in keyof T]?: State extends "retrievable"
-							? T[K]
-							: NonNullable<T[K]> extends boolean
-								? T[K]
-								: ExactlyOneOf<
-											Record<
-												"in" | "notIn",
-												Array<T[K] extends NonNullable<T[K]> ? T[K] : NonNullable<T[K]>>
-											>
-									  > extends infer U
-									? State extends "wildcard"
-										? U
-										: T[K] | U
-									: never;
-					} extends infer U
-					? State extends "retrievable"
-						? U
-						: U & { OR?: U[] }
+						[K in keyof U]?: NonNullable<U[K]> extends boolean
+							? U[K]
+							: U[K] | ExactlyOneOf<Record<"in" | "notIn", Array<NonNullable<U[K]>>>>;
+					} extends infer X
+					? (X & { OR?: never[] }) | (RequireAtLeastOne<X> & { OR?: X[] })
 					: never
 				: never
 			: never;

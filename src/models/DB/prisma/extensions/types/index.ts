@@ -53,7 +53,7 @@ export type FetchOperationUnion<F extends FetchableOperations = FetchableOperati
 		? `fetch${V extends "Unique" ? "ById" : V extends "UniqueOrThrow" ? "ByIdOrThrow" : V}`
 		: never;
 export type FetchOptions<TModel, F extends FetchableOperations = FetchableOperations> = BaseFetchOptionsUnion<TModel> &
-	(F extends `${string}OrThrow` ? {} : FetchValidationOptions | FetchCreateDataOptions<TModel, F>);
+	(F extends `${string}OrThrow` ? FetchValidationOptions : FetchCreateDataOptions<TModel, F>);
 export type FetchOutput<
 	TModel,
 	F extends FetchableOperations = FetchableOperations,
