@@ -5,8 +5,8 @@ import { Discord, SelectMenuComponent, Slash, SlashGroup, SlashOption } from "di
 import prettyMilliseconds from "pretty-ms";
 
 import { Config } from "~/commands/admin/config/root.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { ObjectUtils } from "~/helpers/utils/object.js";

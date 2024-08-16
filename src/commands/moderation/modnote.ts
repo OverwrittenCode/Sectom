@@ -4,8 +4,8 @@ import { type ChatInputCommandInteraction, type GuildMember, PermissionFlagsBits
 import { Discord, Guard, Slash, SlashGroup } from "discordx";
 
 import { Case, CaseModifyType } from "~/commands/moderation/case.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";

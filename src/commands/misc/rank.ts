@@ -1,7 +1,7 @@
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
 import { Discord, Guard, Slash } from "discordx";
 
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";

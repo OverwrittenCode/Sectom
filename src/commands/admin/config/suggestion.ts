@@ -20,8 +20,8 @@ import { ButtonComponent, Discord, SelectMenuComponent, Slash, SlashGroup } from
 
 import { Config } from "~/commands/admin/config/root.js";
 import { LIGHT_GOLD } from "~/constants.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";

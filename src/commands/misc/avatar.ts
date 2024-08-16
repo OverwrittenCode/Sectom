@@ -3,7 +3,7 @@ import { EmbedBuilder, GuildMember, User } from "discord.js";
 import { Discord, Guard, Slash, SlashGroup } from "discordx";
 
 import { LIGHT_GOLD } from "~/constants";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { Enums } from "~/ts/Enums.js";

@@ -4,8 +4,8 @@ import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash, SlashChoice, SlashGroup } from "discordx";
 
 import { AutoCompleteSlashOption } from "~/helpers/decorators/slashOptions/autocomplete.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { GivenChannelSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { GivenChannelSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { StringUtils } from "~/helpers/utils/string.js";

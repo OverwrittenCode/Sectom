@@ -15,8 +15,8 @@ import {
 import { Discord, Guard, ParameterDecoratorEx, Slash, SlashGroup, SlashOption } from "discordx";
 
 import { MAX_MESSAGE_FETCH_LIMIT, MAX_PURGE_COUNT_LIMIT } from "~/constants";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { GivenChannelSlashOption, TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { GivenChannelSlashOption, TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { CommandUtils } from "~/helpers/utils/command.js";

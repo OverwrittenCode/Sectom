@@ -9,7 +9,7 @@ import {
 import { Discord, Guard, Slash, SlashChoice, SlashOption } from "discordx";
 
 import { MAX_COMPONENT_GRID_SIZE } from "~/constants.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ObjectUtils } from "~/helpers/utils/object.js";

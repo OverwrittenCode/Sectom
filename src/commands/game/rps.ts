@@ -10,7 +10,7 @@ import {
 import { Discord, Guard, Slash, SlashChoice, SlashOption } from "discordx";
 import ms from "ms";
 
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { ObjectUtils } from "~/helpers/utils/object.js";
 import type { GameControllerComponent } from "~/models/framework/controllers/GameController.js";

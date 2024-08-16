@@ -5,8 +5,8 @@ import { Discord, Guard, Slash, SlashGroup } from "discordx";
 import ms from "ms";
 
 import { Case, CaseModifyType } from "~/commands/moderation/case.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";

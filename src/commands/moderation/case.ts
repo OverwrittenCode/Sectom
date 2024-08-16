@@ -13,9 +13,9 @@ import {
 } from "discord.js";
 import { Discord, Guard, ParameterDecoratorEx, Slash, SlashGroup } from "discordx";
 
-import { AutoCompleteSlashOption } from "~/helpers/decorators/slashOptions/autocomplete.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { AutoCompleteSlashChoiceOption } from "~/helpers/decorators/slash/autocomplete.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";

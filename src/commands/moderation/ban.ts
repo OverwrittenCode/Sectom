@@ -3,9 +3,9 @@ import { ActionType, EntityType } from "@prisma/client";
 import { PermissionFlagsBits } from "discord.js";
 import { Discord, Guard, Slash } from "discordx";
 
-import { DurationSlashOption } from "~/helpers/decorators/slashOptions/duration.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { DurationSlashOption } from "~/helpers/decorators/slash/duration.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
 import { CommandUtils } from "~/helpers/utils/command.js";

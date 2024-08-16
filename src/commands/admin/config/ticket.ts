@@ -26,8 +26,8 @@ import _ from "lodash";
 
 import { Config } from "~/commands/admin/config/root.js";
 import { LIGHT_GOLD, MAX_ACTIVE_THREAD_LIMIT, MAX_REASON_STRING_LENGTH } from "~/constants.js";
-import { ReasonSlashOption } from "~/helpers/decorators/slashOptions/reason.js";
-import { TargetSlashOption } from "~/helpers/decorators/slashOptions/target.js";
+import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
+import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { AtLeastOneSlashOption } from "~/helpers/guards/AtLeastOne.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
