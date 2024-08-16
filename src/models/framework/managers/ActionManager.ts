@@ -374,7 +374,8 @@ export abstract class ActionManager {
 			guildId,
 			channelId,
 			targetId,
-			perpetratorId
+			perpetratorId,
+			targetType
 		});
 
 		const id = StringUtils.generateID();

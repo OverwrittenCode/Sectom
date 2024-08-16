@@ -23,6 +23,7 @@ interface RelationFieldOptions {
 	guildId: string;
 	perpetratorId: string;
 	targetId: string;
+	targetType: EntityType;
 }
 
 export interface RetrieveCaseOptions {
@@ -77,7 +78,7 @@ export class CaseInstanceMethods {
 	}
 
 	public retrieveRelationFields<T>(this: T, options: RelationFieldOptions): RelationFields {
-		const { guildId, channelId, perpetratorId, targetId } = options;
+		const { guildId, channelId, perpetratorId, targetId, targetType } = options;
 		const entityInstanceMethods = container.resolve(EntityInstanceMethods);
 
 		const connectGuild: Pick<Prisma.CaseCreateInput, "guild"> = {
@@ -91,7 +92,7 @@ export class CaseInstanceMethods {
 		return {
 			channel: entityInstanceMethods.connectOrCreateHelper(channelId, connectGuild, EntityType.CHANNEL),
 			perpetrator: entityInstanceMethods.connectOrCreateHelper(perpetratorId, connectGuild, EntityType.USER),
-			target: entityInstanceMethods.connectOrCreateHelper(targetId, connectGuild, EntityType.USER),
+			target: entityInstanceMethods.connectOrCreateHelper(targetId, connectGuild, targetType),
 			...connectGuild
 		};
 	}
