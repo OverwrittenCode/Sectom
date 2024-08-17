@@ -94,36 +94,40 @@ export abstract class Config {
 		const configurationValues: string[] = [];
 		const pageTextArray: string[] = ["Home"];
 
-		const logChannelConfigurations = await DBConnectionManager.Prisma.entity.fetchMany({
-			where: { logChannelGuildId: guildId },
+		const logChannelConfigurations = await DBConnectionManager.Prisma.logChannel.fetchMany({
+			where: { guildId },
 			select: {
 				id: true,
-				logChannelType: true
+				actionType: true,
+				eventType: true
 			}
 		});
 
-		if (logChannelConfigurations.length) {
-			const pageText = "Log Channel";
+		const pageText = "Log Channel";
 
-			pageTextArray.push(pageText);
-			configurationValues.push(pageText);
+		pageTextArray.push(pageText);
+		configurationValues.push(pageText);
 
-			const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText} Configuration`);
-			const descriptionArray = logChannelConfigurations.map((data) => {
-				const channel = channelMention(data.id);
+		const embed = new EmbedBuilder().setColor(LIGHT_GOLD).setTitle(`${guild.name} | ${pageText} Configuration`);
 
-				const type = data.logChannelType ?? "DEFAULT";
+		const descriptionArray = logChannelConfigurations.map((data) => {
+			const channel = channelMention(data.id);
 
-				const generalisedPunishment = type.replace(StringUtils.regexes.allActionModifiers, "");
-				const titleCasePunishment = StringUtils.convertToTitleCase(generalisedPunishment, "_");
+			const type = data.actionType ?? `DEFAULT_(${data.eventType})`;
 
-				return `${bold(`${titleCasePunishment}:`)} ${channel}`;
-			});
+			const generalisedType = type.replace(StringUtils.regexes.allActionModifiers, "");
+			const titleCaseStr = StringUtils.convertToTitleCase(generalisedType, "_");
 
-			embed.setDescription(descriptionArray.join(StringUtils.lineBreak));
+			return `${bold(`${titleCaseStr}:`)} ${channel}`;
+		});
 
-			paginationPages.push({ embeds: [embed] });
+		if (!descriptionArray.length) {
+			descriptionArray.push("No data yet");
 		}
+
+		embed.setDescription(descriptionArray.join(StringUtils.lineBreak));
+
+		paginationPages.push({ embeds: [embed] });
 
 		for (const [name, _configuration] of ObjectUtils.entries(configuration)) {
 			const pageText = StringUtils.capitaliseFirstLetter(name);

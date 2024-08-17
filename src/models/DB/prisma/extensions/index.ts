@@ -7,8 +7,10 @@ import { Beans } from "~/framework/DI/Beans.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ObjectUtils } from "~/helpers/utils/object.js";
+import { StringUtils } from "~/helpers/utils/string.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
 import { GuildInstanceMethods } from "~/models/DB/prisma/extensions/guild.js";
+import { LogChannelInstanceMethods } from "~/models/DB/prisma/extensions/logChannel.js";
 import { RedisCacheManager } from "~/models/framework/managers/RedisCacheManager.js";
 import type { Typings } from "~/ts/Typings.js";
 
@@ -42,8 +44,9 @@ export abstract class PrismaExtensions {
 			client: {
 				async $flushdb<T>(this: T) {
 					const ctx = Prisma.getExtensionContext(this) as unknown as ClientCTX;
-					const modelNames = Object.values(Prisma.ModelName).map(
-						(str) => str.toLowerCase() as Lowercase<Prisma.ModelName>
+
+					const modelNames = Object.values(Prisma.ModelName).map((str) =>
+						StringUtils.convertToCamelCase(str)
 					);
 
 					const pendingBatchPayloads = modelNames.map((modelName) => {
@@ -57,7 +60,9 @@ export abstract class PrismaExtensions {
 					const result = batchPayloads.reduce(
 						(acc, { count }, index) => {
 							acc._totalCount += count;
+
 							acc[modelNames[index]] = count;
+
 							return acc;
 						},
 						{ _totalCount: 0 } as FlushDBResult
@@ -100,10 +105,10 @@ export abstract class PrismaExtensions {
 							 */
 							const shadowCtx = Prisma.getExtensionContext(this) as unknown as ModelCTX<TModel, true>;
 
-							const shadowCtxNameLowercase = shadowCtx.$name.toLowerCase() as Lowercase<ShadowCTXName>;
+							const shadowCtxNameCamelCase = StringUtils.convertToCamelCase(shadowCtx.$name);
 
-							const shadowClientModel = client[shadowCtxNameLowercase];
-							const shadowRedisModel = RedisCache[shadowCtxNameLowercase];
+							const shadowClientModel = client[shadowCtxNameCamelCase];
+							const shadowRedisModel = RedisCache[shadowCtxNameCamelCase];
 
 							const idSelect = ObjectUtils.entries(shadowRedisModel.pickIDFields()).reduce(
 								(acc, [key]) => Object.assign(acc, { [key]: true }),
@@ -117,7 +122,7 @@ export abstract class PrismaExtensions {
 
 							const shadowSelect = select as Typings.Database.SimpleSelect<ShadowCTXName>;
 
-							let take = undefined;
+							let take: number | undefined = void 0;
 
 							if ("take" in options) {
 								take = options.take;
@@ -160,6 +165,8 @@ export abstract class PrismaExtensions {
 								const shadowId = options.id as Typings.Database.SimpleUniqueWhereId;
 
 								shadowWhere = typeof shadowId === "string" ? { id: shadowId } : shadowId;
+
+								shadowWhere;
 
 								const shadowCacheRecordId = Object.values(
 									Object.fromEntries(
@@ -281,6 +288,7 @@ export abstract class PrismaExtensions {
 			model: {
 				leveling: this.createBoundModel(container.resolve(LevelingInstanceMethods)),
 				entity: this.createBoundModel(container.resolve(EntityInstanceMethods)),
+				logChannel: this.createBoundModel(container.resolve(LogChannelInstanceMethods)),
 				case: this.createBoundModel(container.resolve(CaseInstanceMethods)),
 				guild: this.createBoundModel(container.resolve(GuildInstanceMethods))
 			}
@@ -315,7 +323,7 @@ class WithSave<TModel> implements IWithSave<TModel> {
 	public readonly doc: Doc<RetrieveModelName<TModel>>;
 
 	constructor(doc: Doc<RetrieveModelName<TModel>>, ctx: ModelCTX<any, true>) {
-		this.idFields = RedisCache[ctx.$name.toLowerCase() as Lowercase<ShadowCTXName>].pickIDFields(doc);
+		this.idFields = RedisCache[StringUtils.convertToCamelCase(ctx.$name)].pickIDFields(doc);
 
 		this.nonUpdatedFields = Object.assign(this.idFields, ObjectUtils.pickKeys(doc, "createdAt", "updatedAt"));
 

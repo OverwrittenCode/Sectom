@@ -2,28 +2,34 @@ import type { Typings } from "~/ts/Typings.js";
 
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { DynamicClientExtensionThis, InternalArgs, Operation } from "@prisma/client/runtime/library.js";
-import type { Simplify } from "type-fest";
+import type { CamelCase, PascalCase, Simplify } from "type-fest";
 
 export type BaseFetchOptionsUnion<TModel> =
 	| BaseFetchByIdOptions<TModel>
 	| BaseFetchFirstOptions<TModel>
 	| BaseFetchManyOptions<TModel>;
+
 export type ClientCTX<M extends Prisma.ModelName = Prisma.ModelName, Inner extends boolean = false> = {
-	[K in Lowercase<M>]: Typings.DisplaceObjects<
-		PrismaClient[K] & $NameCTX<Capitalize<K>>,
-		{
-			/**
-			 * for some reason Prisma converts fields to an empty object for extension context
-			 */
-			fields: {};
-			$parent: ClientCTX<Capitalize<K>, true>;
-		}
-	>;
+	[K in Typings.Database.CamelCaseModelNameMap<M>]: K extends keyof PrismaClient
+		? PascalCase<K> extends infer P extends Prisma.ModelName
+			? Typings.DisplaceObjects<
+					PrismaClient[K] & $NameCTX<P>,
+					{
+						/**
+						 * for some reason Prisma converts fields to an empty object for extension context
+						 */
+						fields: {};
+						$parent: ClientCTX<P, true>;
+					}
+				>
+			: never
+		: never;
 } extends infer R
 	? Inner extends false
 		? R
 		: R & $NameCTX<M>
 	: never;
+
 export type FetchExtendedClient = DynamicClientExtensionThis<
 	Prisma.TypeMap<InternalArgs & FetchExtensionArg>,
 	Prisma.TypeMapCb,
@@ -33,7 +39,7 @@ export type FetchExtendedClient = DynamicClientExtensionThis<
 
 type FetchExtensionArg = Record<"result" | "query" | "client", {}> & {
 	model: Record<
-		"$allModels" | Lowercase<Prisma.ModelName>,
+		"$allModels" | CamelCase<Prisma.ModelName>,
 		{
 			[K in keyof FetchFunctions]: () => FetchFunctions[K];
 		}
@@ -58,42 +64,40 @@ export type FetchOutput<
 	TModel,
 	F extends FetchableOperations = FetchableOperations,
 	O extends FetchOptions<TModel, F> = FetchOptions<TModel, F>
-> = Exclude<
-	Typings.SetNullableCase<
-		Simplify<
-			Typings.Database.SimpleSelectOutput<
-				RetrieveModelName<TModel>,
-				O["select"] extends infer T extends Typings.Database.SimpleSelect<RetrieveModelName<TModel>>
-					? T &
-							(Typings.Database.SimpleUniqueWhereId<RetrieveModelName<TModel>> extends infer U extends
-								| Record<string, string>
-								| string
-								? U extends Record<string, string>
-									? Record<keyof U, true>
-									: { id: true }
-								: never) // make sure typings reflect enforcing id fields to be in the selection
-					: undefined
-			>
-		> extends infer X
-			? F extends `${string}Many`
-				? X[]
-				: IWithSave<TModel, X>
-			: never,
-		F extends `${string}${"OrThrow" | "Many"}`
+> = Typings.SetNullableCase<
+	Simplify<
+		Typings.Database.SimpleSelectOutput<
+			RetrieveModelName<TModel>,
+			O["select"] extends infer T extends Typings.Database.SimpleSelect<RetrieveModelName<TModel>>
+				? T &
+						(Typings.Database.SimpleUniqueWhereId<RetrieveModelName<TModel>> extends infer U extends
+							| Record<string, string>
+							| string
+							? U extends Record<string, string>
+								? Record<keyof U, true>
+								: { id: true }
+							: never) // make sure typings reflect enforcing id fields to be in the selection
+				: undefined
+		>
+	> extends infer X
+		? F extends `${string}Many`
+			? X[]
+			: IWithSave<TModel, X>
+		: never,
+	F extends `${string}${"OrThrow" | "Many"}`
+		? true
+		: O extends Required<FetchCreateDataOptions<TModel, F>>
 			? true
-			: O extends Required<FetchCreateDataOptions<TModel, F>>
-				? true
-				: false
-	>,
-	undefined
+			: false
 >;
+
 export type FetchShadowDoc = Typings.Listable<Typings.Database.Prisma.RetrieveModelDocument<"Case">> | null | undefined;
 export type FetchSimpleSelect<TModel> = Typings.Database.SimpleSelect<RetrieveModelName<TModel>>;
 export type FetchableOperations = Extract<Operation, `find${"F" | "U" | "M"}${string}`>;
 export type FlushDBResult = {
 	_totalCount: number;
 } & {
-	[K in Lowercase<Prisma.ModelName>]: number;
+	[K in CamelCase<Prisma.ModelName>]: number;
 };
 export type ModelCTX<TModel, Shadow extends boolean = false> = Shadow extends true
 	? ClientCTX["case"]
@@ -108,6 +112,7 @@ export type ModelCTX<TModel, Shadow extends boolean = false> = Shadow extends tr
 				: never
 			: never
 		: never;
+
 export type RetrieveModelName<TModel> = ModelCTX<TModel>["$name"];
 export type ShadowCTXName = ModelCTX<any, true>["$name"];
 

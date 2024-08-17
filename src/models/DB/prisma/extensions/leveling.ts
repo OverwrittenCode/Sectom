@@ -1,16 +1,15 @@
-import { ActionType, EntityType } from "@prisma/client";
+import { ActionType, EntityType, EventType } from "@prisma/client";
 import canvacord from "canvacord";
 import { AttachmentBuilder, ChannelType, type Message, bold, roleMention } from "discord.js";
 import { container, inject, singleton } from "tsyringe";
 
 import { Beans } from "~/framework/DI/Beans.js";
-import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
+import { GuildInstanceMethods } from "~/models/DB/prisma/extensions/guild.js";
+import { LogChannelInstanceMethods } from "~/models/DB/prisma/extensions/logChannel.js";
 import type { Typings } from "~/ts/Typings.js";
 
-import { EntityInstanceMethods } from "./entity.js";
-
 import type { FetchExtendedClient } from "./types/index.js";
-import type { ChatInputCommandInteraction, GuildBasedChannel, GuildMember } from "discord.js";
+import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 import type { SetOptional, Simplify } from "type-fest";
 
 interface GetLevelingDataOutput extends Required<PrismaJson.LevelingXPOptions> {
@@ -199,12 +198,13 @@ export class LevelingInstanceMethods {
 		target: GuildMember
 	): Promise<GetLevelingDataOutput> {
 		const clazz = container.resolve(LevelingInstanceMethods);
+		const _guild = container.resolve(GuildInstanceMethods);
 
 		const { guildId, channelId } = interaction;
 
 		const {
 			configuration: { leveling }
-		} = await DBConnectionManager.Prisma.guild.fetchValidConfiguration({ guildId, check: "leveling" });
+		} = await _guild.fetchValidConfiguration({ guildId, check: "leveling" });
 
 		const connectGuild = {
 			connect: {
@@ -235,7 +235,7 @@ export class LevelingInstanceMethods {
 		});
 
 		if (leveling.overrides) {
-			const ids = [channelId, target.id, ...Array.from(target.roles.cache.values()).map(({ id }) => id)];
+			const ids = [channelId, target.id].concat(target.roles.cache.map(({ id }) => id));
 
 			const { cooldown, multiplier } = Object.values(leveling.overrides).reduce(
 				(acc, curr) => {
@@ -284,6 +284,7 @@ export class LevelingInstanceMethods {
 
 	public async sendLevelUp<T>(this: T, options: LevelRequiredOptions): Promise<void> {
 		const clazz = container.resolve(LevelingInstanceMethods);
+		const _logChannel = container.resolve(LogChannelInstanceMethods);
 
 		const { interaction, target, levelingData, levelAfter } = options;
 
@@ -307,11 +308,13 @@ export class LevelingInstanceMethods {
 			}
 		}
 
-		let levelChannel: GuildBasedChannel | null = await container
-			.resolve(EntityInstanceMethods)
-			.retrieveGivenGuildLogChannel(interaction, ActionType.LEVEL_UP_ACKNOWLEDGED_NEW);
+		const logChannelData = await _logChannel.retrieveMatching({
+			input: interaction,
+			actionType: ActionType.LEVEL_UP_ACKNOWLEDGED_NEW,
+			eventType: EventType.BOT
+		});
 
-		levelChannel ??= interaction.channel;
+		const levelChannel = logChannelData?.channel ?? interaction.channel;
 
 		if (!levelChannel || levelChannel.type !== ChannelType.GuildText) {
 			return;

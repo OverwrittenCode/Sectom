@@ -11,6 +11,17 @@ interface EntriesOptions {
 	sortByTypeof?: boolean;
 }
 
+interface UpdatesByDiscriminator<T> {
+	before: Partial<T>;
+	after: Partial<T>;
+}
+
+interface ChangesByDiscriminator<T> {
+	added: T[];
+	removed: T[];
+	updated: UpdatesByDiscriminator<T>[];
+}
+
 export abstract class ObjectUtils {
 	public static cloneObject<T>(obj: T): T {
 		return JSON.parse(JSON.stringify(obj)) as T;
@@ -47,6 +58,48 @@ export abstract class ObjectUtils {
 
 		return fn as unknown as T;
 	}
+
+	public static getChangesByDiscriminator<T extends Record<string, any>>(
+		before: T[],
+		after: T[],
+		discriminator: keyof T
+	): ChangesByDiscriminator<T> {
+		const findIndexInArray = (arr: T[], value: T, discriminator: keyof T) =>
+			arr.findIndex((item) => item[discriminator] === value[discriminator]);
+
+		const [added, removed] = [after, before].map((value, i, arr) =>
+			value.filter((item) => findIndexInArray(arr[(i + 1) % 2], item, discriminator) === -1)
+		);
+
+		const updated = after.reduce((acc, afterObj) => {
+			const beforeIndex = findIndexInArray(before, afterObj, discriminator);
+
+			if (beforeIndex === -1 || !before[beforeIndex]) {
+				return acc;
+			}
+
+			const changes: UpdatesByDiscriminator<T> = { before: {}, after: {} };
+
+			let hasChanges = false;
+
+			this.keys(afterObj).forEach((key) => {
+				const afterValue = afterObj[key];
+				const beforeValue = before[beforeIndex][key];
+
+				if (JSON.stringify(afterValue) !== JSON.stringify(beforeValue)) {
+					changes.before[key] = beforeValue;
+					changes.after[key] = afterValue;
+
+					hasChanges = true;
+				}
+			});
+
+			return hasChanges ? [...acc, changes] : acc;
+		}, [] as UpdatesByDiscriminator<T>[]);
+
+		return { added, removed, updated };
+	}
+
 	public static isDateString(str: unknown): boolean {
 		if (typeof str !== "string") {
 			return false;

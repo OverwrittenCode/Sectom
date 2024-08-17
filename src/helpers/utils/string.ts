@@ -1,11 +1,29 @@
 import crypto from "node:crypto";
 
-import { ActionType } from "@prisma/client";
-
+import { ACTION_TYPES } from "~/constants.js";
 import type { Typings } from "~/ts/Typings.js";
 
-import type { PascalCase, Split } from "type-fest";
-import type { SplitWords } from "type-fest/source/split-words.js";
+import type { Join, Split } from "type-fest";
+
+type CamelCase<T extends string, S extends string, J extends string> = Join<_CamelCase<Split<T, S>>, J>;
+
+type TitleCase<T extends string, S extends string, J extends string> = Join<_PascalCase<Split<T, S>>, J>;
+
+type PascalCaseString<S extends string> = S extends `${infer First}${infer Rest}` ? `${Uppercase<First>}${Rest}` : S;
+
+type CamelCaseString<S extends string> = S extends `${infer First}${infer Rest}` ? `${Lowercase<First>}${Rest}` : S;
+
+type _PascalCase<T extends string[]> = T extends [infer First, ...infer Rest extends string[]]
+	? First extends string
+		? [PascalCaseString<First>, ..._PascalCase<Rest>]
+		: []
+	: [];
+
+type _CamelCase<T extends string[]> = T extends [infer First, ...infer Rest extends string[]]
+	? First extends string
+		? [CamelCaseString<PascalCaseString<First>>, ..._CamelCase<Rest>]
+		: []
+	: [];
 
 export abstract class StringUtils {
 	public static readonly customIDFIeldBodySeperator = ".";
@@ -24,12 +42,13 @@ export abstract class StringUtils {
 
 		number: /^\d+$/,
 		allActionModifiers: new RegExp(
-			`_(${Array.from(
-				new Set<string>(Object.values(ActionType).map((actionType) => actionType.split("_").at(-1)!))
-			).join("|")})$`,
+			`_(${Array.from(new Set<string>(ACTION_TYPES.map((actionType) => actionType.split("_").at(-1)!))).join(
+				"|"
+			)})$`,
 			"g"
 		),
-		createBasedActionModifiers: /_(ADD|CREATE|SET|ENABLE)$/g
+		createBasedActionModifiers: /_(ADD|CREATE|SET|ENABLE)$/,
+		discordBasedActionLog: /^DISCORD_/
 	} as const;
 	public static readonly tabCharacter = "⠀";
 
@@ -56,16 +75,29 @@ export abstract class StringUtils {
 		return result as Typings.Concatenate<T, Seperator>;
 	}
 
-	public static convertToTitleCase<const T extends string, const S extends string = " ">(
+	public static convertToCamelCase<const T extends string, const S extends string = " ", J extends string = "">(
 		str: T,
-		splitBy?: S
-	): Split<T, S> extends SplitWords<T> ? Typings.Concatenate<SplitWords<PascalCase<Lowercase<T>>>, " "> : string {
+		splitBy?: S,
+		join?: J
+	): CamelCase<T, S, J> {
+		const titleCase = this.convertToTitleCase(str, splitBy ?? " ", join ?? "");
+
+		const result = titleCase.charAt(0).toLowerCase() + titleCase.slice(1);
+
+		return result as CamelCase<T, S, J>;
+	}
+
+	public static convertToTitleCase<T extends string, S extends string = " ", J extends string = " ">(
+		str: T,
+		splitBy?: S,
+		join?: J
+	): TitleCase<T, S, J> {
 		return str
 			.replace(this.regexes.camelCaseBoundary, "$1 $2")
 			.toLowerCase()
-			.split(splitBy || " ")
+			.split(splitBy ?? " ")
 			.map(this.capitaliseFirstLetter)
-			.join(" ") as Typings.Concatenate<SplitWords<PascalCase<Lowercase<T>>>, " ">;
+			.join(join ?? " ") as TitleCase<T, S, J>;
 	}
 
 	public static generateID(len: number | Buffer = 6, buf?: Buffer): string {

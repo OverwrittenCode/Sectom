@@ -28,7 +28,7 @@ import type {
 	UserSelectMenuInteraction
 } from "discord.js";
 import type { DApplicationCommand, NotEmpty, SlashOptionOptions, VerifyName } from "discordx";
-import type { Join, Simplify } from "type-fest";
+import type { CamelCase, Join, RequireAtLeastOne, Simplify } from "type-fest";
 
 export namespace Typings {
 	export namespace Database {
@@ -117,6 +117,10 @@ export namespace Typings {
 			> = T["length"] extends 0 ? {} : UnionToTuple<TransformTuple<T[number]>>;
 		}
 
+		export type CamelCaseModelNameMap<M extends _Prisma.ModelName = _Prisma.ModelName> = {
+			[K in _Prisma.ModelName]: CamelCase<K>;
+		}[M];
+
 		export type DocumentInput<M extends _Prisma.ModelName = _Prisma.ModelName> =
 			| Redis.RetrieveModelDocument<M>
 			| Prisma.RetrieveModelDocument<M>;
@@ -152,6 +156,10 @@ export namespace Typings {
 				: never
 			: never;
 
+		export type SimpleWhereOR<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
+			? Exclude<SimpleWhere<M>["OR"], undefined>[number]
+			: never;
+
 		export type SimpleUniqueWhereId<M extends _Prisma.ModelName = _Prisma.ModelName> = M extends M
 			? Exclude<
 					_Prisma.TypeMap["model"][M]["operations"]["findUnique"]["args"]["where"]["id"],
@@ -181,9 +189,11 @@ export namespace Typings {
 	export type DisplaceObjects<T1, T2> = Omit<T1, keyof T2> & T2;
 	export type Listable<T> = T | T[];
 	export type ObjectValues<T> = T[keyof T];
-	export type SetNullableCase<T, WithoutFalsyCase extends boolean = true> = WithoutFalsyCase extends true
-		? T
-		: T | null | undefined;
+	export type SetNullableCase<
+		T,
+		WithoutFalsyCase extends boolean = true,
+		WithUndefined extends boolean = false
+	> = WithoutFalsyCase extends true ? T : WithUndefined extends true ? T | null | undefined : T | null;
 	export type PickMatching<T, V> = { [K in keyof T as T[K] extends V | (() => V) ? K : never]: T[K] };
 	export type ExactlyOneOf<T> = {
 		[K in keyof T]: Simplify<Pick<T, K> & Partial<Record<Exclude<keyof T, K>, never>>>;

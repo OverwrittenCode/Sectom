@@ -1,12 +1,12 @@
 import { container } from "tsyringe";
 
+import { CaseRedisCache } from "~/models/DB/cache/case.js";
+import { EntityRedisCache } from "~/models/DB/cache/entity.js";
+import { GuildRedisCache } from "~/models/DB/cache/guild.js";
+import { LevelingRedisCache } from "~/models/DB/cache/leveling.js";
+import { LogChannelRedisCache } from "~/models/DB/cache/logChannel.js";
 import { SuggestionRedisCache } from "~/models/DB/cache/suggestion.js";
 import { TicketRedisCache } from "~/models/DB/cache/ticket.js";
-
-import { CaseRedisCache } from "./case.js";
-import { EntityRedisCache } from "./entity.js";
-import { GuildRedisCache } from "./guild.js";
-import { LevelingRedisCache } from "./leveling.js";
 
 export abstract class RedisCache {
 	public static get case(): CaseRedisCache {
@@ -15,6 +15,10 @@ export abstract class RedisCache {
 
 	public static get entity(): EntityRedisCache {
 		return container.resolve(EntityRedisCache);
+	}
+
+	public static get logChannel(): LogChannelRedisCache {
+		return container.resolve(LogChannelRedisCache);
 	}
 
 	public static get guild(): GuildRedisCache {

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 
+import { StringUtils } from "~/helpers/utils/string.js";
 import { DBConnectionManager } from "~/managers/DBConnectionManager.js";
 import { RedisCache } from "~/models/DB/cache/index.js";
 import type { Typings } from "~/ts/Typings.js";
@@ -17,9 +18,7 @@ type PulseEventData<M extends Prisma.ModelName = Prisma.ModelName> = BasePulseEv
 
 abstract class Subscriptions {
 	public static async init() {
-		const modelNames = Object.values(Prisma.ModelName).map(
-			(str) => str.toLowerCase() as Lowercase<Prisma.ModelName>
-		);
+		const modelNames = Object.values(Prisma.ModelName).map((str) => StringUtils.convertToCamelCase(str));
 
 		const prismaModels = modelNames.map((str) => DBConnectionManager.Prisma[str]);
 
@@ -33,7 +32,7 @@ abstract class Subscriptions {
 			for await (const event of subscription) {
 				const eventData = event as PulseEventData<Prisma.ModelName>;
 
-				const cacheModel = RedisCache[eventData.modelName.toLowerCase() as Lowercase<Prisma.ModelName>];
+				const cacheModel = RedisCache[StringUtils.convertToCamelCase(eventData.modelName)];
 
 				switch (eventData.action) {
 					case "create":

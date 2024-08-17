@@ -17,29 +17,37 @@ datasource db {
 }
 
 model Entity {
-    id                String       @id
-    createdAt         DateTime     @default(now()) @db.Timestamptz()
-    updatedAt         DateTime     @updatedAt @db.Timestamptz()
-    type              EntityType
-    perpetratorCases  Case[]       @relation(name: "Perpetrator")
-    targetedCases     Case[]       @relation(name: "Target")
-    channelCases      Case[]       @relation(name: "Channel")
-    channelTickets    Ticket[]     @relation(name: "Ticket-Channel")
-    parentTickets     Ticket[]     @relation(name: "Ticket-Parent")
-    authorTickets     Ticket[]     @relation(name: "Ticket-Author")
-    suggestions       Suggestion[] @relation(name: "Suggestion")
-    levelingData      Leveling?
-    guild             Guild        @relation(name: "Guild-Entity", fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    guildId           String
-    /// only for {@link $Enums.EntityType.CHANNEL}
-    logChannelGuild   Guild?       @relation(name: "LogChannel", fields: [logChannelGuildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    /// only for {@link $Enums.EntityType.CHANNEL}
-    logChannelGuildId String?
-    /// only for {@link $Enums.EntityType.CHANNEL}
-    logChannelType    ActionType?
+    id               String       @id
+    createdAt        DateTime     @default(now()) @db.Timestamptz()
+    updatedAt        DateTime     @updatedAt @db.Timestamptz()
+    type             EntityType
+    perpetratorCases Case[]       @relation(name: "Perpetrator")
+    targetedCases    Case[]       @relation(name: "Target")
+    channelCases     Case[]       @relation(name: "Channel")
+    channelTickets   Ticket[]     @relation(name: "Ticket-Channel")
+    parentTickets    Ticket[]     @relation(name: "Ticket-Parent")
+    authorTickets    Ticket[]     @relation(name: "Ticket-Author")
+    suggestions      Suggestion[] @relation(name: "Suggestion")
+    levelingData     Leveling?
+    guild            Guild        @relation(name: "Entity", fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    guildId          String
 
     @@index([guildId])
-    @@index([logChannelGuildId])
+}
+
+model LogChannel {
+    id         String     @id
+    createdAt  DateTime   @default(now()) @db.Timestamptz()
+    updatedAt  DateTime   @updatedAt @db.Timestamptz()
+    guild      Guild      @relation(name: "LogChannel", fields: [guildId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    guildId    String
+    actionType ActionType?
+    eventType  EventType
+    /// exists when {@link $Enums.EventType} is {@link $Enums.EventType.DISCORD}
+    webhookUrl String?
+
+    @@index([guildId])
+    @@index(fields: [guildId, eventType])
 }
 
 model Case {
@@ -94,8 +102,8 @@ model Guild {
     /// [Configuration]
     configuration              Json
     cases                      Case[]
-    entities                   Entity[]     @relation(name: "Guild-Entity")
-    logChannels                Entity[]     @relation(name: "LogChannel")
+    entities                   Entity[]     @relation(name: "Entity")
+    logChannels                LogChannel[] @relation(name: "LogChannel")
     suggestions                Suggestion[]
     tickets                    Ticket[]
 }
@@ -159,6 +167,11 @@ enum PriorityType {
     NORMAL
     IMPORTANT
     URGENT
+}
+
+enum EventType {
+    BOT
+    DISCORD
 }
 
 enum ActionType {
@@ -239,4 +252,21 @@ enum ActionType {
     CONFIG_LEVEL_SETTINGS_EDIT
     CONFIG_LEVEL_SETTINGS_UPDATE
     CONFIG_LEVEL_SETTINGS_REMOVE
+    DISCORD_SERVER_UPDATE
+    DISCORD_MEMBER_UPDATE
+    DISCORD_MESSAGE_DELETE
+    DISCORD_MESSAGE_UPDATE
+    DISCORD_EMOJI_CREATE
+    DISCORD_EMOJI_UPDATE
+    DISCORD_EMOJI_DELETE
+    DISCORD_STICKER_CREATE
+    DISCORD_STICKER_UPDATE
+    DISCORD_STICKER_DELETE
+    DISCORD_CHANNEL_CREATE
+    DISCORD_CHANNEL_UPDATE
+    DISCORD_CHANNEL_DELETE
+    DISCORD_THREAD_UPDATE
+    DISCORD_ROLE_CREATE
+    DISCORD_ROLE_UPDATE
+    DISCORD_ROLE_DELETE
 }

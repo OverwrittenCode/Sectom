@@ -22,12 +22,14 @@ abstract class Main {
 		intents: [
 			IntentsBitField.Flags.Guilds,
 			IntentsBitField.Flags.GuildMembers,
+			IntentsBitField.Flags.GuildEmojisAndStickers,
+			IntentsBitField.Flags.GuildModeration,
 			IntentsBitField.Flags.GuildMessages,
 			IntentsBitField.Flags.GuildMessageReactions,
 			IntentsBitField.Flags.GuildVoiceStates,
 			IntentsBitField.Flags.MessageContent
 		],
-		partials: [Partials.Channel, Partials.GuildMember, Partials.User],
+		partials: [Partials.Channel, Partials.GuildMember, Partials.User, Partials.Message],
 		allowedMentions: {
 			parse: ["users"]
 		},

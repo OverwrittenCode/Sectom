@@ -7,8 +7,6 @@ import { ObjectUtils } from "~/helpers/utils/object.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 import type { Typings } from "~/ts/Typings.js";
 
-import { DBConnectionManager } from "./DBConnectionManager.js";
-
 import type { Entries } from "type-fest";
 
 type PrismaDoc<M extends Prisma.ModelName> = Typings.Database.Prisma.RetrieveModelDocument<M>;
@@ -24,7 +22,6 @@ export abstract class RedisCacheManager<
 	protected override readonly modelName: M;
 
 	public readonly collection: Typings.Database.Redis.ModelCollection<M>;
-	public readonly prismaModel: (typeof DBConnectionManager.Prisma)[Lowercase<M>];
 	public readonly indexes = {} as Typings.Database.Redis.IndexObject<M, IndexList[number]>;
 
 	constructor(prismaModelName: M, indexList?: IndexList) {
@@ -35,9 +32,8 @@ export abstract class RedisCacheManager<
 			redis: Redis.fromEnv({ automaticDeserialization: false }),
 			encoderDecoder: new RedisDataService<M>(this.modelName)
 		});
-		this.collection = this.queryClient.createCollection<PrismaDoc<M>>(this.modelName);
 
-		this.prismaModel = DBConnectionManager.Prisma[this.modelName.toLowerCase() as Lowercase<M>];
+		this.collection = this.queryClient.createCollection<PrismaDoc<M>>(this.modelName);
 
 		if (indexList?.length) {
 			indexList.forEach((data, i) => {

@@ -1,13 +1,14 @@
 import { type APIEmbedField, bold as _bold } from "discord.js";
 import { EmbedBuilder } from "discord.js";
 
+import { ObjectUtils } from "~/helpers/utils/object.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 
-import type { APIEmbed } from "discord.js";
+import type { APIEmbed, BitField } from "discord.js";
 
-interface BaseField extends Omit<APIEmbedField, "inline"> {}
+export interface BaseField extends Omit<APIEmbedField, "inline"> {}
 
-interface Field extends Pick<APIEmbedField, "name"> {
+export interface Field extends Pick<APIEmbedField, "name"> {
 	value: string | BaseField[];
 }
 
@@ -19,6 +20,14 @@ interface MutualField {
 	data: APIEmbedField;
 	indexPosition: number | "end";
 }
+
+interface BitFieldIndentFieldsOptions<T extends BitfieldIndentable> {
+	fieldNames?: [added: string, removed: string];
+	before: T;
+	after: T;
+}
+
+type BitfieldIndentable = BitField<string, number | bigint>;
 
 export abstract class EmbedManager {
 	public static addMutualFields(embeds: EmbedBuilder[], mutualFields: MutualField[]): EmbedBuilder[] {
@@ -84,7 +93,7 @@ export abstract class EmbedManager {
 		return fields
 			.map((field) => {
 				const seperatedFieldName = field.name + seperator;
-				const formattedFieldName = _bold(seperatedFieldName)
+				const formattedFieldName = _bold(seperatedFieldName);
 
 				if (typeof field.value === "string") {
 					return tab + formattedFieldName + field.value;
@@ -102,5 +111,73 @@ export abstract class EmbedManager {
 				}
 			})
 			.join(StringUtils.lineBreak);
+	}
+
+	public static convertBitFieldToIndentableFields<T extends BitfieldIndentable>(
+		options: BitFieldIndentFieldsOptions<T>
+	): BaseField[] {
+		const { fieldNames = ["Added", "Removed"] } = options;
+
+		const granted = options.before.missing(options.after);
+		const revoked = options.after.missing(options.before);
+
+		const result: BaseField[] = fieldNames
+			.map((name, i) => ({
+				name,
+				value: (i === 0 ? granted : revoked).join(", ")
+			}))
+			.filter(({ value }) => !!value);
+
+		return result;
+	}
+
+	public static convertObjectToIndentedFieldValues(obj: Record<string, any>, indentLevel: number = 0): string {
+		if (indentLevel > 6) {
+			throw new RangeError("Maximum depth reached", { cause: obj });
+		}
+
+		const indent = StringUtils.tabCharacter.repeat(indentLevel);
+
+		const nextIndentLevel = indentLevel + 1;
+
+		const entries = ObjectUtils.entries(obj);
+
+		let result = "";
+
+		for (const [key, value] of entries) {
+			const property = indentLevel <= 1 ? _bold(StringUtils.convertToTitleCase(key)) : key;
+
+			if (value == null) {
+				continue;
+			}
+
+			if (result) {
+				result += StringUtils.lineBreak;
+			}
+
+			result += indent + property;
+
+			if (ObjectUtils.isValidArray(value)) {
+				const isObjectArr = value.every((v) => ObjectUtils.isValidObject(v));
+
+				if (isObjectArr) {
+					result += `: ${StringUtils.lineBreak}`;
+
+					result += value
+						.map((v) => this.convertObjectToIndentedFieldValues(v, nextIndentLevel))
+						.join(StringUtils.lineBreak);
+				} else {
+					const arrayStr = value.map((v) => `${v}`).join(", ");
+
+					result += `: ${arrayStr}`;
+				}
+			} else if (ObjectUtils.isValidObject(value)) {
+				result += `:${StringUtils.lineBreak + this.convertObjectToIndentedFieldValues(value, nextIndentLevel) + StringUtils.lineBreak}`;
+			} else {
+				result += `: ${value}`;
+			}
+		}
+
+		return result.trimEnd();
 	}
 }

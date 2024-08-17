@@ -2,7 +2,7 @@ import assert from "assert";
 
 import * as discordBuilders from "@discordjs/builders";
 import { PaginationType } from "@discordx/pagination";
-import { ActionType, CaseType, EntityType } from "@prisma/client";
+import { ActionType, CaseType, EntityType, EventType } from "@prisma/client";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,
@@ -18,7 +18,7 @@ import {
 import _ from "lodash";
 import prettyMilliseconds from "pretty-ms";
 
-import { BOT_ID, LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
+import { ACTION_TYPES, BOT_ID, LIGHT_GOLD, MAX_ELEMENTS_PER_PAGE } from "~/constants";
 import { CommandUtils } from "~/helpers/utils/command.js";
 import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { ObjectUtils } from "~/helpers/utils/object.js";
@@ -33,11 +33,13 @@ import type { PaginationItem } from "@discordx/pagination";
 import type { Prisma } from "@prisma/client";
 import type {
 	APIEmbedField,
-	ButtonInteraction,
 	ChatInputCommandInteraction,
 	GuildMember,
 	InteractionResponse,
-	Message
+	Message,
+	NewsChannel,
+	Webhook,
+	WebhookType
 } from "discord.js";
 import type { Simplify } from "type-fest";
 
@@ -58,6 +60,8 @@ type PrismaTX = (typeof DBConnectionManager.Prisma)["$transaction"] extends (fn:
 	: never;
 
 type CommandMentionArgs = [commandName: string, subcommandGroupName: string, subcommandName: string, commandId: string];
+
+type AuditOrigin = Pick<ChatInputCommandInteraction<"cached">, "user" | "channel">;
 
 interface ActionOptions {
 	checkPossible?: (guildMember: GuildMember) => boolean;
@@ -107,16 +111,24 @@ export abstract class ActionManager {
 		messageURL: true
 	} satisfies Prisma.CaseSelectScalar;
 
-	public static readonly createBasedTypes = Object.values(ActionType).filter((caseActionType) =>
+	public static readonly eventBasedLogTypes = Object.groupBy(ACTION_TYPES, (type) =>
+		StringUtils.regexes.discordBasedActionLog.test(type) ? EventType.DISCORD : EventType.BOT
+	) as Record<EventType, ActionType[]>;
+
+	public static readonly createBasedTypes = ACTION_TYPES.filter((caseActionType) =>
 		StringUtils.regexes.createBasedActionModifiers.test(caseActionType)
 	);
 
-	public static generateAuditReason(
-		interaction: ChatInputCommandInteraction<"cached"> | ButtonInteraction<"cached">,
-		reason: string,
-		fields: AuditFields = {}
-	): string {
-		const { user: actioned_by, channel } = interaction;
+	public static readonly _createBasedTypes = this.eventBasedLogTypes[EventType.BOT].filter((type) =>
+		StringUtils.regexes.createBasedActionModifiers.test(type)
+	);
+
+	public static readonly discordLogTypes = ACTION_TYPES.filter((type) =>
+		StringUtils.regexes.discordBasedActionLog.test(type)
+	);
+
+	public static generateAuditReason(origin: AuditOrigin, reason: string, fields: AuditFields = {}): string {
+		const { user: actioned_by, channel } = origin;
 
 		const defaultAuditFields: AuditFields = {
 			reason,
@@ -172,6 +184,16 @@ export abstract class ActionManager {
 			name: "Timestamps",
 			value: EmbedManager.indentFieldValues(createdCaseEmbedTimestampFieldValue)
 		};
+	}
+
+	public static async generateLogWebhook(
+		origin: AuditOrigin,
+		targetChannel: TextChannel | NewsChannel
+	): Promise<Webhook<WebhookType.Incoming>> {
+		return await targetChannel.createWebhook({
+			name: targetChannel.client.user.displayName,
+			reason: this.generateAuditReason(origin, "Discord Event Logging requires a webhook")
+		});
 	}
 
 	public static async getCases(
@@ -324,7 +346,7 @@ export abstract class ActionManager {
 
 		let { id: perpetratorId } = perpetrator;
 
-		const { case: _case, entity: _entity } = tx ?? DBConnectionManager.Prisma;
+		const { case: _case, logChannel: _logChannel } = tx ?? DBConnectionManager.Prisma;
 
 		assert(interaction.channel && channelId);
 
@@ -463,8 +485,15 @@ export abstract class ActionManager {
 						let value = toStringPrototypeValue?.toString();
 
 						if (value in ActionType) {
+							const isDiscordEventLog = this.eventBasedLogTypes[EventType.DISCORD].includes(value);
+
 							value = StringUtils.convertToTitleCase(
-								value.replace(StringUtils.regexes.allActionModifiers, ""),
+								value.replace(
+									isDiscordEventLog
+										? StringUtils.regexes.discordBasedActionLog
+										: StringUtils.regexes.allActionModifiers,
+									""
+								),
 								"_"
 							);
 						} else if (option.name.includes("duration") && StringUtils.regexes.number.test(value)) {
@@ -563,27 +592,33 @@ export abstract class ActionManager {
 
 		const apiEmbeds = formattedEmbeds.map((embed) => embed.toJSON());
 
-		let moderativeLogChannel = await _entity.retrieveGivenGuildLogChannel(interaction, actionType);
+		const logChannelData = await _logChannel.retrieveMatching({
+			input: interaction,
+			actionType,
+			eventType: EventType.BOT
+		});
+
+		let logChannel = logChannelData?.channel;
 		let moderationLogFailStatusMessage: string | null = null;
 		let logMessage: Message<true> | null = null;
 		let messageURL: string | null = null;
 
-		if (!moderativeLogChannel && interaction.channel instanceof TextChannel) {
-			moderativeLogChannel = interaction.channel;
+		if (!logChannel && interaction.channel instanceof TextChannel) {
+			logChannel = interaction.channel;
 		}
 
-		if (moderativeLogChannel) {
+		if (logChannel) {
 			try {
 				const components = logBasedButtonActionRows ?? buttonActionRows;
 
-				logMessage = await moderativeLogChannel.send({ embeds: formattedEmbeds, components });
+				logMessage = await logChannel.send({ embeds: formattedEmbeds, components });
 				messageURL = logMessage.url;
 			} catch (err) {
 				if (!InteractionUtils.isPermissionError(err)) {
 					throw err;
 				}
 
-				moderationLogFailStatusMessage = `I was unable to send the log message to ${moderativeLogChannel.toString()}`;
+				moderationLogFailStatusMessage = `I was unable to send the log message to ${logChannel.toString()}`;
 			}
 		}
 
@@ -692,7 +727,7 @@ export abstract class ActionManager {
 				});
 			}
 
-			if (messageURL && moderativeLogChannel && moderativeLogChannel.id !== interaction.channelId) {
+			if (messageURL && logChannel && logChannel.id !== interaction.channelId) {
 				const messageURLButton = new ButtonBuilder()
 					.setLabel("View Log Message")
 					.setStyle(ButtonStyle.Link)

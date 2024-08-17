@@ -1,22 +1,39 @@
-import { Category, EnumChoice, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { ActionType, EntityType } from "@prisma/client";
-import { ApplicationCommandOptionType, PermissionFlagsBits } from "discord.js";
-import { Discord, Guard, Slash, SlashChoice, SlashGroup } from "discordx";
+import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
+import { ActionType, EntityType, EventType } from "@prisma/client";
+import { PermissionFlagsBits } from "discord.js";
+import { Discord, Guard, MethodDecoratorEx, Slash as SlashDecorator, SlashGroup } from "discordx";
 
-import { AutoCompleteSlashOption } from "~/helpers/decorators/slashOptions/autocomplete.js";
+import { ActionSlashChoiceOption } from "~/helpers/decorators/slash/autocomplete.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
 import { GivenChannelSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
 import { ClientRequiredPermissions } from "~/helpers/guards/ClientRequiredPermissions.js";
+import { InteractionUtils } from "~/helpers/utils/interaction.js";
 import { StringUtils } from "~/helpers/utils/string.js";
 import { ActionManager } from "~/models/framework/managers/ActionManager.js";
 import { DBConnectionManager } from "~/models/framework/managers/DBConnectionManager.js";
 import { Enums } from "~/ts/Enums.js";
 
-import type { Prisma, PrismaPromise } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { ChatInputCommandInteraction, TextChannel } from "discord.js";
 
-type ActionTypeChoice = ActionType | "DEFAULT";
+interface BaseHandlerOptions {
+	actionTypeChoice?: ActionType;
+	eventType: EventType;
+	interaction: ChatInputCommandInteraction<"cached">;
+	reason: string;
+}
+
+interface RemoveHandlerOptions extends BaseHandlerOptions {
+	modifyType: Enums.ModifierType.Remove;
+}
+
+interface SetHandlerOptions extends BaseHandlerOptions {
+	channel: TextChannel;
+	modifyType: Enums.ModifierType.Add;
+}
+
+type HandlerOptions = RemoveHandlerOptions | SetHandlerOptions;
 
 @Discord()
 @Category(Enums.CommandCategory.Admin)
@@ -27,177 +44,247 @@ type ActionTypeChoice = ActionType | "DEFAULT";
 })
 @SlashGroup("logchannel", "config")
 export abstract class LogChannelConfig {
-	private static readonly choices = ActionManager.createBasedTypes.reduce(
-		(acc, actionType) => {
-			const formattedKey = StringUtils.concatenate(
-				" ",
-				...actionType
-					.replace(StringUtils.regexes.createBasedActionModifiers, "")
-					.toLowerCase()
-					.split("_")
-					.map((str) => StringUtils.capitaliseFirstLetter(str))
-			);
+	private static Slash(modifierType: HandlerOptions["modifyType"], eventType: EventType): MethodDecoratorEx {
+		const modiferTypeStr = modifierType === Enums.ModifierType.Add ? "set" : "remove";
 
-			acc[formattedKey] = actionType;
+		const eventTypeLowercase = eventType.toLowerCase() as Lowercase<EventType>;
 
-			return acc;
-		},
-		{ Default: "DEFAULT" } as Record<string, ActionTypeChoice>
-	);
+		return SlashDecorator({
+			description: `${StringUtils.capitaliseFirstLetter(modiferTypeStr)}s a ${eventTypeLowercase} log channel`,
+			name: `${modiferTypeStr}-${eventTypeLowercase}-log`
+		});
+	}
 
-	@Slash({ description: "Removes a log channel" })
-	public async remove(
-		@SlashChoice(...EnumChoice(LogChannelConfig.choices))
-		@LogChannelConfig.ActionChoiceSlashOption(true)
-		actionTypeChoice: ActionTypeChoice,
+	@LogChannelConfig.Slash(Enums.ModifierType.Remove, EventType.BOT)
+	public async removeBotLog(
+		@ActionSlashChoiceOption({ eventType: EventType.BOT, required: true })
+		actionTypeChoice: ActionType,
 		@ReasonSlashOption()
 		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const actionTypeGroup = actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
-
-		const retrievedGuildLogChannel = await DBConnectionManager.Prisma.entity.retrieveGivenGuildLogChannel(
+		return this.handler({
 			interaction,
-			actionTypeGroup
-		);
-
-		const currentCorrespondingLogChannelId = retrievedGuildLogChannel?.id;
-
-		if (!currentCorrespondingLogChannelId) {
-			throw new ValidationError(ValidationError.messageTemplates.NotConfigured("given log channel"));
-		}
-
-		return await ActionManager.logCase({
-			interaction,
-			target: {
-				id: currentCorrespondingLogChannelId,
-				type: EntityType.CHANNEL
-			},
 			reason,
-			actionType: ActionType.CONFIG_LOG_CHANNEL_REMOVE,
-			actionOptions: {
-				pastTense: "removed the log channel",
-				pendingExecution: () =>
-					DBConnectionManager.Prisma.entity.update({
-						where: {
-							id: currentCorrespondingLogChannelId
-						},
-						data: {
-							logChannelType: null,
-							logChannelGuild: {
-								disconnect: true
-							}
-						}
-					})
-			}
+			actionTypeChoice,
+			eventType: EventType.BOT,
+			modifyType: Enums.ModifierType.Remove
 		});
 	}
 
-	@Slash({ description: "Sets the log channel for an action type group" })
+	@LogChannelConfig.Slash(Enums.ModifierType.Remove, EventType.DISCORD)
+	public async removeDiscordLog(
+		@ActionSlashChoiceOption({ eventType: EventType.DISCORD, required: true })
+		actionTypeChoice: ActionType,
+		@ReasonSlashOption()
+		reason: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler({
+			interaction,
+			reason,
+			actionTypeChoice,
+			eventType: EventType.DISCORD,
+			modifyType: Enums.ModifierType.Remove
+		});
+	}
+
+	@LogChannelConfig.Slash(Enums.ModifierType.Add, EventType.BOT)
 	@Guard(
 		RateLimit(TIME_UNIT.seconds, 3),
 		ClientRequiredPermissions([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])
 	)
-	public async set(
-		@GivenChannelSlashOption()
+	public async setBotLog(
+		@GivenChannelSlashOption({ required: true })
 		channel: TextChannel,
-		@LogChannelConfig.ActionChoiceSlashOption()
-		actionTypeChoice: ActionTypeChoice | undefined,
+		@ActionSlashChoiceOption({ eventType: EventType.BOT })
+		actionTypeChoice: ActionType | undefined,
 		@ReasonSlashOption()
 		reason: string,
 		interaction: ChatInputCommandInteraction<"cached">
 	) {
-		const { guildId } = interaction;
-		const actionTypeGroup = !actionTypeChoice || actionTypeChoice === "DEFAULT" ? null : actionTypeChoice;
-
-		const retrievedGuildLogChannel = await DBConnectionManager.Prisma.entity.retrieveGivenGuildLogChannel(
+		return this.handler({
 			interaction,
-			actionTypeGroup
-		);
-
-		const currentCorrespondingLogChannelId = retrievedGuildLogChannel?.id;
-
-		const prismaTransaction: PrismaPromise<any>[] = [];
-
-		if (currentCorrespondingLogChannelId) {
-			if (currentCorrespondingLogChannelId === channel.id) {
-				throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
-			}
-
-			prismaTransaction.push(
-				DBConnectionManager.Prisma.entity.update({
-					where: {
-						id: currentCorrespondingLogChannelId
-					},
-					data: {
-						logChannelType: null,
-						logChannelGuild: {
-							disconnect: true
-						}
-					}
-				})
-			);
-		}
-
-		const connectGuild = {
-			connect: {
-				id: guildId
-			} satisfies Prisma.GuildWhereUniqueInput
-		};
-
-		const updateFields = {
-			logChannelType: actionTypeGroup,
-			logChannelGuild: connectGuild
-		} satisfies Prisma.EntityUpdateInput;
-
-		const createFields = {
-			id: channel.id,
-			type: EntityType.CHANNEL,
-			guild: connectGuild,
-			...updateFields
-		} satisfies Prisma.EntityCreateInput;
-
-		prismaTransaction.push(
-			DBConnectionManager.Prisma.entity.upsert({
-				where: {
-					id: channel.id
-				},
-				update: updateFields,
-				create: createFields,
-				select: {
-					id: true
-				}
-			})
-		);
-
-		const actionType = ActionType[`CONFIG_LOG_CHANNEL_${currentCorrespondingLogChannelId ? "UPDATE" : "ADD"}`];
-
-		const actionStr = currentCorrespondingLogChannelId ? "updated" : "set";
-
-		return await ActionManager.logCase({
-			interaction,
-			target: {
-				id: channel.id,
-				type: EntityType.CHANNEL
-			},
 			reason,
-			actionType,
-			actionOptions: {
-				pastTense: `${actionStr} the log channel`,
-				pendingExecution: () => DBConnectionManager.Prisma.$transaction(prismaTransaction)
-			}
+			actionTypeChoice,
+			eventType: EventType.BOT,
+			modifyType: Enums.ModifierType.Add,
+			channel
 		});
 	}
 
-	private static ActionChoiceSlashOption(required?: boolean) {
-		return AutoCompleteSlashOption(
-			{
-				description: "The action type group",
-				name: "action_type",
-				type: ApplicationCommandOptionType.String,
-				required
-			},
-			LogChannelConfig.choices
-		);
+	@LogChannelConfig.Slash(Enums.ModifierType.Add, EventType.DISCORD)
+	@Guard(
+		RateLimit(TIME_UNIT.seconds, 3),
+		ClientRequiredPermissions([
+			PermissionFlagsBits.ViewChannel,
+			PermissionFlagsBits.SendMessages,
+			PermissionFlagsBits.ManageWebhooks,
+			PermissionFlagsBits.ViewAuditLog
+		])
+	)
+	public async setDiscordLog(
+		@GivenChannelSlashOption({ required: true })
+		channel: TextChannel,
+		@ActionSlashChoiceOption({ eventType: EventType.DISCORD })
+		actionTypeChoice: ActionType | undefined,
+		@ReasonSlashOption()
+		reason: string,
+		interaction: ChatInputCommandInteraction<"cached">
+	) {
+		return this.handler({
+			interaction,
+			reason,
+			actionTypeChoice,
+			eventType: EventType.DISCORD,
+			modifyType: Enums.ModifierType.Add,
+			channel
+		});
+	}
+
+	private async handler(options: HandlerOptions) {
+		const { interaction, reason, actionTypeChoice = null, eventType, modifyType } = options;
+
+		await InteractionUtils.deferInteraction(interaction, true);
+
+		const logChannelData = await DBConnectionManager.Prisma.logChannel.retrieveMatching({
+			input: interaction,
+			actionType: actionTypeChoice,
+			eventType
+		});
+
+		const currentCorrespondingLogChannelId = logChannelData?.channel?.id;
+
+		const sucessContent = (pastTenseAction: string, newChannel?: TextChannel): string => {
+			const contentArr = [`${pastTenseAction} the`];
+
+			if (actionTypeChoice) {
+				let actionType: string = actionTypeChoice;
+
+				if (eventType === EventType.BOT) {
+					actionType = actionType.replace(StringUtils.regexes.allActionModifiers, "");
+				}
+
+				contentArr.push(StringUtils.convertToTitleCase(actionType, "_"));
+			} else {
+				contentArr.push(`default ${eventType.toLowerCase()}`);
+			}
+
+			contentArr.push("log channel");
+
+			if (newChannel) {
+				contentArr.push(`to ${newChannel}`);
+			}
+
+			return contentArr.join(" ");
+		};
+
+		switch (modifyType) {
+			case Enums.ModifierType.Add:
+				{
+					const updateFields: Omit<Prisma.LogChannelCreateInput, "id" | "guild"> = {
+						actionType: actionTypeChoice,
+						eventType
+					};
+
+					const { channel } = options;
+					const { guildId } = interaction;
+
+					if (currentCorrespondingLogChannelId === channel.id) {
+						throw new ValidationError(ValidationError.messageTemplates.AlreadyMatched);
+					}
+
+					const connectGuild = {
+						connect: {
+							id: guildId
+						} satisfies Prisma.GuildWhereUniqueInput
+					};
+
+					if (eventType === EventType.DISCORD) {
+						const webhooks = await channel.fetchWebhooks();
+
+						let webhookUrl = webhooks.find(
+							(webhook) => webhook.isUserCreated() && webhook.owner.id === interaction.client.user.id
+						)?.url;
+
+						if (!webhookUrl) {
+							const webhook = await ActionManager.generateLogWebhook(interaction, channel);
+
+							webhookUrl = webhook.url;
+						}
+
+						updateFields.webhookUrl = webhookUrl;
+					}
+
+					const actionType =
+						ActionType[`CONFIG_LOG_CHANNEL_${currentCorrespondingLogChannelId ? "UPDATE" : "ADD"}`];
+
+					const actionStr = currentCorrespondingLogChannelId ? "updated" : "set";
+
+					await ActionManager.logCase({
+						interaction,
+						target: {
+							id: channel.id,
+							type: EntityType.CHANNEL
+						},
+						reason,
+						actionType,
+						actionOptions: {
+							pendingExecution: () =>
+								DBConnectionManager.Prisma.logChannel.upsert({
+									where: {
+										id: channel.id
+									},
+									update: updateFields,
+									create: {
+										id: channel.id,
+										guild: connectGuild,
+										...updateFields
+									},
+									select: {
+										id: true
+									}
+								})
+						},
+						successContent: sucessContent(actionStr, channel)
+					});
+				}
+
+				break;
+
+			case Enums.ModifierType.Remove:
+				{
+					if (!currentCorrespondingLogChannelId) {
+						throw new ValidationError(
+							ValidationError.messageTemplates.NotConfigured(
+								`given ${eventType.toLowerCase()} log channel`
+							)
+						);
+					}
+
+					await ActionManager.logCase({
+						interaction,
+						target: {
+							id: currentCorrespondingLogChannelId,
+							type: EntityType.CHANNEL
+						},
+						reason,
+						actionType: ActionType.CONFIG_LOG_CHANNEL_REMOVE,
+						actionOptions: {
+							pendingExecution: () =>
+								DBConnectionManager.Prisma.logChannel.delete({
+									where: {
+										id: currentCorrespondingLogChannelId,
+										eventType,
+										actionType: actionTypeChoice
+									}
+								})
+						},
+						successContent: sucessContent("removed")
+					});
+				}
+
+				break;
+		}
 	}
 }

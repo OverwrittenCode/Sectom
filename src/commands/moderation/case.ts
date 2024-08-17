@@ -1,7 +1,7 @@
 import assert from "assert";
 
 import { Category, RateLimit, TIME_UNIT } from "@discordx/utilities";
-import { ActionType, EntityType } from "@prisma/client";
+import { ActionType, EntityType, EventType } from "@prisma/client";
 import {
 	ActionRowBuilder,
 	ApplicationCommandOptionType,
@@ -13,7 +13,8 @@ import {
 } from "discord.js";
 import { Discord, Guard, ParameterDecoratorEx, Slash, SlashGroup } from "discordx";
 
-import { AutoCompleteSlashChoiceOption } from "~/helpers/decorators/slash/autocomplete.js";
+import { ACTION_TYPES } from "~/constants.js";
+import { ActionSlashChoiceOption } from "~/helpers/decorators/slash/autocomplete.js";
 import { ReasonSlashOption } from "~/helpers/decorators/slash/reason.js";
 import { TargetSlashOption } from "~/helpers/decorators/slash/target.js";
 import { ValidationError } from "~/helpers/errors/ValidationError.js";
@@ -80,7 +81,7 @@ export abstract class Case {
 
 		const actionTypeMatch = [actionTypeStem, `${actionTypeStem}_${type.toUpperCase()}`];
 
-		const actionType = ActionManager.types.find((actionType) => actionTypeMatch.includes(actionType));
+		const actionType = ACTION_TYPES.find((actionType) => actionTypeMatch.includes(actionType));
 
 		if (!actionType) {
 			throw new ValidationError(`you may not ${type} cases under this group`);
@@ -261,14 +262,9 @@ export abstract class Case {
 
 	@Slash({ description: "List and filter all cases on the server" })
 	public async list(
-		@AutoCompleteSlashOption(
-			{
-				description: "The action type",
-				name: "action_type",
-				type: ApplicationCommandOptionType.String
-			},
-			ActionType
-		)
+		@ActionSlashChoiceOption({
+			eventType: EventType.BOT
+		})
 		action: ActionType | undefined,
 		@TargetSlashOption({
 			entityType: CommandUtils.entityType.USER,
