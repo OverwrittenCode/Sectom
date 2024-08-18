@@ -115,11 +115,7 @@ export abstract class ActionManager {
 		StringUtils.regexes.discordBasedActionLog.test(type) ? EventType.DISCORD : EventType.BOT
 	) as Record<EventType, ActionType[]>;
 
-	public static readonly createBasedTypes = ACTION_TYPES.filter((caseActionType) =>
-		StringUtils.regexes.createBasedActionModifiers.test(caseActionType)
-	);
-
-	public static readonly _createBasedTypes = this.eventBasedLogTypes[EventType.BOT].filter((type) =>
+	public static readonly createBasedTypes = this.eventBasedLogTypes[EventType.BOT].filter((type) =>
 		StringUtils.regexes.createBasedActionModifiers.test(type)
 	);
 

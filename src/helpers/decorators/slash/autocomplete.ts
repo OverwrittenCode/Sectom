@@ -132,7 +132,7 @@ export function AutoCompleteSlashChoiceOption(
 
 const choiceConfigs = {
 	[EventType.BOT]: {
-		types: ActionManager._createBasedTypes,
+		types: ActionManager.createBasedTypes,
 		regex: StringUtils.regexes.createBasedActionModifiers
 	},
 	[EventType.DISCORD]: {
